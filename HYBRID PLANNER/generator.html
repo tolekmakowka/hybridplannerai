@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HybridPlanner — Generator planu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brown:#3E2723; --white:#FFFFFF; --beige:#8D8C87;
+  --text:#EDEDEA; --muted:#C9C7C2; --bg:#0F0F0F; --card:#1B1B1B;
+  --border:#2A2A2A; --radius:16px; --shadow:0 12px 40px rgba(0,0,0,.4);
+  --maxw:1100px;
+}
+*{box-sizing:border-box} html,body{height:100%;margin:0}
+body{font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);color:var(--text)}
+a{color:inherit;text-decoration:none}
+h1{font:700 clamp(28px,4vw,38px)/1.15 Poppins;margin:0 0 10px}
+h2{font:700 22px/1.2 Poppins;margin:0 0 10px}
+p{margin:0}
+.container{max-width:var(--maxw);margin:0 auto;padding:24px}
+.card{background:#151515;border:1px solid var(--border);border-radius:16px;padding:18px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+label{font:600 13px/1.3 Inter;color:#cfcfcf}
+input[type="text"],input[type="number"],select,textarea{
+  width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border);
+  background:#1b1b1b;color:#fff;outline:none
+}
+textarea{min-height:110px;resize:vertical}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:12px 18px;border-radius:12px;border:2px solid var(--text);color:var(--text);background:transparent;font:700 15px/1 Inter;cursor:pointer}
+.btn-brown{background:var(--brown);border-color:var(--brown);color:#fff}
+.tabs{display:flex;gap:8px;margin:14px 0 10px}
+.tab{padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#111;cursor:pointer;font:600 13px/1 Inter;color:#ddd}
+.tab[aria-selected="true"]{background:#fff;color:#111;border-color:#fff}
+.help{color:#a9a7a3;font:400 13px/1.4 Inter;margin-bottom:14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips label{display:inline-flex;align-items:center;gap:6px;padding:8px 10px;border:1px solid var(--border);border-radius:999px;background:#1a1a1a;color:#ddd;cursor:pointer}
+.chips input{appearance:none;width:14px;height:14px;border:1px solid #666;border-radius:4px;display:inline-block;background:#111}
+.chips input:checked{background:var(--brown);border-color:var(--brown)}
+.grid{display:grid;gap:12px}
+.two{grid-template-columns:1fr 1fr}
+hr{border:none;border-top:1px solid var(--border);margin:18px 0}
+small.muted{color:#a9a7a3}
+pre#output{background:#0f0f0f;border:1px solid var(--border);border-radius:12px;padding:16px;white-space:pre-wrap;word-wrap:break-word}
+
+/* mini toast */
+.toast{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:#111;color:#fff;border:1px solid #333;padding:10px 14px;border-radius:10px;z-index:100;display:none}
+.toast.show{display:block}
+</style>
+</head>
+<body>
+
+<!-- === STRAŻNIK: wymagany e-mail + zgoda (zostaje bez zmian) === -->
+<script>
+(function(){
+  try{
+    var email = localStorage.getItem('hp_email');
+    var consent = localStorage.getItem('hp_consent') === '1';
+    if(!email || !consent){
+      window.location.replace('index.html#email-required');
+    }
+  }catch(e){
+    window.location.replace('index.html#email-required');
+  }
+})();
+</script>
+
+<div class="container">
+  <a href="index.html" class="btn" style="margin-bottom:14px">← Powrót</a>
+
+  <h1>Generator planu (AI)</h1>
+  <!-- === KLAUZULA RODO (zostaje) === -->
+  <div class="card" style="margin:10px 0 16px;background:#131313">
+    <div class="help">
+      <strong>RODO:</strong> Administratorem danych jest <em>[Twoja nazwa firmy]</em>. Twój adres e-mail przetwarzamy wyłącznie w celu wygenerowania planu treningowego i wysłania linku do pobrania PDF. Masz prawo dostępu do danych, ich sprostowania, usunięcia oraz sprzeciwu. Kontakt: <a href="mailto:hello@hybridplanner.app" style="color:#8D8C87;text-decoration:underline">hello@hybridplanner.app</a>. Szczegóły: <a href="polityka.html" style="color:#8D8C87;text-decoration:underline">Polityka prywatności</a>.
+    </div>
+  </div>
+
+  <!-- wybór trybu -->
+  <div class="tabs" role="tablist" aria-label="Tryb planu">
+    <button id="tabA" class="tab" role="tab" aria-selected="true" aria-controls="panelA">Plan Treningowy (12 tygodni)</button>
+    <button id="tabB" class="tab" role="tab" aria-selected="false" aria-controls="panelB">Hybrydowy Plan (4 tygodnie)</button>
+  </div>
+
+  <!-- Panel A: 6 pytań -->
+  <section id="panelA" class="card grid" role="tabpanel" aria-labelledby="tabA">
+    <p class="help">Odpowiedz na 6 kluczowych pytań — AI ułoży Twój 12-tygodniowy plan.</p>
+    <div class="row">
+      <div>
+        <label>Cel główny</label>
+        <input id="a_goal" type="text" placeholder="np. siła całego ciała / redukcja / maraton za 12 tyg.">
+      </div>
+      <div>
+        <label>Poziom</label>
+        <select id="a_level">
+          <option>Początkujący</option><option>Średniozaawansowany</option><option>Zaawansowany</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Dostępny czas (h/tydz.)</label>
+        <input id="a_time" type="number" min="1" max="20" placeholder="np. 4">
+      </div>
+      <div>
+        <label>Sprzęt</label>
+        <input id="a_equipment" type="text" placeholder="np. siłownia pełna / hantle + drążek / domowy minimalny">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Historia kontuzji/ograniczenia</label>
+        <input id="a_limits" type="text" placeholder="np. kolano, odcinek L/S — bez skoków i ciężkich przysiadów">
+      </div>
+      <div>
+        <label>Preferencje (dni, dyscypliny)</label>
+        <input id="a_prefs" type="text" placeholder="np. wolne środy; +wspinaczka 1×/tydz.">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:6px">
+      <button id="genA" class="btn btn-brown">Wygeneruj plan A</button>
+      <small class="muted">Plan jest tylko informacyjny; nie stanowi porady medycznej.</small>
+    </div>
+  </section>
+
+  <!-- Panel B: 10 pytań (hybryda, 20 dyscyplin) -->
+  <section id="panelB" class="card grid" role="tabpanel" aria-labelledby="tabB" hidden>
+    <p class="help">Wybierz dyscypliny i częstotliwości — AI rozplanuje tydzień na 4 tygodnie.</p>
+
+    <div>
+      <label>Wybór dyscyplin (zaznacz dowolne)</label>
+      <div id="b_disciplines" class="chips" style="margin-top:8px">
+        <!-- 20 dyscyplin -->
+        <label><input type="checkbox" value="Siłownia"><span>Siłownia</span></label>
+        <label><input type="checkbox" value="Bieganie"><span>Bieganie</span></label>
+        <label><input type="checkbox" value="Wspinaczka"><span>Wspinaczka</span></label>
+        <label><input type="checkbox" value="Kolarstwo"><span>Kolarstwo</span></label>
+        <label><input type="checkbox" value="Pływanie"><span>Pływanie</span></label>
+        <label><input type="checkbox" value="Joga"><span>Joga</span></label>
+        <label><input type="checkbox" value="Mobilność"><span>Mobilność</span></label>
+        <label><input type="checkbox" value="Cross-Training"><span>Cross-Training</span></label>
+        <label><input type="checkbox" value="Trening Interwałowy"><span>Trening Interwałowy</span></label>
+        <label><input type="checkbox" value="Trening Obwodowy"><span>Trening Obwodowy</span></label>
+        <label><input type="checkbox" value="BJJ"><span>BJJ</span></label>
+        <label><input type="checkbox" value="Boks"><span>Boks</span></label>
+        <label><input type="checkbox" value="Kickboxing"><span>Kickboxing</span></label>
+        <label><input type="checkbox" value="Piłka Nożna"><span>Piłka Nożna</span></label>
+        <label><input type="checkbox" value="Tenis"><span>Tenis</span></label>
+        <label><input type="checkbox" value="Narciarstwo Biegowe"><span>Narciarstwo Biegowe</span></label>
+        <label><input type="checkbox" value="Narciarstwo"><span>Narciarstwo</span></label>
+        <label><input type="checkbox" value="Snowboard"><span>Snowboard</span></label>
+        <label><input type="checkbox" value="Kajakarstwo"><span>Kajakarstwo</span></label>
+        <label><input type="checkbox" value="Inna (wpisz niżej)"><span>Inna (wpisz niżej)</span></label>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Częstotliwości (opisz krótko)</label>
+        <input id="b_freq" type="text" placeholder="np. Siłownia 3×, Bieganie 2×, Wspinaczka 1×">
+      </div>
+      <div>
+        <label>Dostępne dni tygodnia</label>
+        <input id="b_days" type="text" placeholder="np. pn, wt, czw, sob (wolne: śr, pt, nd)">
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Poziom</label>
+        <select id="b_level">
+          <option>Początkujący</option><option>Średniozaawansowany</option><option>Zaawansowany</option>
+        </select>
+      </div>
+      <div>
+        <label>Ograniczenia / kontuzje</label>
+        <input id="b_limits" type="text" placeholder="np. kolano — rozdziel siłę nóg i interwały 48h">
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Czas na jednostkę (min)</label>
+        <input id="b_session" type="number" min="20" max="120" step="5" placeholder="np. 60">
+      </div>
+      <div>
+        <label>Priorytety (co najważniejsze?)</label>
+        <input id="b_prio" type="text" placeholder="np. wspinaczka > siła > bieganie">
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Sprzęt</label>
+        <input id="b_equipment" type="text" placeholder="np. domowy minimalny / pełna siłownia / panel wspin.">
+      </div>
+      <div>
+        <label>Inne uwagi</label>
+        <input id="b_notes" type="text" placeholder="np. start w zawodach za 5 tygodni">
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:6px">
+      <button id="genB" class="btn btn-brown">Wygeneruj plan B</button>
+      <small class="muted">Plan jest tylko informacyjny; nie stanowi porady medycznej.</small>
+    </div>
+  </section>
+
+  <hr>
+
+  <div class="card">
+    <h2>Wynik</h2>
+    <pre id="output">Najpierw wypełnij formularz i kliknij „Wygeneruj”.</pre>
+  </div>
+</div>
+
+<div id="toast" class="toast">Wygenerowano podgląd planu.</div>
+
+<script>
+/* Zakładki A/B + preselect z query param ?plan= (zostaje) */
+(function(){
+  const tabA = document.getElementById('tabA');
+  const tabB = document.getElementById('tabB');
+  const pa = document.getElementById('panelA');
+  const pb = document.getElementById('panelB');
+  function sel(a){
+    tabA.setAttribute('aria-selected', a?'true':'false');
+    tabB.setAttribute('aria-selected', a?'false':'true');
+    pa.hidden = !a; pb.hidden = a;
+  }
+  tabA.addEventListener('click', ()=>sel(true));
+  tabB.addEventListener('click', ()=>sel(false));
+  const q = new URLSearchParams(location.search).get('plan');
+  if(q && (q.toUpperCase()==='B' || q.toUpperCase()==='BUNDLE')) sel(false); else sel(true);
+})();
+
+/* === NOWA OBSŁUGA: połączenie z Netlify Function /.netlify/functions/generate-plan === */
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg||t.textContent;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+async function callAI(payload){
+  const res = await fetch('/.netlify/functions/generate-plan', {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if(!res.ok){
+    const txt = await res.text();
+    throw new Error(txt || ('HTTP '+res.status));
+  }
+  return res.json();
+}
+
+const outputEl = document.getElementById('output');
+const lang = (document.documentElement.lang || 'pl').toLowerCase().startsWith('en') ? 'en' : 'pl';
+
+document.getElementById('genA').addEventListener('click', async ()=>{
+  const data = {
+    goal: document.getElementById('a_goal').value,
+    level: document.getElementById('a_level').value,
+    time: document.getElementById('a_time').value,
+    equipment: document.getElementById('a_equipment').value,
+    limits: document.getElementById('a_limits').value,
+    prefs: document.getElementById('a_prefs').value,
+    email: localStorage.getItem('hp_email')||''
+  };
+  outputEl.textContent = (lang==='en' ? 'Generating…' : 'Generowanie…');
+  try{
+    const { plan, emailed, email_error } = await callAI({ type:'A', lang, inputs: data });
+    outputEl.textContent = plan || (lang==='en' ? 'No content received.' : 'Brak treści.');
+    if (emailed) {
+      toast(lang==='en' ? 'Sent to your email.' : 'Wysłano na Twój e-mail.');
+    } else {
+      toast((lang==='en' ? 'Generated. Email not sent.' : 'Wygenerowano. E-mail nie wysłany.') + (email_error ? ' • ' + email_error : ''));
+    }
+  }catch(e){
+    outputEl.textContent = (lang==='en' ? 'Error: ' : 'Błąd: ') + e.message;
+  }
+});
+
+document.getElementById('genB').addEventListener('click', async ()=>{
+  const checked = Array.from(document.querySelectorAll('#b_disciplines input:checked')).map(i=>i.value);
+  const data = {
+    disc: checked.join(', ') || '',
+    freq: document.getElementById('b_freq').value,
+    days: document.getElementById('b_days').value,
+    level: document.getElementById('b_level').value,
+    limits: document.getElementById('b_limits').value,
+    session: document.getElementById('b_session').value,
+    prio: document.getElementById('b_prio').value,
+    equipment: document.getElementById('b_equipment').value,
+    notes: document.getElementById('b_notes').value,
+    email: localStorage.getItem('hp_email')||''
+  };
+  outputEl.textContent = (lang==='en' ? 'Generating…' : 'Generowanie…');
+  try{
+    const { plan, emailed, email_error } = await callAI({ type:'B', lang, inputs: data });
+    outputEl.textContent = plan || (lang==='en' ? 'No content received.' : 'Brak treści.');
+    if (emailed) {
+      toast(lang==='en' ? 'Sent to your email.' : 'Wysłano na Twój e-mail.');
+    } else {
+      toast((lang==='en' ? 'Generated. Email not sent.' : 'Wygenerowano. E-mail nie wysłany.') + (email_error ? ' • ' + email_error : ''));
+    }
+  }catch(e){
+    outputEl.textContent = (lang==='en' ? 'Error: ' : 'Błąd: ') + e.message;
+  }
+});
+</script>
+</body>
+</html>

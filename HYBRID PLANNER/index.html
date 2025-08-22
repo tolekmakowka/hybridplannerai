@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HybridPlanner — Plany treningowe z AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brown:#3E2723; --white:#FFFFFF; --beige:#8D8C87;
+  --text:#EDEDEA; --muted:#C9C7C2; --bg:#0F0F0F; --card:#1B1B1B;
+  --border:#2A2A2A; --radius:16px; --shadow:0 12px 40px rgba(0,0,0,.4);
+  --maxw:1200px;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);color:var(--text)}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+h1{font:700 44px/1.15 Poppins;margin:0 0 12px}
+h2{font:700 34px/1.2 Poppins;margin:0 0 12px;color:#111}
+h3{font:600 20px/1.3 Poppins;margin:0 0 8px}
+p{font:400 16px/1.6 Inter;margin:0}
+
+main{height:100vh;overflow-y:auto;scroll-snap-type:y mandatory;scroll-behavior:smooth}
+section.snap{min-height:100vh;scroll-snap-align:start;position:relative;display:flex;align-items:center}
+.container{max-width:var(--maxw);margin:0 auto;padding:0 24px;width:100%}
+
+/* Preloader */
+.pre{position:absolute;inset:0;display:grid;place-items:center;z-index:3;pointer-events:none;opacity:0;transition:opacity .35s}
+.pre.dark{background:rgba(0,0,0,.55)}
+.pre.light{background:rgba(255,255,255,.9)}
+.loader{display:flex;gap:8px}
+.dot{width:8px;height:8px;border-radius:50%;animation:bounce .9s infinite ease-in-out}
+.dark .dot{background:#fff}
+.light .dot{background:var(--brown)}
+.dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,100%{transform:translateY(0);opacity:.4}50%{transform:translateY(-6px);opacity:1}}
+
+/* Layouty */
+.grid-2{display:grid;grid-template-columns:1.1fr .9fr;gap:32px;align-items:center}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.card-light{background:#fff;border:1px solid #EEE;border-radius:16px;padding:20px}
+.round{border-radius:16px;border:1px solid var(--border);background:#1a1a1a}
+.icon-dot{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.icon-dot img{width:22px;height:22px;object-fit:contain}
+
+/* Hero */
+.hero-bg{width:100%;border-radius:24px;border:1px solid var(--border);padding:28px;background:linear-gradient(180deg,#191919,#121212);box-shadow:var(--shadow);overflow:hidden;position:relative}
+.curves{position:absolute;inset:0;pointer-events:none;opacity:.25}
+.curves svg{width:100%;height:100%}
+.kicker{display:inline-block;padding:6px 10px;border:1px solid var(--border);border-radius:10px;font:600 13px/1 Inter;color:#C9C7C2;margin-bottom:14px}
+.hero-copy p{color:#C9C7C2}
+.right-stack{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.right-stack .wide{grid-column:1/-1;position:relative}
+.bigcta{position:absolute;inset:0;display:grid;place-items:center;font:700 44px/1 Poppins;color:rgba(255,255,255,.12);letter-spacing:.06em}
+
+/* Jasne sekcje */
+.section-light{background:#fff;color:#111}
+.section-light p{color:#5f5e5b}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:10px;padding:12px 18px;border-radius:12px;border:2px solid var(--text);color:var(--text);background:transparent;font:600 16px/1 Inter;transition:.25s;cursor:pointer}
+.btn:hover{transform:translateY(-1px)}
+.btn-brown{background:var(--brown);border-color:var(--brown);color:#fff}
+.btn-light{background:#fff;color:#111;border-color:#fff}
+
+/* Animacje */
+.reveal{opacity:0;transform:translateY(14px);transition:opacity .6s, transform .6s}
+.reveal.show{opacity:1;transform:none}
+.reveal-stagger > *{opacity:0;transform:translateY(16px)}
+.reveal-stagger.show > *{animation:st .9s ease forwards}
+.reveal-stagger.show > *:nth-child(1){animation-delay:.05s}
+.reveal-stagger.show > *:nth-child(2){animation-delay:.15s}
+.reveal-stagger.show > *:nth-child(3){animation-delay:.25s}
+.reveal-stagger.show > *:nth-child(4){animation-delay:.35s}
+@keyframes st{to{opacity:1;transform:none}}
+.typewriter span{opacity:0;transition:opacity .08s}
+.typewriter.start span{opacity:1;transition-delay:calc(var(--i)*55ms)}
+
+/* Auto-play toggle */
+.autoplay-toggle{position:fixed;right:16px;bottom:16px;z-index:50;background:#111;color:#fff;border:1px solid #333;padding:8px 12px;border-radius:10px;font:600 13px/1 Inter;cursor:pointer;opacity:.85}
+.autoplay-toggle:hover{opacity:1}
+
+/* JOIN HERE */
+.joinhere-card{
+  grid-column: 1 / -1;
+  height: 220px; width:100%;
+  position:relative; display:grid; place-items:center;
+  border-radius:16px; border:1px solid var(--border); overflow:hidden;
+  text-decoration:none; background:#141414;
+}
+.joinhere-card::before{
+  content:""; position:absolute; inset:0;
+  background:url('assets/Bytol3.jpg') center/cover no-repeat;
+  opacity:.55; transition:opacity .25s, transform .25s, filter .25s;
+}
+.joinhere-text{
+  position:relative; font:800 clamp(34px,6vw,72px)/1 Poppins;
+  letter-spacing:.06em; text-transform:uppercase;
+  color:rgba(255,255,255,.18); transition:color .25s, transform .25s;
+}
+.joinhere-card:hover::before{opacity:.35; filter:saturate(1.05)}
+.joinhere-card:hover .joinhere-text{color:rgba(255,255,255,.92); transform:translateY(-1px)}
+@media (max-width:640px){ .joinhere-card{height:160px} }
+
+/* FAQ */
+.faq-list{display:grid;gap:14px;margin-top:14px}
+.faq-list details{background:#fff;border:1px solid #EEE;border-radius:12px;padding:16px 18px}
+.faq-list summary{font:600 16px/1.3 Poppins;cursor:pointer;outline:none}
+.faq-list p{margin-top:10px;color:#5f5e5b}
+
+/* Responsive */
+@media (max-width:1024px){ .grid-2{grid-template-columns:1fr} .right-stack{grid-template-columns:1fr 1fr} }
+@media (max-width:640px){ h1{font-size:34px} .right-stack{grid-template-columns:1fr} .bigcta{font-size:34px} }
+
+/* === Email gate (modal) === */
+.modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.6);z-index:100}
+.modal.show{display:grid}
+.modal .panel{width:min(560px,92vw);background:#111;color:#EDEDEA;border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
+.modal h3{font:700 20px/1.3 Poppins;margin:0 0 8px}
+.modal p{color:#a9a7a3;margin:0 0 12px}
+.modal input[type="email"]{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:#1a1a1a;color:#fff;outline:none}
+.modal .error{color:#ffb4b4;font:600 12px/1.2 Inter;margin-top:6px;display:none}
+.modal .actions{display:flex;gap:12px;justify-content:flex-end;margin-top:14px}
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#111;color:#fff;border:1px solid #333;padding:10px 14px;border-radius:10px;z-index:110;display:none}
+.toast.show{display:block}
+/* dopiski dla checkboxa zgody */
+.modal .consent{display:flex;align-items:flex-start;gap:10px;margin-top:10px;color:#cfcfcf}
+.modal .consent input{margin-top:2px}
+.modal .error-consent{color:#ffb4b4;font:600 12px/1.2 Inter;margin-top:6px;display:none}
+</style>
+</head>
+<body>
+
+<main id="main">
+
+  <!-- HERO -->
+  <section class="snap">
+    <div class="pre dark"><div class="loader"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+    <div class="container">
+      <div class="hero-bg">
+        <div class="curves" aria-hidden="true">
+          <svg viewBox="0 0 1200 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M-50 430C200 290 380 560 650 430C920 300 1040 380 1250 260" stroke="#2A2A2A" stroke-width="1.2"/>
+            <path d="M-120 360C120 220 360 420 620 320C880 220 1040 320 1260 180" stroke="#2A2A2A" stroke-width="1.2"/>
+            <path d="M-90 300C150 180 350 300 580 220C820 140 1030 220 1240 120" stroke="#2A2A2A" stroke-width="1.2"/>
+          </svg>
+        </div>
+
+        <div class="grid-2">
+          <div class="hero-copy">
+            <span class="kicker reveal">HybridPlanner • AI</span>
+            <h1 class="typewriter" data-typer="Ty masz cele, dzięki nam stają się rzeczywistością."></h1>
+            <p class="reveal" style="max-width:560px;margin-top:12px">
+              Plan Treningowy (12 tygodni) lub Hybrydowy Plan Treningowy (4 tygodnie). Minimalna objętość, maksymalne efekty.
+            </p>
+            <div class="reveal" style="margin-top:18px;display:flex;gap:12px;flex-wrap:wrap">
+              <a class="btn btn-brown" href="generator.html">Wygeneruj</a>
+              <a class="btn" href="#features">Zobacz szczegóły</a>
+            </div>
+            <p class="reveal" style="margin-top:10px;color:#a9a7a3;font-size:13px">To nie jest porada medyczna.</p>
+          </div>
+
+          <div class="right-stack reveal-stagger">
+            <img class="round" src="assets/Bytol1.jpg" alt="Bytol 1" style="height:220px;object-fit:cover">
+            <img class="round" src="assets/Bytol2.jpg" alt="Bytol 2" style="height:220px;object-fit:cover">
+            <a href="generator.html" class="joinhere-card" aria-label="Przejdź do generatora — Join here">
+              <span class="joinhere-text">JOIN HERE</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section id="features" class="snap section-light">
+    <div class="pre light"><div class="loader"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+    <div class="container">
+      <h2 class="reveal typewriter" data-typer="Co zawiera program"></h2>
+      <div class="grid-3" style="margin-top:20px">
+        <article class="card-light reveal">
+          <div class="icon-dot">
+            <img src="assets/trainer_10452493.svg" alt="Personalizacja AI">
+            <strong>Personalizacja AI</strong>
+          </div>
+          <p>Dopasowanie do celu, poziomu, dostępnego czasu/tydzień i ograniczeń.</p>
+        </article>
+        <article class="card-light reveal">
+          <div class="icon-dot">
+            <img src="assets/gym_1025929.svg" alt="Bezpieczna progresja">
+            <strong>Bezpieczna progresja</strong>
+          </div>
+          <p>24–48 h odstępu między ciężkimi bodźcami, deload, kontrola objętości.</p>
+        </article>
+        <article class="card-light reveal">
+          <div class="icon-dot">
+            <img src="assets/note_13552540.svg" alt="Podgląd i PDF">
+            <strong>Podgląd + PDF</strong>
+          </div>
+          <p>Podgląd na stronie i plik PDF po <strong>wygenerowaniu</strong>. Interfejs PL/EN.</p>
+        </article>
+        <article class="card-light reveal">
+          <div class="icon-dot">
+            <img src="assets/target_15023730.svg" alt="Indywidualny wybór dyscyplin">
+            <strong>Indywidualny wybór dyscyplin</strong>
+          </div>
+          <p>Wybierz i łącz dyscypliny zgodnie z priorytetami i dostępnością.</p>
+        </article>
+        <article class="card-light reveal">
+          <div class="icon-dot">
+            <img src="assets/clipboard_15409277.svg" alt="Uniwersalne nazewnictwo ćwiczeń">
+            <strong>Uniwersalne nazewnictwo ćwiczeń</strong>
+          </div>
+          <p>Ujednolicone nazwy w PL/EN – szybkie do rozpoznania i wyszukania.</p>
+        </article>
+        <article class="card-light reveal">
+          <div class="icon-dot">
+            <img src="assets/note_13552540.svg" alt="Dokładne rozplanowanie tygodnia">
+            <strong>Dokładne rozplanowanie tygodnia treningowego</strong>
+          </div>
+          <p>Tydzień ułożony dzień po dniu z buforami regeneracji i progresją.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- OFERTA -->
+  <section id="pricing" class="snap section-light">
+    <div class="pre light"><div class="loader"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+    <div class="container">
+      <h2 class="reveal">Oferta</h2>
+
+      <div class="grid-3" style="margin-top:20px;align-items:stretch">
+        <article class="card-light reveal" style="display:flex;flex-direction:column;height:100%">
+          <div style="flex:1">
+            <h3>Plan Treningowy (12 tygodni)</h3>
+            <p>Pełny plan z progresją i dniami regeneracji.</p>
+          </div>
+          <a class="btn btn-brown" href="generator.html?plan=A">Wygeneruj teraz</a>
+        </article>
+
+        <article class="card-light reveal" style="display:flex;flex-direction:column;height:100%;border:2px solid var(--brown)">
+          <div style="flex:1">
+            <h3>Pakiet Planów Treningowych</h3>
+            <p>Plan Treningowy (12 tygodni) i Hybrydowy Plan Treningowy (4 tygodnie).</p>
+          </div>
+          <a class="btn btn-brown" href="generator.html?plan=BUNDLE">Wygeneruj teraz</a>
+        </article>
+
+        <article class="card-light reveal" style="display:flex;flex-direction:column;height:100%">
+          <div style="flex:1">
+            <h3>Hybrydowy Plan Treningowy (4 tygodnie)</h3>
+            <p>Optymalne rozłożenie treningów wielu dyscyplin.</p>
+          </div>
+          <a class="btn btn-brown" href="generator.html?plan=B">Wygeneruj teraz</a>
+        </article>
+      </div>
+
+      <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between;margin-top:24px">
+        <small style="color:#6a6966">Minimalna objętość, maksymalne efekty.</small>
+        <nav style="display:flex;gap:16px">
+          <a href="#" style="color:#6a6966">Polityka</a>
+          <a href="#" style="color:#6a6966">Regulamin</a>
+          <a href="mailto:hello@hybridplanner.app" style="color:#6a6966">Kontakt</a>
+          <a href="#faq" style="color:#6a6966">FAQ</a>
+        </nav>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" class="snap section-light">
+    <div class="pre light"><div class="loader"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+    <div class="container">
+      <h2 class="reveal">FAQ</h2>
+      <div class="faq-list reveal-stagger">
+        <details>
+          <summary>Jak powstaje mój plan?</summary>
+          <p>Plan generuje AI na podstawie Twoich odpowiedzi w krótkiej ankiecie. Uwzględniamy cel, poziom, sprzęt, czas oraz ewentualne ograniczenia.</p>
+        </details>
+        <details>
+          <summary>Ile to trwa?</summary>
+          <p>Zwykle kilkanaście sekund od wysłania odpowiedzi. Otrzymujesz podgląd na stronie oraz plik PDF do pobrania.</p>
+        </details>
+        <details>
+          <summary>Czy mogę trenować kilka dyscyplin w tygodniu?</summary>
+          <p>Tak. Hybrydowy Plan Treningowy ustawia tygodniowy rozkład tak, aby łączyć dyscypliny i zminimalizować ryzyko przeciążeń.</p>
+        </details>
+        <details>
+          <summary>W jakim języku dostanę plan?</summary>
+          <p>Interfejs i pliki dostępne są w dwóch wersjach językowych: PL oraz EN.</p>
+        </details>
+        <details>
+          <summary>Co jeśli mam kontuzję lub chorobę?</summary>
+          <p>To nie jest porada medyczna. Jeśli masz uraz lub wątpliwości zdrowotne, skonsultuj się ze specjalistą przed rozpoczęciem.</p>
+        </details>
+        <details>
+          <summary>Nie mam pełnego dostępu do sprzętu. Czy plan zadziała?</summary>
+          <p>Tak. W ankiecie podajesz dostępny sprzęt, a AI dopasuje ćwiczenia i objętość do Twoich warunków.</p>
+        </details>
+        <details>
+          <summary>Czy mogę później wprowadzić zmiany?</summary>
+          <p>Możesz ponownie wygenerować wariant planu, odpowiadając na ankietę z innymi ustawieniami — zachowaj najnowszą wersję jako główną.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<button id="autoBtn" class="autoplay-toggle" aria-pressed="true">Auto: ON</button>
+
+<script>
+/* (Twój istniejący skrypt – NIEZMIENIONY poza interwałem przewijania) */
+function initTypewriter(el){
+  if(!el || el.dataset.ready) return;
+  const text = el.dataset.typer || "";
+  el.dataset.ready = "1";
+  el.innerHTML = [...text].map((ch,i)=>{
+    if(ch === '\n' || ch === '\r'){ return '<br>'; }
+    return `<span style="--i:${i}">${ch}</span>`;
+  }).join('');
+  requestAnimationFrame(()=> el.classList.add('start'));
+}
+const snaps = document.querySelectorAll('section.snap');
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(entry=>{
+    if(entry.isIntersecting){
+      const sec = entry.target;
+      const pre = sec.querySelector('.pre');
+      if(!sec.dataset.loaded){
+        pre.style.opacity = 1;
+        setTimeout(()=>{
+          pre.style.opacity = 0;
+          sec.dataset.loaded = "1";
+          sec.querySelectorAll('.reveal, .reveal-stagger').forEach(x=>x.classList.add('show'));
+          sec.querySelectorAll('.typewriter').forEach(initTypewriter);
+        }, 450);
+      }else{
+        sec.querySelectorAll('.reveal, .reveal-stagger').forEach(x=>x.classList.add('show'));
+        sec.querySelectorAll('.typewriter').forEach(initTypewriter);
+      }
+    }
+  });
+},{threshold:0.55});
+snaps.forEach(s=>io.observe(s));
+
+let auto = true;
+const btn = document.getElementById('autoBtn');
+btn.addEventListener('click',()=>{
+  auto = !auto;
+  btn.textContent = 'Auto: ' + (auto ? 'ON' : 'OFF');
+  btn.setAttribute('aria-pressed', String(auto));
+});
+const list = Array.from(snaps);
+let idx = 0;
+function advance(){
+  if(!auto) return;
+  idx = (idx + 1) % list.length;
+  list[idx].scrollIntoView({behavior:'smooth', block:'start'});
+}
+setInterval(advance, 30000); /* ← było 10000, teraz 30000 */
+
+window.addEventListener('load', ()=>{
+  snaps[0].querySelectorAll('.typewriter').forEach(initTypewriter);
+  const pre = snaps[0].querySelector('.pre');
+  pre.style.opacity = 1;
+  setTimeout(()=> pre.style.opacity = 0, 450);
+});
+</script>
+
+<!-- Email gate (HTML) -->
+<div id="emailGate" class="modal" aria-hidden="true">
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="eg-title">
+    <h3 id="eg-title">Podaj e-mail, aby przejść do generatora</h3>
+    <p>Wyślemy podsumowanie i link do pobrania PDF.</p>
+    <input id="eg-input" type="email" placeholder="twoj@email.pl" autocomplete="email" />
+    <div id="eg-err" class="error">Wpisz poprawny adres e-mail.</div>
+
+    <label class="consent">
+      <input id="eg-consent" type="checkbox">
+      <span>Wyrażam zgodę na przetwarzanie moich danych osobowych.</span>
+    </label>
+    <div id="eg-err-consent" class="error-consent">Aby kontynuować, zaznacz zgodę.</div>
+
+    <div class="actions">
+      <button id="eg-cancel" class="btn">Anuluj</button>
+      <button id="eg-ok" class="btn btn-brown">Kontynuuj</button>
+    </div>
+  </div>
+</div>
+<div id="eg-toast" class="toast">Podaj e-mail, aby przejść do generatora.</div>
+
+<!-- Email gate (JS) -->
+<script>
+(function(){
+  const gate = document.getElementById('emailGate');
+  const input = document.getElementById('eg-input');
+  const err = document.getElementById('eg-err');
+  const consent = document.getElementById('eg-consent');
+  const errC = document.getElementById('eg-err-consent');
+  const btnOk = document.getElementById('eg-ok');
+  const btnCancel = document.getElementById('eg-cancel');
+  const toast = document.getElementById('eg-toast');
+  let pendingHref = null;
+
+  function openGate(href){
+    pendingHref = href;
+    err.style.display = 'none';
+    errC.style.display = 'none';
+    input.value = localStorage.getItem('hp_email') || '';
+    consent.checked = (localStorage.getItem('hp_consent') === '1');
+    gate.classList.add('show');
+    gate.setAttribute('aria-hidden','false');
+    setTimeout(()=>input.focus(), 50);
+  }
+  function closeGate(){
+    gate.classList.remove('show');
+    gate.setAttribute('aria-hidden','true');
+    pendingHref = null;
+  }
+  function valid(email){
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(String(email||'').trim());
+  }
+  function submit(){
+    const email = input.value.trim();
+    const isEmailOk = valid(email);
+    const isConsentOk = consent.checked === true;
+
+    err.style.display = isEmailOk ? 'none' : 'block';
+    errC.style.display = isConsentOk ? 'none' : 'block';
+    if(!isEmailOk || !isConsentOk) return;
+
+    localStorage.setItem('hp_email', email);
+    localStorage.setItem('hp_consent', '1');
+    closeGate();
+    if(pendingHref){ window.location.href = pendingHref; }
+  }
+
+  // Przechwyć wszystkie linki do generatora
+  document.querySelectorAll("a[href^='generator.html']").forEach(a=>{
+    a.addEventListener('click', (e)=>{
+      e.preventDefault();
+      openGate(a.getAttribute('href'));
+    });
+  });
+
+  btnOk.addEventListener('click', submit);
+  btnCancel.addEventListener('click', closeGate);
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter'){ submit(); } });
+  window.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeGate(); } });
+  gate.addEventListener('click', e=>{ if(e.target===gate){ closeGate(); } });
+
+  if(location.hash === '#email-required'){
+    toast.classList.add('show');
+    setTimeout(()=>toast.classList.remove('show'), 2200);
+    history.replaceState(null, '', location.pathname + location.search);
+  }
+})();
+</script>
+
+</body>
+</html>
