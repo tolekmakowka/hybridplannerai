@@ -358,7 +358,7 @@ function initTypewriter(el){
   el.dataset.ready = "1";
   el.innerHTML = [...text].map((ch,i)=>{
     if(ch === '\n' || ch === '\r'){ return '<br>'; }
-    return <span style="--i:${i}">${ch}</span>;
+    return `<span style="--i:${i}">${ch}</span>`;
   }).join('');
   requestAnimationFrame(()=> el.classList.add('start'));
 }
