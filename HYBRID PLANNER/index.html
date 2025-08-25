@@ -29,7 +29,7 @@ main{height:100vh;overflow-y:auto;scroll-snap-type:y mandatory;scroll-behavior:s
 section.snap{min-height:100vh;scroll-snap-align:start;position:relative;display:flex;align-items:center}
 .container{max-width:var(--maxw);margin:0 auto;padding:0 24px;width:100%}
 
-/* Preloader */
+/* Preloader na każdej sekcji */
 .pre{position:absolute;inset:0;display:grid;place-items:center;z-index:3;pointer-events:none;opacity:0;transition:opacity .35s}
 .pre.dark{background:rgba(0,0,0,.55)}
 .pre.light{background:rgba(255,255,255,.9)}
@@ -48,7 +48,7 @@ section.snap{min-height:100vh;scroll-snap-align:start;position:relative;display:
 .icon-dot{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .icon-dot img{width:22px;height:22px;object-fit:contain}
 
-/* Hero */
+/* Hero (ciemny kontener) */
 .hero-bg{width:100%;border-radius:24px;border:1px solid var(--border);padding:28px;background:linear-gradient(180deg,#191919,#121212);box-shadow:var(--shadow);overflow:hidden;position:relative}
 .curves{position:absolute;inset:0;pointer-events:none;opacity:.25}
 .curves svg{width:100%;height:100%}
@@ -79,13 +79,12 @@ section.snap{min-height:100vh;scroll-snap-align:start;position:relative;display:
 .reveal-stagger.show > *:nth-child(4){animation-delay:.35s}
 @keyframes st{to{opacity:1;transform:none}}
 .typewriter span{opacity:0;transition:opacity .08s}
-.typewriter.start span{opacity:1;transition-delay:calc(var(--i)*55ms)}
 
 /* Autoplay toggle */
 .autoplay-toggle{position:fixed;right:16px;bottom:16px;z-index:50;background:#111;color:#fff;border:1px solid #333;padding:8px 12px;border-radius:10px;font:600 13px/1 Inter;cursor:pointer;opacity:.85}
 .autoplay-toggle:hover{opacity:1}
 
-/* JOIN HERE */
+/* JOIN HERE (Bytol 3) — szeroki */
 .joinhere-card{
   grid-column: 1 / -1;
   height: 220px;
@@ -136,42 +135,25 @@ section.snap{min-height:100vh;scroll-snap-align:start;position:relative;display:
 </head>
 <body>
 
-<!-- EN/PL toggle -->
+<!-- Przycisk EN/PL -->
 <a id="langToggle" class="lang-toggle" href="?lang=en" aria-label="English version">EN</a>
 
-<!-- Modal e-mail + zgoda (otwierany przy „Wygeneruj”) -->
+<!-- Modal e-mail + zgoda -->
 <div id="emailModal" aria-modal="true" role="dialog" style="position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center">
   <div class="box" style="background:#fff;color:#111;border-radius:16px;padding:22px;max-width:420px;width:92%;box-shadow:0 10px 40px rgba(0,0,0,.35)">
-    <h3 id="gateTitle" style="margin-top:0">Dostęp do generatora</h3>
-    <label id="gateEmailLbl" for="gateEmail" style="display:block;font:600 14px/1.3 Inter;margin-bottom:6px">Twój e-mail</label>
+    <h3 style="margin-top:0">Dostęp do generatora</h3>
+    <label for="gateEmail" style="display:block;font:600 14px/1.3 Inter;margin-bottom:6px">Twój e-mail</label>
     <input id="gateEmail" type="email" placeholder="np. imie@domena.com" autocomplete="email" required
            style="width:100%;padding:12px 12px;border-radius:10px;border:1px solid #DDD;font:400 15px/1.3 Inter">
     <div class="row" style="display:flex;align-items:flex-start;gap:10px;margin:12px 0">
       <input id="gateConsent" type="checkbox" required>
-      <label id="gateConsentLbl" for="gateConsent" style="margin:0">Wyrażam zgodę na przetwarzanie moich danych osobowych.</label>
+      <label for="gateConsent" style="margin:0">Wyrażam zgodę na przetwarzanie moich danych osobowych.</label>
     </div>
     <div style="margin-top:10px">
       <button id="gateConfirm" style="background:#3E2723;color:#fff;border:none;border-radius:12px;padding:10px 14px;font:600 14px;cursor:pointer">Kontynuuj</button>
       <button class="close" id="gateClose" type="button" style="background:#111;border:1px solid #333;color:#fff;border-radius:12px;padding:10px 14px;font:600 14px;cursor:pointer;margin-left:8px">Anuluj</button>
     </div>
     <p id="gateError" style="color:#b00020;margin-top:10px;display:none">Podaj poprawny e-mail i zaznacz zgodę.</p>
-  </div>
-</div>
-
-<!-- Modal REGULAMIN -->
-<div id="termsModal" aria-modal="true" role="dialog" style="position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center">
-  <div class="box" style="background:#fff;color:#111;border-radius:16px;padding:22px;max-width:760px;width:92%;max-height:80vh;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,.35)">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
-      <h3 id="termsTitle" style="margin:0">Regulamin serwisu</h3>
-      <button id="termsClose" type="button" style="background:#111;border:1px solid #333;color:#fff;border-radius:10px;padding:8px 12px;font:600 12px;cursor:pointer">Zamknij</button>
-    </div>
-    <div id="termsContent" style="margin-top:12px;font:400 15px/1.6 Inter;color:#333">
-      <p>Korzystając z serwisu HybridPlanner wyrażasz zgodę na niniejszy Regulamin.</p>
-      <p>Generator ma charakter edukacyjno-informacyjny i nie stanowi porady medycznej ani dietetycznej. Przed rozpoczęciem aktywności skonsultuj się z lekarzem, jeśli masz przeciwwskazania.</p>
-      <p>Użytkownik odpowiada za poprawność wprowadzonych danych. Wygenerowany plan ma charakter pomocniczy i powinien być stosowany z uwzględnieniem własnych możliwości.</p>
-      <p>Dane osobowe przetwarzamy wyłącznie w celu obsługi generatora oraz komunikacji. Szczegóły znajdziesz w Polityce prywatności.</p>
-      <p>Wszelkie treści i materiały w serwisie podlegają ochronie prawnej. © 2025 Anatol Makówka. Wszelkie prawa zastrzeżone.</p>
-    </div>
   </div>
 </div>
 
@@ -201,7 +183,7 @@ section.snap{min-height:100vh;scroll-snap-align:start;position:relative;display:
               <a id="btnGenerate" class="btn btn-brown requires-email" href="generator.html">Wygeneruj</a>
               <a id="btnDetails" class="btn" href="#features">Zobacz szczegóły</a>
             </div>
-            <p id="disclaimer" class="reveal" style="margin-top:10px;color:#a9a7a3;font-size:13px">To nie jest porada medyczna.</p>
+            <p class="reveal" style="margin-top:10px;color:#a9a7a3;font-size:13px">To nie jest porada medyczna.</p>
           </div>
 
           <div class="right-stack reveal-stagger">
@@ -224,43 +206,37 @@ section.snap{min-height:100vh;scroll-snap-align:start;position:relative;display:
       <div class="grid-3" style="margin-top:20px">
         <article class="card-light reveal">
           <div class="icon-dot">
-            <img src="assets/trainer_10452493.svg" alt="Personalizacja AI">
-            <strong id="f1title">Personalizacja AI</strong>
+            <img src="assets/trainer_10452493.svg" alt="Personalizacja AI"><strong>Personalizacja AI</strong>
           </div>
-          <p id="f1desc">Dopasowanie do celu, poziomu, dostępnego czasu/tydzień i ograniczeń.</p>
+          <p>Dopasowanie do celu, poziomu, dostępnego czasu/tydzień i ograniczeń.</p>
         </article>
         <article class="card-light reveal">
           <div class="icon-dot">
-            <img src="assets/gym_1025929.svg" alt="Bezpieczna progresja">
-            <strong id="f2title">Bezpieczna progresja</strong>
+            <img src="assets/gym_1025929.svg" alt="Bezpieczna progresja"><strong>Bezpieczna progresja</strong>
           </div>
-          <p id="f2desc">24–48 h odstępu między ciężkimi bodźcami, deload, kontrola objętości.</p>
+          <p>24–48 h odstępu między ciężkimi bodźcami, deload, kontrola objętości.</p>
         </article>
         <article class="card-light reveal">
           <div class="icon-dot">
-            <img src="assets/note_13552540.svg" alt="Podgląd i PDF">
-            <strong id="f3title">Podgląd + PDF</strong>
+            <img src="assets/note_13552540.svg" alt="Podgląd i PDF"><strong>Podgląd + PDF</strong>
           </div>
           <p id="featPdfDesc">Plan wysyłany po wygenerowaniu na email w formacie PDF.</p>
         </article>
         <article class="card-light reveal">
           <div class="icon-dot">
-            <img src="assets/target_15023730.svg" alt="Indywidualny wybór dyscyplin">
-            <strong id="f4title">Indywidualny wybór dyscyplin</strong>
+            <img src="assets/target_15023730.svg" alt="Indywidualny wybór dyscyplin"><strong>Indywidualny wybór dyscyplin</strong>
           </div>
-          <p id="f4desc">Wybierz i łącz dyscypliny zgodnie z priorytetami i dostępnością.</p>
+          <p>Wybierz i łącz dyscypliny zgodnie z priorytetami i dostępnością.</p>
         </article>
         <article class="card-light reveal">
           <div class="icon-dot">
-            <img src="assets/clipboard_15409277.svg" alt="Uniwersalne nazewnictwo ćwiczeń">
-            <strong id="f5title">Uniwersalne nazewnictwo ćwiczeń</strong>
+            <img src="assets/clipboard_15409277.svg" alt="Uniwersalne nazewnictwo ćwiczeń"><strong>Uniwersalne nazewnictwo ćwiczeń</strong>
           </div>
-          <p id="f5desc">Ujednolicone nazwy w PL/EN – szybkie do rozpoznania i wyszukania.</p>
+          <p>Ujednolicone nazwy w PL/EN – szybkie do rozpoznania i wyszukania.</p>
         </article>
         <article class="card-light reveal">
           <div class="icon-dot">
-            <img src="assets/note_13552540.svg" alt="Dokładne rozplanowanie tygodnia">
-            <strong id="f6title">Dokładne rozplanowanie tygodnia treningowego</strong>
+            <img src="assets/note_13552540.svg" alt="Dokładne rozplanowanie tygodnia"><strong>Dokładne rozplanowanie tygodnia treningowego</strong>
           </div>
           <p id="featWeekDesc">Tydzień ułożony dzień po dniu z rozmieszczeniem regeneracji i progresją.</p>
         </article>
@@ -276,35 +252,35 @@ section.snap{min-height:100vh;scroll-snap-align:start;position:relative;display:
       <div class="grid-3" style="margin-top:20px">
         <article class="card-light reveal" style="display:flex;flex-direction:column;min-height:220px">
           <div>
-            <h3 id="o1title">Plan Treningowy (12 tygodni)</h3>
-            <p id="o1desc">Pełny plan z progresją i rozmieszczeniem regeneracji.</p>
+            <h3>Plan Treningowy (12 tygodni)</h3>
+            <p>Pełny plan z progresją i rozmieszczeniem regeneracji.</p>
           </div>
           <div style="margin-top:auto">
-            <a id="o1btn" class="btn btn-brown requires-email" href="generator.html#plan=A">Wygeneruj teraz</a>
+            <a class="btn btn-brown requires-email" href="generator.html#plan=A">Wygeneruj teraz</a>
           </div>
         </article>
         <article class="card-light reveal" style="border:2px solid var(--brown);display:flex;flex-direction:column;min-height:220px">
           <div>
-            <h3 id="o2title">Pakiet Planów Treningowych</h3>
-            <p id="o2desc">Plan Treningowy (12 tygodni) i Hybrydowy Plan Treningowy (4 tygodnie).</p>
+            <h3>Pakiet Planów Treningowych</h3>
+            <p>Plan Treningowy (12 tygodni) i Hybrydowy Plan Treningowy (4 tygodnie).</p>
           </div>
           <div style="margin-top:auto">
-            <a id="o2btn" class="btn btn-brown requires-email" href="generator.html#plan=BUNDLE">Wygeneruj teraz</a>
+            <a class="btn btn-brown requires-email" href="generator.html#plan=BUNDLE">Wygeneruj teraz</a>
           </div>
         </article>
         <article class="card-light reveal" style="display:flex;flex-direction:column;min-height:220px">
           <div>
-            <h3 id="o3title">Hybrydowy Plan Treningowy (4 tygodnie)</h3>
-            <p id="o3desc">Optymalne rozłożenie treningów wielu dyscyplin.</p>
+            <h3>Hybrydowy Plan Treningowy (4 tygodnie)</h3>
+            <p>Optymalne rozłożenie treningów wielu dyscyplin.</p>
           </div>
           <div style="margin-top:auto">
-            <a id="o3btn" class="btn btn-brown requires-email" href="generator.html#plan=B">Wygeneruj teraz</a>
+            <a class="btn btn-brown requires-email" href="generator.html#plan=B">Wygeneruj teraz</a>
           </div>
         </article>
       </div>
 
       <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between;margin-top:24px">
-        <small id="bottomTagline" style="color:#6a6966">2025 Anatol Makówka – wszelkie prawa zastrzeżone</small>
+        <small style="color:#6a6966">Minimalna objętość, maksymalne efekty.</small>
         <nav style="display:flex;gap:16px">
           <a id="legalPolicy" href="#" style="color:#6a6966">Polityka</a>
           <a id="legalTerms" href="#" style="color:#6a6966">Regulamin</a>
@@ -321,12 +297,12 @@ section.snap{min-height:100vh;scroll-snap-align:start;position:relative;display:
     <div class="container">
       <h2 class="reveal">FAQ</h2>
       <div class="faq-list reveal-stagger">
-        <details><summary id="faqQ1">Jak powstaje mój plan?</summary><p id="faqA1">Plan generuje AI na podstawie Twoich odpowiedzi w krótkiej ankiecie. Uwzględniamy cel, poziom, sprzęt, czas oraz ewentualne ograniczenia.</p></details>
-        <details><summary id="faqQ2">Ile to trwa?</summary><p id="faqA2">Zwykle kilkanaście sekund od wysłania odpowiedzi. Otrzymujesz podgląd i plik PDF do pobrania.</p></details>
-        <details><summary id="faqQ3">Czy mogę trenować kilka dyscyplin w tygodniu?</summary><p id="faqA3">Tak. Hybrydowy Plan Treningowy ustawia tygodniowy rozkład tak, aby łączyć dyscypliny i zminimalizować ryzyko przeciążeń.</p></details>
-        <details><summary id="faqQ4">W jakim języku dostanę plan?</summary><p id="faqA4">Interfejs i pliki dostępne są w dwóch wersjach językowych: PL oraz EN.</p></details>
-        <details><summary id="faqQ5">Co jeśli mam kontuzję lub chorobę?</summary><p id="faqA5">To nie jest porada medyczna. Jeśli masz uraz lub wątpliwości zdrowotne, skonsultuj się z lekarzem lub fizjoterapeutą przed rozpoczęciem.</p></details>
-        <details><summary id="faqQ6">Nie mam pełnego dostępu do sprzętu. Czy plan zadziała?</summary><p id="faqA6">Tak. W ankiecie podajesz dostępny sprzęt, a AI dopasuje ćwiczenia i objętość do Twoich warunków.</p></details>
+        <details><summary>Jak powstaje mój plan?</summary><p>Plan generuje AI na podstawie Twoich odpowiedzi w krótkiej ankiecie. Uwzględniamy cel, poziom, sprzęt, czas oraz ewentualne ograniczenia.</p></details>
+        <details><summary>Ile to trwa?</summary><p>Zwykle kilkanaście sekund od wysłania odpowiedzi. Otrzymujesz podgląd i plik PDF do pobrania.</p></details>
+        <details><summary>Czy mogę trenować kilka dyscyplin w tygodniu?</summary><p>Tak. Hybrydowy Plan Treningowy ustawia tygodniowy rozkład tak, aby łączyć dyscypliny i zminimalizować ryzyko przeciążeń.</p></details>
+        <details><summary>W jakim języku dostanę plan?</summary><p>Interfejs i pliki dostępne są w dwóch wersjach językowych: PL oraz EN.</p></details>
+        <details><summary>Co jeśli mam kontuzję lub chorobę?</summary><p>To nie jest porada medyczna. Jeśli masz uraz lub wątpliwości zdrowotne, skonsultuj się z lekarzem lub fizjoterapeutą przed rozpoczęciem.</p></details>
+        <details><summary>Nie mam pełnego dostępu do sprzętu. Czy plan zadziała?</summary><p>Tak. W ankiecie podajesz dostępny sprzęt, a AI dopasuje ćwiczenia i objętość do Twoich warunków.</p></details>
       </div>
     </div>
   </section>
@@ -422,7 +398,6 @@ if(confirmBtn){
   });
 }
 
-// przechwycenie kliknięć w przyciski wymagające e-maila
 document.querySelectorAll('.requires-email').forEach(a=>{
   a.addEventListener('click', (e)=>{
     if(!localStorage.getItem('hp_email') || !localStorage.getItem('hp_consent')){
@@ -431,180 +406,202 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     }
   });
 });
-
-/* ------- Regulamin: otwieranie / zamykanie ------- */
-const termsModal = document.getElementById('termsModal');
-const termsLink  = document.getElementById('legalTerms');
-const termsClose = document.getElementById('termsClose');
-
-if(termsLink){
-  termsLink.addEventListener('click', (e)=>{
-    e.preventDefault();
-    termsModal.style.display='flex';
-  });
-}
-if(termsClose){
-  termsClose.addEventListener('click', ()=> termsModal.style.display='none');
-}
-termsModal?.addEventListener('click', (e)=>{
-  if(e.target === termsModal) termsModal.style.display='none';
-});
-window.addEventListener('keydown',(e)=>{
-  if(e.key === 'Escape' && termsModal.style.display==='flex'){ termsModal.style.display='none'; }
-});
 </script>
 
-<!-- ------- Mini i18n: EN/PL toggle (pełne tłumaczenie + stopka + regulamin) ------- -->
+<!-- ------- Mini i18n: EN/PL toggle (pełne tłumaczenie) ------- -->
 <script>
-(function(){
+(function () {
   const params = new URLSearchParams(location.search);
   const lang = (params.get('lang') || localStorage.getItem('hp_lang') || 'pl').toLowerCase();
 
-  const setHTML = (id, val) => { const el = document.getElementById(id); if(el && val!==undefined) el.innerHTML = val; };
-  const setText  = (id, val) => { const el = document.getElementById(id); if(el && val!==undefined) el.textContent = val; };
-  const setInner = (id, html) => { const el = document.getElementById(id); if(el && html!==undefined) el.innerHTML = html; };
+  const setHTML = (id, val) => { const el = document.getElementById(id); if (el && val) el.innerHTML = val; };
+  const setText  = (id, val) => { const el = document.getElementById(id); if (el && val) el.textContent = val; };
   const toggleBtn = document.getElementById('langToggle');
 
-  if(lang === 'en'){
+  // Elementy bez ID, które też tłumaczymy
+  const heroDisclaimer = document.querySelector('.hero-copy p:last-of-type'); // "To nie jest porada medyczna."
+  const featuresCards = document.querySelectorAll('#features .card-light');
+  const offerCards = document.querySelectorAll('#pricing .card-light');
+  const pricingSmall = document.querySelector('#pricing small');
+  const pricingButtons = document.querySelectorAll('#pricing .card-light .requires-email');
+
+  // Modal e-mail
+  const modal = document.getElementById('emailModal');
+  const modalH3 = modal ? modal.querySelector('h3') : null;
+  const labelEmail = modal ? modal.querySelector('label[for="gateEmail"]') : null;
+  const labelConsent = modal ? modal.querySelector('label[for="gateConsent"]') : null;
+  const gateConfirm = document.getElementById('gateConfirm');
+  const gateClose = document.getElementById('gateClose');
+  const gateError = document.getElementById('gateError');
+
+  // FAQ
+  const faqDetails = document.querySelectorAll('#faq details');
+
+  if (lang === 'en') {
     // HERO
     setHTML('heroH1', 'You set the goals — we make them real.');
     setHTML('heroDesc', 'Training Plan (12 weeks) or Hybrid Training Plan (4 weeks). Minimal volume, maximum results.');
     setText('btnGenerate','Generate');
     setText('btnDetails','See details');
-    setText('disclaimer','This is not medical advice.');
+    if (heroDisclaimer) heroDisclaimer.textContent = 'This is not medical advice.';
 
-    // Sekcje
+    // FEATURES
     setText('featuresTitle','What’s included');
+    if (featuresCards.length >= 6) {
+      featuresCards[0].querySelector('.icon-dot strong').textContent = 'AI Personalization';
+      featuresCards[0].querySelector('p').textContent = 'Tailored to your goal, level, available weekly time and constraints.';
+
+      featuresCards[1].querySelector('.icon-dot strong').textContent = 'Safe progression';
+      featuresCards[1].querySelector('p').textContent = '24–48 h spacing between hard stimuli, deloads and volume control.';
+
+      featuresCards[2].querySelector('.icon-dot strong').textContent = 'Preview + PDF';
+      featuresCards[2].querySelector('p').textContent = 'Your plan is sent by email as a PDF right after generation.';
+
+      featuresCards[3].querySelector('.icon-dot strong').textContent = 'Custom discipline selection';
+      featuresCards[3].querySelector('p').textContent = 'Pick and combine disciplines according to your priorities and availability.';
+
+      featuresCards[4].querySelector('.icon-dot strong').textContent = 'Universal exercise naming';
+      featuresCards[4].querySelector('p').textContent = 'Unified PL/EN names — easy to recognise and search.';
+
+      featuresCards[5].querySelector('.icon-dot strong').textContent = 'Detailed weekly layout';
+      featuresCards[5].querySelector('p').textContent = 'A week laid out day by day with recovery placement and progression.';
+    }
+
+    // OFFER
     setText('offerTitle','Offer');
+    if (offerCards.length >= 3) {
+      offerCards[0].querySelector('h3').textContent = 'Training Plan (12 weeks)';
+      offerCards[0].querySelector('p').textContent = 'Full program with progression and recovery placement.';
 
-    // Features
-    setText('f1title','AI personalization');
-    setText('f1desc','Tailored to your goal, level, weekly time and constraints.');
+      offerCards[1].querySelector('h3').textContent = 'Training Plans Bundle';
+      offerCards[1].querySelector('p').textContent = 'Training Plan (12 weeks) + Hybrid Training Plan (4 weeks).';
 
-    setText('f2title','Safe progression');
-    setText('f2desc','24–48 h spacing between hard stimuli, deloads, and volume control.');
+      offerCards[2].querySelector('h3').textContent = 'Hybrid Training Plan (4 weeks)';
+      offerCards[2].querySelector('p').textContent = 'Optimal weekly schedule for multiple disciplines.';
+    }
+    pricingButtons.forEach(b => b.textContent = 'Generate now');
+    if (pricingSmall) pricingSmall.textContent = 'Minimum volume, maximum results.';
 
-    setText('f3title','Preview + PDF');
-    setText('featPdfDesc','Your plan is sent by email as a PDF right after generation.');
-
-    setText('f4title','Custom sport selection');
-    setText('f4desc','Pick and combine disciplines by priority and availability.');
-
-    setText('f5title','Unified exercise names');
-    setText('f5desc','Consistent PL/EN naming — easy to recognize and search.');
-
-    setText('f6title','Detailed weekly layout');
-    setText('featWeekDesc','A week laid out day by day with recovery placement and progression.');
-
-    // Oferta
-    setText('o1title','Training Plan (12 weeks)');
-    setText('o1desc','Full plan with progression and recovery placement.');
-    setText('o1btn','Generate now');
-
-    setText('o2title','Training Plans Bundle');
-    setText('o2desc','Training Plan (12 weeks) and Hybrid Training Plan (4 weeks).');
-    setText('o2btn','Generate now');
-
-    setText('o3title','Hybrid Training Plan (4 weeks)');
-    setText('o3desc','Optimal weekly mix of multiple disciplines.');
-    setText('o3btn','Generate now');
-
-    // Stopka
-    setText('bottomTagline','2025 Anatol Makówka — all rights reserved');
+    // LEGAL
     setText('legalPolicy','Policy');
     setText('legalTerms','Terms');
     setText('legalContact','Contact');
     setText('legalFaq','FAQ');
 
-    // Modal (e-mail)
-    setText('gateTitle','Access the generator');
-    setText('gateEmailLbl','Your e-mail');
-    document.getElementById('gateEmail').placeholder = 'e.g. name@example.com';
-    setText('gateConsentLbl','I agree to the processing of my personal data.');
-    setText('gateConfirm','Continue');
-    setText('gateClose','Cancel');
-    setText('gateError','Enter a valid e-mail and check the consent box.');
+    // MODAL
+    if (modalH3) modalH3.textContent = 'Access to the generator';
+    if (labelEmail) labelEmail.textContent = 'Your e-mail';
+    if (labelConsent) labelConsent.textContent = 'I consent to the processing of my personal data.';
+    if (gateConfirm) gateConfirm.textContent = 'Continue';
+    if (gateClose) gateClose.textContent = 'Cancel';
+    if (gateError) gateError.textContent = 'Enter a valid e-mail and tick the consent box.';
 
-    // Terms modal EN
-    setText('termsTitle','Terms of Service');
-    setInner('termsContent', `
-      <p>By using the HybridPlanner service you agree to these Terms.</p>
-      <p>The generator is for educational and informational purposes only and does not constitute medical or dietary advice. Consult a physician before starting any activity if you have contraindications.</p>
-      <p>You are responsible for the accuracy of your inputs. The generated plan is guidance only and should be followed with regard to your own capabilities.</p>
-      <p>We process personal data solely to provide the generator and communicate with you. See the Privacy Policy for details.</p>
-      <p>All content and materials are legally protected. © 2025 Anatol Makówka. All rights reserved.</p>
-    `);
+    // FAQ
+    if (faqDetails.length >= 6) {
+      const map = [
+        ['How is my plan created?', 'The plan is generated by AI based on your short questionnaire: goal, level, equipment, time and any constraints.'],
+        ['How long does it take?', 'Usually a few seconds after submitting. You see a preview and receive a PDF.'],
+        ['Can I train multiple disciplines per week?', 'Yes. The Hybrid Training Plan arranges the week to combine disciplines while reducing overload risk.'],
+        ['Which language will I get?', 'The interface and files are available in two languages: PL and EN.'],
+        ['What if I have an injury or condition?', 'This is not medical advice. If you have an injury or doubts, consult a doctor or physiotherapist before you start.'],
+        ['I lack full equipment. Will it work?', 'Yes. The AI adapts exercises and volume to whatever equipment you have.']
+      ];
+      map.forEach((arr, i) => {
+        const [q, a] = arr, el = faqDetails[i];
+        const sum = el.querySelector('summary'), p = el.querySelector('p');
+        if (sum) sum.textContent = q;
+        if (p) p.textContent = a;
+      });
+    }
 
-    // zapisz i przełącz przycisk
+    // Toggle
     localStorage.setItem('hp_lang','en');
-    if(toggleBtn){ toggleBtn.href='?lang=pl'; toggleBtn.textContent='PL'; toggleBtn.setAttribute('aria-label','Polish version'); }
+    if (toggleBtn){ toggleBtn.href='?lang=pl'; toggleBtn.textContent='PL'; toggleBtn.setAttribute('aria-label','Polish version'); }
 
-    // Typewriter
+    // Typewriter EN
     const h1 = document.getElementById('heroH1');
-    if(h1 && h1.classList.contains('typewriter')){
+    if (h1 && h1.classList.contains('typewriter')) {
       h1.dataset.typer = 'You set the goals — we make them real.';
       h1.dataset.ready = ''; h1.innerHTML = '';
-      if(typeof initTypewriter==='function'){ initTypewriter(h1); }
+      if (typeof initTypewriter === 'function') initTypewriter(h1);
     }
+
   } else {
-    // PL
+    // POLSKI (wartości jak w HTML)
     localStorage.setItem('hp_lang','pl');
-    if(toggleBtn){ toggleBtn.href='?lang=en'; toggleBtn.textContent='EN'; toggleBtn.setAttribute('aria-label','English version'); }
+    if (toggleBtn){ toggleBtn.href='?lang=en'; toggleBtn.textContent='EN'; toggleBtn.setAttribute('aria-label','English version'); }
 
     setHTML('heroH1','Ty masz cele, dzięki nam stają się rzeczywistością.');
     setHTML('heroDesc','Plan Treningowy (12 tygodni) lub Hybrydowy Plan Treningowy (4 tygodnie). Minimalna objętość, maksymalne efekty.');
     setText('btnGenerate','Wygeneruj');
     setText('btnDetails','Zobacz szczegóły');
-    setText('disclaimer','To nie jest porada medyczna.');
+    if (heroDisclaimer) heroDisclaimer.textContent = 'To nie jest porada medyczna.';
 
     setText('featuresTitle','Co zawiera program');
+    if (featuresCards.length >= 6) {
+      featuresCards[0].querySelector('.icon-dot strong').textContent = 'Personalizacja AI';
+      featuresCards[0].querySelector('p').textContent = 'Dopasowanie do celu, poziomu, dostępnego czasu/tydzień i ograniczeń.';
+
+      featuresCards[1].querySelector('.icon-dot strong').textContent = 'Bezpieczna progresja';
+      featuresCards[1].querySelector('p').textContent = '24–48 h odstępu między ciężkimi bodźcami, deload, kontrola objętości.';
+
+      featuresCards[2].querySelector('.icon-dot strong').textContent = 'Podgląd + PDF';
+      featuresCards[2].querySelector('p').textContent = 'Plan wysyłany po wygenerowaniu na email w formacie PDF.';
+
+      featuresCards[3].querySelector('.icon-dot strong').textContent = 'Indywidualny wybór dyscyplin';
+      featuresCards[3].querySelector('p').textContent = 'Wybierz i łącz dyscypliny zgodnie z priorytetami i dostępnością.';
+
+      featuresCards[4].querySelector('.icon-dot strong').textContent = 'Uniwersalne nazewnictwo ćwiczeń';
+      featuresCards[4].querySelector('p').textContent = 'Ujednolicone nazwy w PL/EN – szybkie do rozpoznania i wyszukania.';
+
+      featuresCards[5].querySelector('.icon-dot strong').textContent = 'Dokładne rozplanowanie tygodnia treningowego';
+      featuresCards[5].querySelector('p').textContent = 'Tydzień ułożony dzień po dniu z rozmieszczeniem regeneracji i progresją.';
+    }
+
     setText('offerTitle','Oferta');
+    if (offerCards.length >= 3) {
+      offerCards[0].querySelector('h3').textContent = 'Plan Treningowy (12 tygodni)';
+      offerCards[0].querySelector('p').textContent = 'Pełny plan z progresją i rozmieszczeniem regeneracji.';
 
-    setText('f1title','Personalizacja AI');
-    setText('f1desc','Dopasowanie do celu, poziomu, dostępnego czasu/tydzień i ograniczeń.');
+      offerCards[1].querySelector('h3').textContent = 'Pakiet Planów Treningowych';
+      offerCards[1].querySelector('p').textContent = 'Plan Treningowy (12 tygodni) i Hybrydowy Plan Treningowy (4 tygodnie).';
 
-    setText('f2title','Bezpieczna progresja');
-    setText('f2desc','24–48 h odstępu między ciężkimi bodźcami, deload, kontrola objętości.');
+      offerCards[2].querySelector('h3').textContent = 'Hybrydowy Plan Treningowy (4 tygodnie)';
+      offerCards[2].querySelector('p').textContent = 'Optymalne rozłożenie treningów wielu dyscyplin.';
+    }
+    pricingButtons.forEach(b => b.textContent = 'Wygeneruj teraz');
+    if (pricingSmall) pricingSmall.textContent = 'Minimalna objętość, maksymalne efekty.';
 
-    setText('f3title','Podgląd + PDF');
-    setText('featPdfDesc','Plan wysyłany po wygenerowaniu na email w formacie PDF.');
-
-    setText('f4title','Indywidualny wybór dyscyplin');
-    setText('f4desc','Wybierz i łącz dyscypliny zgodnie z priorytetami i dostępnością.');
-
-    setText('f5title','Uniwersalne nazewnictwo ćwiczeń');
-    setText('f5desc','Ujednolicone nazwy w PL/EN – szybkie do rozpoznania i wyszukania.');
-
-    setText('f6title','Dokładne rozplanowanie tygodnia treningowego');
-    setText('featWeekDesc','Tydzień ułożony dzień po dniu z rozmieszczeniem regeneracji i progresją.');
-
-    setText('o1title','Plan Treningowy (12 tygodni)');
-    setText('o1desc','Pełny plan z progresją i rozmieszczeniem regeneracji.');
-    setText('o1btn','Wygeneruj teraz');
-
-    setText('o2title','Pakiet Planów Treningowych');
-    setText('o2desc','Plan Treningowy (12 tygodni) i Hybrydowy Plan Treningowy (4 tygodnie).');
-    setText('o2btn','Wygeneruj teraz');
-
-    setText('o3title','Hybrydowy Plan Treningowy (4 tygodnie)');
-    setText('o3desc','Optymalne rozłożenie treningów wielu dyscyplin.');
-    setText('o3btn','Wygeneruj teraz');
-
-    setText('bottomTagline','2025 Anatol Makówka – wszelkie prawa zastrzeżone');
     setText('legalPolicy','Polityka');
     setText('legalTerms','Regulamin');
     setText('legalContact','Kontakt');
     setText('legalFaq','FAQ');
 
-    // Terms modal PL
-    setText('termsTitle','Regulamin serwisu');
-    setInner('termsContent', `
-      <p>Korzystając z serwisu HybridPlanner wyrażasz zgodę na niniejszy Regulamin.</p>
-      <p>Generator ma charakter edukacyjno-informacyjny i nie stanowi porady medycznej ani dietetycznej. Przed rozpoczęciem aktywności skonsultuj się z lekarzem, jeśli masz przeciwwskazania.</p>
-      <p>Użytkownik odpowiada za poprawność wprowadzonych danych. Wygenerowany plan ma charakter pomocniczy i powinien być stosowany z uwzględnieniem własnych możliwości.</p>
-      <p>Dane osobowe przetwarzamy wyłącznie w celu obsługi generatora oraz komunikacji. Szczegóły znajdziesz w Polityce prywatności.</p>
-      <p>Wszelkie treści i materiały w serwisie podlegają ochronie prawnej. © 2025 Anatol Makówka. Wszelkie prawa zastrzeżone.</p>
-    `);
+    // MODAL PL
+    if (modalH3) modalH3.textContent = 'Dostęp do generatora';
+    if (labelEmail) labelEmail.textContent = 'Twój e-mail';
+    if (labelConsent) labelConsent.textContent = 'Wyrażam zgodę na przetwarzanie moich danych osobowych.';
+    if (gateConfirm) gateConfirm.textContent = 'Kontynuuj';
+    if (gateClose) gateClose.textContent = 'Anuluj';
+    if (gateError) gateError.textContent = 'Podaj poprawny e-mail i zaznacz zgodę.';
+
+    // FAQ PL (dopasowane do HTML)
+    if (faqDetails.length >= 6) {
+      const map = [
+        ['Jak powstaje mój plan?', 'Plan generuje AI na podstawie Twoich odpowiedzi w krótkiej ankiecie. Uwzględniamy cel, poziom, sprzęt, czas oraz ewentualne ograniczenia.'],
+        ['Ile to trwa?', 'Zwykle kilkanaście sekund od wysłania odpowiedzi. Otrzymujesz podgląd i plik PDF do pobrania.'],
+        ['Czy mogę trenować kilka dyscyplin w tygodniu?', 'Tak. Hybrydowy Plan Treningowy ustawia tygodniowy rozkład tak, aby łączyć dyscypliny i zminimalizować ryzyko przeciążeń.'],
+        ['W jakim języku dostanę plan?', 'Interfejs i pliki dostępne są w dwóch wersjach językowych: PL oraz EN.'],
+        ['Co jeśli mam kontuzję lub chorobę?', 'To nie jest porada medyczna. Jeśli masz uraz lub wątpliwości zdrowotne, skonsultuj się z lekarzem lub fizjoterapeutą przed rozpoczęciem.'],
+        ['Nie mam pełnego dostępu do sprzętu. Czy plan zadziała?', 'Tak. W ankiecie podajesz dostępny sprzęt, a AI dopasuje ćwiczenia i objętość do Twoich warunków.']
+      ];
+      map.forEach((arr, i) => {
+        const [q, a] = arr, el = faqDetails[i];
+        const sum = el.querySelector('summary'), p = el.querySelector('p');
+        if (sum) sum.textContent = q;
+        if (p) p.textContent = a;
+      });
+    }
   }
 })();
 </script>
