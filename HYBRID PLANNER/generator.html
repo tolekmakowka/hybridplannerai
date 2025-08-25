@@ -316,7 +316,6 @@ function buildPrompt(payload, lang){
   const inputsBlock = Object.entries(payload.inputs)
     .map(([k,v])=>`- ${k}: ${v ?? '—'}`).join('\n');
 
-  // >>> TU: pełne wymagania z Twojej wiadomości (po polsku, 1:1) <<<
   const HARD_RULES_PL = `
 FORMAT planu treningowego:
 - każdy dzień treningowy ma mieć oznaczenie który to dzień tygodnia.
@@ -346,7 +345,6 @@ Hybrydowy Plan treningowy:
 - uwzględnienie odpoczynku między treningami min 24h max 48h
 `.trim();
 
-  // Minimalne instrukcje dot. formatu wyjścia (czysty tekst)
   const OUTPUT_RULES = isEN ? `
 OUTPUT:
 - Language: ${isEN?'English':'Polish'}.
@@ -361,7 +359,6 @@ WYJŚCIE:
 - Zakończ zdaniem: „To nie jest porada medyczna.”
 `.trim();
 
-  // Prośba o konkretny split i strukturę (A) lub o hybrydę (B)
   const PLAN_REQUEST = A
     ? (isEN ? `
 Create a 12-week program respecting the rules above. Choose the split based on "splitPreference" (FBW / PPL / Arnold / Upper-Lower / best match). Guarantee 24–48h spacing between hard stimuli of the same muscle groups and use ONLY the allowed exercise list. Provide 5–8 exercises per day with 8–12 reps and 3–4 sets each, in the prescribed order (large → small → additional). Name each day with the weekday (${dayNamesEN.join(', ')}).`
@@ -386,23 +383,21 @@ Ułóż 4-tygodniowy plan hybrydowy. Podziel tydzień na dni treningowe i nietre
   ].join('\n');
 }
 
-/* ---------- (Opcjonalnie) Wywołanie backendu z promptem ---------- */
-/*
+/* ---------- Wywołanie backendu z promptem ---------- */
 async function callBackendGenerateWithPrompt(payload){
   const prompt = buildPrompt(payload, localStorage.getItem('hp_lang')||'pl');
   const res = await fetch('/.netlify/functions/generate-plan', {
-    method:'POST', headers:{'Content-Type':'application/json'},
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ prompt, mode: payload.mode, inputs: payload.inputs })
   });
   if(!res.ok) throw new Error(await res.text());
   return await res.json(); // oczekiwane { planText: "...", planName: "..." }
 }
-*/
 
 /* ---------- Fallback lokalny (na potrzeby testu bez backendu) ---------- */
 function localGenerateText(payload){
   const prompt = buildPrompt(payload, localStorage.getItem('hp_lang')||'pl');
-  // tymczasowo zwracamy sam prompt + szkic
   const lines = [];
   lines.push('=== PROMPT WYSYŁANY DO OPENAI (skrót) ===');
   lines.push(prompt.substring(0, 800) + (prompt.length>800?' ...':''));
@@ -494,9 +489,10 @@ window.hpOnPlanReady = async function(pdfBlob, planName){
   catch(e){ console.error(e); }
 };
 
-/* ---------- Generowanie (z backendem lub fallback) ---------- */
+/* ---------- Generowanie (preferuj backend; fallback lokalny) ---------- */
 const genBtn = document.getElementById('genBtn');
 const dlBtn  = document.getElementById('dlBtn');
+
 genBtn.addEventListener('click', async ()=>{
   try{
     genBtn.disabled = true; genBtn.textContent = 'Generowanie…';
@@ -504,17 +500,18 @@ genBtn.addEventListener('click', async ()=>{
 
     const payload = buildPayload();
 
-    // 1) Jeśli masz funkcję backendową — odkomentuj poniższe 3 linie:
-    // const { planText, planName } = await callBackendGenerateWithPrompt(payload);
+    // Najpierw backend (OpenAI przez Netlify Function), w razie błędu fallback lokalny
+    let planText, planName;
+    try{
+      ({ planText, planName } = await callBackendGenerateWithPrompt(payload));
+    }catch(err){
+      console.error('callBackendGenerateWithPrompt failed:', err);
+      ({ planText, planName } = localGenerateText(payload));
+    }
 
-    // 2) Fallback lokalny (bez OpenAI):
-    const { planText, planName } = localGenerateText(payload);
-
-    // 3) PDF
     const { blob, url } = await makePdf(planText, planName);
     dlBtn.href = url; dlBtn.style.display='inline-flex';
 
-    // 4) E-mail
     await window.hpOnPlanReady(blob, planName);
 
     genBtn.textContent = 'Gotowe ✓';
