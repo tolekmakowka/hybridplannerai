@@ -131,6 +131,45 @@ section.snap{min-height:100vh;scroll-snap-align:start;position:relative;display:
   opacity:.9
 }
 .lang-toggle:hover{opacity:1}
+
+/* ========= MOBILE POLISH (dopisek) ========= */
+
+/* stabilna wysokość viewportu na mobile */
+section.snap{ min-height: 100svh; }
+
+/* 2 kolumny na tablet */
+@media (max-width: 900px){
+  .grid-3{ grid-template-columns: repeat(2, 1fr); }
+}
+
+/* 1 kolumna i dopracowane proporcje na telefonie */
+@media (max-width: 640px){
+  .container{ padding: 0 16px; }
+
+  .hero-bg{ padding: 18px; border-radius: 14px; }
+  .kicker{ font-size: 12px; }
+  h1{ font-size: clamp(26px, 7vw, 34px); }
+  h2{ font-size: 24px; }
+  p{  font-size: 15px; }
+  .btn{ padding: 10px 14px; font-size: 15px; border-radius: 10px; }
+
+  .right-stack{ grid-template-columns: 1fr; gap: 12px; }
+  .round{
+    width: 100%;
+    height: auto !important;  /* nadpisuje inline height */
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+  }
+
+  .joinhere-card{ height: 140px; }
+  .bigcta{ font-size: 28px; }
+
+  .grid-3{ grid-template-columns: 1fr; gap: 16px; }
+  .card-light{ padding: 16px; border-radius: 14px; }
+
+  .autoplay-toggle{ bottom: 10px; right: 10px; padding: 6px 10px; font-size: 12px; }
+  .lang-toggle{ top: 10px; right: 10px; padding: 5px 8px; font-size: 11px; }
+}
 </style>
 </head>
 <body>
@@ -585,7 +624,7 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     if (gateClose) gateClose.textContent = 'Anuluj';
     if (gateError) gateError.textContent = 'Podaj poprawny e-mail i zaznacz zgodę.';
 
-    // FAQ PL (dopasowane do HTML)
+    // FAQ PL
     if (faqDetails.length >= 6) {
       const map = [
         ['Jak powstaje mój plan?', 'Plan generuje AI na podstawie Twoich odpowiedzi w krótkiej ankiecie. Uwzględniamy cel, poziom, sprzęt, czas oraz ewentualne ograniczenia.'],
