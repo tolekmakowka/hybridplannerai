@@ -49,112 +49,25 @@ textarea{min-height:90px;resize:vertical}
 .notice{display:flex;justify-content:space-between;gap:10px;align-items:center;border:1px dashed #3a3a3a;border-radius:12px;padding:10px 12px;margin-top:12px}
 footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
 
-/* ========= MOBILE POLISH — generator.html ========= */
-/* neutralne, bezpieczne ulepszenia na mniejszych ekranach */
-
-/* lepsza typografia i siatka na tabletach */
+/* ========= MOBILE POLISH ========= */
+section.snap{ min-height: 100svh; }
 @media (max-width: 900px){
-  .grid-2, .two-col, .cols, .layout, .builder-grid{
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    gap: 18px !important;
-  }
-  .sidebar, .aside{ order: 2; }
-  .main, .content{ order: 1; }
-  .container, .wrap, .page{ max-width: 860px; padding-left: 20px; padding-right: 20px; }
+  .grid-3{ grid-template-columns: repeat(2, 1fr); }
 }
-
-/* telefon: 1 kolumna, większe pola, bezpieczne dolne CTA */
 @media (max-width: 640px){
-  /* ogólne spacingi */
-  .container, .wrap, .page{ padding-left: 16px; padding-right: 16px; }
-  .card, .panel, .box{ border-radius: 14px; padding: 16px; }
-  h1{ font-size: clamp(22px, 7vw, 28px); line-height: 1.2; }
-  h2{ font-size: clamp(18px, 5.6vw, 22px); }
-  p, label, .muted{ font-size: 15px; line-height: 1.55; }
-
-  /* formularz – wygodniejsze trafianie kciukiem */
-  form input[type="text"],
-  form input[type="email"],
-  form input[type="number"],
-  form input[type="tel"],
-  form input[type="url"],
-  form input[type="search"],
-  form input[type="password"],
-  form select,
-  form textarea{
-    width: 100%;
-    min-height: 48px;
-    padding: 12px 12px;
-    border-radius: 10px;
-    font-size: 16px;
-  }
-  form textarea{ min-height: 120px; }
-
-  /* grupy pól w wierszach -> kolumna */
-  .form-row, .row, .inputs, .fields{
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    gap: 12px !important;
-  }
-
-  /* przyciski – pełna szerokość na mobile */
-  .btn, button, [type="submit"]{
-    min-height: 48px;
-    border-radius: 12px;
-    font-weight: 600;
-    width: 100%;
-  }
-  .btn--sm, .btn.sm{ min-height: 44px; }
-
-  /* zakładki/etapy przewijane poziomo, jeśli się nie mieszczą */
-  .tabs, .steps, .progress-tabs{
-    display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch;
-  }
-  .tabs > *, .steps > *{ flex: 0 0 auto; }
-
-  /* podgląd / panel boczny pod formularzem */
-  .preview, .preview-card, .aside, .sidebar{
-    position: static !important;
-    top: auto; max-height: none; margin-top: 8px;
-  }
-
-  /* dolny pasek CTA – obsługa notcha (iOS) */
-  .sticky-footer, .sticky-cta, .cta-bar, .bottom-bar{
-    position: fixed; left: 0; right: 0; bottom: 0;
-    display: grid; grid-template-columns: 1fr;
-    gap: 10px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
-    background: rgba(17,17,17,.94); backdrop-filter: saturate(120%) blur(8px);
-    border-top: 1px solid rgba(255,255,255,.08);
-    z-index: 999;
-  }
-  /* rezerwa miejsca, żeby pasek nie zasłaniał treści */
-  .page, main, body{
-    padding-bottom: calc(90px + env(safe-area-inset-bottom));
-  }
-
-  /* przycisk „Generuj” w pasku CTA – priorytet */
-  .sticky-footer .btn-primary,
-  .sticky-cta .btn-primary,
-  .cta-bar .btn-primary{
-    font-size: 16px; font-weight: 700; min-height: 50px;
-  }
-
-  /* modale – na mobile pełna szerokość + większe targety */
-  .modal, [role="dialog"] .box, .sheet{
-    width: 100% !important; max-width: none !important;
-    margin: 0 !important; border-radius: 16px 16px 0 0 !important;
-    bottom: 0; position: fixed; left: 0; right: 0;
-  }
-  .modal .actions, [role="dialog"] .actions{
-    display: grid; gap: 10px;
-  }
-}
-
-/* bardzo małe ekrany */
-@media (max-width: 360px){
-  .btn, button{ font-size: 14px; }
-  .tabs, .steps{ gap: 6px; }
+  .container{ padding: 0 16px; }
+  .hero-bg{ padding: 18px; border-radius: 14px; }
+  .kicker{ font-size: 12px; }
+  h1{ font-size: clamp(26px, 7vw, 34px); }
+  h2{ font-size: 24px; }
+  p{  font-size: 15px; }
+  .btn{ padding: 10px 14px; font-size: 15px; border-radius: 10px; }
+  .right-stack{ grid-template-columns: 1fr; gap: 12px; }
+  .round{ width:100%; height:auto !important; aspect-ratio:4/3; object-fit:cover; }
+  .grid-3{ grid-template-columns: 1fr; gap: 16px; }
+  .card-light{ padding: 16px; border-radius: 14px; }
+  .autoplay-toggle{ bottom: 10px; right: 10px; padding: 6px 10px; font-size: 12px; }
+  .lang-toggle{ top: 10px; right: 10px; padding: 5px 8px; font-size: 11px; }
 }
 </style>
 </head>
@@ -258,8 +171,8 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
   <footer>© 2025 Anatol Makówka</footer>
 </div>
 
-<!-- jsPDF do generowania PDF w przeglądarce -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-NA4mIQGQm8qQpBv8EoYd7tTzL9XJ6s7pXWZqYzJQ9w0H5Sxv0l8oEt9v2cOJ3sHjzS4lOqP9c6z9Gg8rXn1H3g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!-- jsPDF do generowania PDF w przeglądarce (podmiana bez integrity) -->
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" crossorigin="anonymous"></script>
 
 <script>
 /* ---------- Bramka e-mail (pobrana z index.html przez localStorage) ---------- */
@@ -267,7 +180,6 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
   const mail = localStorage.getItem('hp_email');
   const consent = localStorage.getItem('hp_consent');
   if(!mail || !consent){
-    // brak e-maila/zgody → wróć do index, gdzie jest modal
     window.location.href = 'index.html';
   } else {
     document.getElementById('who').textContent = mail;
@@ -312,7 +224,6 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
 
     t('whoLbl','The plan will be sent to: ');
     t('rodoLbl','This is not medical advice. Use at your own risk.');
-    document.querySelector('#whoLbl + small')?.remove; // nic
 
     localStorage.setItem('hp_lang','en');
     if(toggleBtn){ toggleBtn.href='?lang=pl'; toggleBtn.textContent='PL'; toggleBtn.setAttribute('aria-label','Polish version'); }
@@ -342,7 +253,6 @@ const DISC = [
       const list = cur ? cur.split(',').map(s=>s.trim()).filter(Boolean) : [];
       if(!list.includes(name)) list.push(name);
       input.value = list.join(', ');
-      // podgląd-chips
       const c = document.createElement('span'); c.className='badge'; c.textContent=name;
       chips.appendChild(c);
     });
@@ -362,15 +272,14 @@ function showB(){ formA.style.display='none'; formB.style.display='block'; btnB.
 btnA.addEventListener('click', showA);
 btnB.addEventListener('click', showB);
 
-// start wg hash
 (function(){
   const h = location.hash;
   if(h && /plan=B/i.test(h)) showB();
   else if(h && /plan=A/i.test(h)) showA();
-  else showA(); // domyślnie A
+  else showA();
 })();
 
-/* ---------- Budowanie promptu (client-side) ---------- */
+/* ---------- Budowanie payloadu ---------- */
 function buildPayload(){
   const usingA = formA.style.display==='block';
   if(usingA){
@@ -406,19 +315,7 @@ function buildPayload(){
   }
 }
 
-/* ---------- (Opcjonalnie) Próba wywołania Twojej funkcji OpenAI w Netlify ---------- */
-/* Jeśli masz funkcję /.netlify/functions/generate-plan — odkomentuj i dostosuj
-async function callBackendGenerate(payload){
-  const res = await fetch('/.netlify/functions/generate-plan', {
-    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
-  });
-  if(!res.ok) throw new Error(await res.text());
-  const data = await res.json(); // oczekiwany { planText: "...", planName: "..." }
-  return data;
-}
-*/
-
-/* ---------- Fallback: lokalne wygenerowanie tekstu (placeholder) ---------- */
+/* ---------- Fallback lokalny (placeholder) ---------- */
 function localGenerateText(payload){
   const { mode, title, inputs } = payload;
   const lines = [];
@@ -442,10 +339,26 @@ function localGenerateText(payload){
   return { planText: lines.join('\n'), planName: title };
 }
 
-/* ---------- Generowanie PDF (jsPDF) ---------- */
+/* ---------- Generowanie PDF (jsPDF) — PODMIANA ---------- */
 async function makePdf(planText, planName){
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ unit:'pt', format:'a4' });
+  // Upewnij się, że jsPDF jest załadowany; jeśli nie, doładuj z zapasowego CDN
+  async function ensureJsPDF(){
+    if (window.jspdf?.jsPDF || window.jsPDF) return;
+    await new Promise((resolve, reject)=>{
+      const s = document.createElement('script');
+      s.src = 'https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js';
+      s.crossOrigin = 'anonymous';
+      s.onload = resolve;
+      s.onerror = ()=>reject(new Error('Nie udało się załadować jsPDF'));
+      document.head.appendChild(s);
+    });
+  }
+
+  await ensureJsPDF();
+  const JsPDF = window.jspdf?.jsPDF || window.jsPDF;
+  if (!JsPDF) throw new Error('jsPDF niedostępny');
+
+  const doc = new JsPDF({ unit:'pt', format:'a4' });
   const margin = 48, width = 595.28 - margin*2; // A4 width pt
   const lineH = 16;
   const lines = doc.splitTextToSize(planText, width);
@@ -458,7 +371,6 @@ async function makePdf(planText, planName){
     doc.text(t, margin, y);
     y += lineH;
   });
-  // Zwróć Blob i URL
   const blob = doc.output('blob');
   const url = URL.createObjectURL(blob);
   return { blob, url };
@@ -475,7 +387,7 @@ genBtn.addEventListener('click', async ()=>{
 
     const payload = buildPayload();
 
-    // 1) spróbuj backend (jeśli masz funkcję generate-plan) – odkomentuj:
+    // 1) tu docelowo backend (jeśli masz funkcję generate-plan)
     // const { planText, planName } = await callBackendGenerate(payload);
 
     // 2) fallback lokalny:
@@ -485,7 +397,7 @@ genBtn.addEventListener('click', async ()=>{
     const { blob, url } = await makePdf(planText, planName);
     dlBtn.href = url; dlBtn.style.display='inline-flex';
 
-    // 4) WYŚLIJ E-MAIL (Resend przez Netlify Function)
+    // 4) e-mail (Netlify Function – jeśli jej nie masz, można zakomentować linię poniżej)
     await window.hpOnPlanReady(blob, planName);
 
     genBtn.textContent = 'Gotowe ✓';
@@ -499,7 +411,6 @@ genBtn.addEventListener('click', async ()=>{
 });
 
 /* ---------- RESEND: helpery + hook do wywołania po PDF ---------- */
-// Blob → base64 (bez prefiksu data:)
 function blobToBase64(blob){
   return new Promise((resolve, reject)=>{
     const r = new FileReader();
@@ -534,14 +445,11 @@ async function sendPlanByEmail(pdfBlob, planName){
       alert('Nie udało się wysłać e-maila. Spróbuj ponownie.');
       return;
     }
-    // opcjonalnie: brak alertu, już jest „Gotowe”
   } catch(e){
     console.error(e);
-    // nie blokuj użytkownika
   }
 }
 
-// globalny hook – możesz też wywołać w innym miejscu swojego kodu
 window.hpOnPlanReady = async function(pdfBlob, planName){
   try { await sendPlanByEmail(pdfBlob, planName); }
   catch(e){ console.error(e); }
