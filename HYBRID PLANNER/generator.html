@@ -48,6 +48,114 @@ textarea{min-height:90px;resize:vertical}
 
 .notice{display:flex;justify-content:space-between;gap:10px;align-items:center;border:1px dashed #3a3a3a;border-radius:12px;padding:10px 12px;margin-top:12px}
 footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
+
+/* ========= MOBILE POLISH — generator.html ========= */
+/* neutralne, bezpieczne ulepszenia na mniejszych ekranach */
+
+/* lepsza typografia i siatka na tabletach */
+@media (max-width: 900px){
+  .grid-2, .two-col, .cols, .layout, .builder-grid{
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 18px !important;
+  }
+  .sidebar, .aside{ order: 2; }
+  .main, .content{ order: 1; }
+  .container, .wrap, .page{ max-width: 860px; padding-left: 20px; padding-right: 20px; }
+}
+
+/* telefon: 1 kolumna, większe pola, bezpieczne dolne CTA */
+@media (max-width: 640px){
+  /* ogólne spacingi */
+  .container, .wrap, .page{ padding-left: 16px; padding-right: 16px; }
+  .card, .panel, .box{ border-radius: 14px; padding: 16px; }
+  h1{ font-size: clamp(22px, 7vw, 28px); line-height: 1.2; }
+  h2{ font-size: clamp(18px, 5.6vw, 22px); }
+  p, label, .muted{ font-size: 15px; line-height: 1.55; }
+
+  /* formularz – wygodniejsze trafianie kciukiem */
+  form input[type="text"],
+  form input[type="email"],
+  form input[type="number"],
+  form input[type="tel"],
+  form input[type="url"],
+  form input[type="search"],
+  form input[type="password"],
+  form select,
+  form textarea{
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 12px;
+    border-radius: 10px;
+    font-size: 16px;
+  }
+  form textarea{ min-height: 120px; }
+
+  /* grupy pól w wierszach -> kolumna */
+  .form-row, .row, .inputs, .fields{
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* przyciski – pełna szerokość na mobile */
+  .btn, button, [type="submit"]{
+    min-height: 48px;
+    border-radius: 12px;
+    font-weight: 600;
+    width: 100%;
+  }
+  .btn--sm, .btn.sm{ min-height: 44px; }
+
+  /* zakładki/etapy przewijane poziomo, jeśli się nie mieszczą */
+  .tabs, .steps, .progress-tabs{
+    display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+  }
+  .tabs > *, .steps > *{ flex: 0 0 auto; }
+
+  /* podgląd / panel boczny pod formularzem */
+  .preview, .preview-card, .aside, .sidebar{
+    position: static !important;
+    top: auto; max-height: none; margin-top: 8px;
+  }
+
+  /* dolny pasek CTA – obsługa notcha (iOS) */
+  .sticky-footer, .sticky-cta, .cta-bar, .bottom-bar{
+    position: fixed; left: 0; right: 0; bottom: 0;
+    display: grid; grid-template-columns: 1fr;
+    gap: 10px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    background: rgba(17,17,17,.94); backdrop-filter: saturate(120%) blur(8px);
+    border-top: 1px solid rgba(255,255,255,.08);
+    z-index: 999;
+  }
+  /* rezerwa miejsca, żeby pasek nie zasłaniał treści */
+  .page, main, body{
+    padding-bottom: calc(90px + env(safe-area-inset-bottom));
+  }
+
+  /* przycisk „Generuj” w pasku CTA – priorytet */
+  .sticky-footer .btn-primary,
+  .sticky-cta .btn-primary,
+  .cta-bar .btn-primary{
+    font-size: 16px; font-weight: 700; min-height: 50px;
+  }
+
+  /* modale – na mobile pełna szerokość + większe targety */
+  .modal, [role="dialog"] .box, .sheet{
+    width: 100% !important; max-width: none !important;
+    margin: 0 !important; border-radius: 16px 16px 0 0 !important;
+    bottom: 0; position: fixed; left: 0; right: 0;
+  }
+  .modal .actions, [role="dialog"] .actions{
+    display: grid; gap: 10px;
+  }
+}
+
+/* bardzo małe ekrany */
+@media (max-width: 360px){
+  .btn, button{ font-size: 14px; }
+  .tabs, .steps{ gap: 6px; }
+}
 </style>
 </head>
 <body>
