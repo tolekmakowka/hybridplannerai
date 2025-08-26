@@ -157,6 +157,11 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
 <!-- jsPDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
+<!-- KONFIG: pełny URL do funkcji Netlify (KROK 1) -->
+<script>
+  window.HP_FUNCTION_URL = 'https://hybridplannerai.netlify.app/.netlify/functions/send-email';
+</script>
+
 <script>
 /* ---------- Bramka e-mail ---------- */
 (function(){
@@ -296,7 +301,7 @@ function buildPayload(){
   }
 }
 
-/* ---------- PROMPT do OpenAI (zawiera Twoje wymagania 1:1) ---------- */
+/* ---------- PROMPT do OpenAI (Twoje wymagania 1:1) ---------- */
 function buildPrompt(payload, lang){
   const L = (lang || localStorage.getItem('hp_lang') || 'pl').toLowerCase();
   const isEN = L === 'en';
@@ -383,19 +388,20 @@ Ułóż 4-tygodniowy plan hybrydowy. Podziel tydzień na dni treningowe i nietre
   ].join('\n');
 }
 
-/* ---------- Wywołanie backendu z promptem ---------- */
+/* ---------- (Opcjonalnie) Wywołanie backendu z promptem ---------- */
+/*
 async function callBackendGenerateWithPrompt(payload){
   const prompt = buildPrompt(payload, localStorage.getItem('hp_lang')||'pl');
   const res = await fetch('/.netlify/functions/generate-plan', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
+    method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ prompt, mode: payload.mode, inputs: payload.inputs })
   });
   if(!res.ok) throw new Error(await res.text());
   return await res.json(); // oczekiwane { planText: "...", planName: "..." }
 }
+*/
 
-/* ---------- Fallback lokalny (na potrzeby testu bez backendu) ---------- */
+/* ---------- Fallback lokalny (bez backendu) ---------- */
 function localGenerateText(payload){
   const prompt = buildPrompt(payload, localStorage.getItem('hp_lang')||'pl');
   const lines = [];
@@ -452,21 +458,27 @@ async function makePdf(planText, planName){
   return { blob, url };
 }
 
-/* ---------- Send e-mail przez Netlify Function (Resend) ---------- */
-function blobToBase64(blob){
-  return new Promise((resolve, reject)=>{
-    const r = new FileReader();
-    r.onload = () => resolve(String(r.result).split(',')[1]);
-    r.onerror = reject;
-    r.readAsDataURL(blob);
-  });
-}
+/* --- PODMIANA: wysyłka PDF e-mailem przez Netlify Function --- */
 async function sendPlanByEmail(pdfBlob, planName){
   try {
     const to = localStorage.getItem('hp_email');
     if(!to){ console.warn('Brak e-maila w localStorage (hp_email).'); return; }
+
+    // pełny URL z kroku 1 (działa także poza Netlify)
+    const API_URL = window.HP_FUNCTION_URL || '/.netlify/functions/send-email';
+
+    // PDF → base64 (lokalnie, w przeglądarce)
+    async function blobToBase64(blob){
+      return new Promise((resolve, reject)=>{
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result).split(',')[1]);
+        r.onerror = reject;
+        r.readAsDataURL(blob);
+      });
+    }
     const b64 = pdfBlob ? await blobToBase64(pdfBlob) : null;
-    const resp = await fetch('/.netlify/functions/send-email', {
+
+    const resp = await fetch(API_URL, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
@@ -477,22 +489,27 @@ async function sendPlanByEmail(pdfBlob, planName){
         filename: 'plan.pdf'
       })
     });
+
+    const text = await resp.text();
     if(!resp.ok){
-      const t = await resp.text();
-      console.error('Resend error:', t);
-      alert('Nie udało się wysłać e-maila. Spróbuj ponownie.');
+      console.error('send-email error:', text);
+      alert('Nie udało się wysłać e-maila. Sprawdź konfigurację funkcji / klucz RESEND.');
     }
-  } catch(e){ console.error(e); }
+  } catch(e){
+    console.error(e);
+    alert('Nie udało się wysłać e-maila (wyjątek).');
+  }
 }
+
+// hook, jak było
 window.hpOnPlanReady = async function(pdfBlob, planName){
   try { await sendPlanByEmail(pdfBlob, planName); }
   catch(e){ console.error(e); }
 };
 
-/* ---------- Generowanie (preferuj backend; fallback lokalny) ---------- */
+/* ---------- Generowanie ---------- */
 const genBtn = document.getElementById('genBtn');
 const dlBtn  = document.getElementById('dlBtn');
-
 genBtn.addEventListener('click', async ()=>{
   try{
     genBtn.disabled = true; genBtn.textContent = 'Generowanie…';
@@ -500,18 +517,17 @@ genBtn.addEventListener('click', async ()=>{
 
     const payload = buildPayload();
 
-    // Najpierw backend (OpenAI przez Netlify Function), w razie błędu fallback lokalny
-    let planText, planName;
-    try{
-      ({ planText, planName } = await callBackendGenerateWithPrompt(payload));
-    }catch(err){
-      console.error('callBackendGenerateWithPrompt failed:', err);
-      ({ planText, planName } = localGenerateText(payload));
-    }
+    // 1) Backend (jeśli odkomentujesz funkcję):
+    // const { planText, planName } = await callBackendGenerateWithPrompt(payload);
 
+    // 2) Fallback lokalny:
+    const { planText, planName } = localGenerateText(payload);
+
+    // 3) PDF
     const { blob, url } = await makePdf(planText, planName);
     dlBtn.href = url; dlBtn.style.display='inline-flex';
 
+    // 4) E-mail
     await window.hpOnPlanReady(blob, planName);
 
     genBtn.textContent = 'Gotowe ✓';
