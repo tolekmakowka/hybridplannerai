@@ -49,9 +49,6 @@ textarea{min-height:90px;resize:vertical}
 .notice{display:flex;justify-content:space-between;gap:10px;align-items:center;border:1px dashed #3a3a3a;border-radius:12px;padding:10px 12px;margin-top:12px}
 footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
 </style>
-
-<!-- USTAWIENIE adresu funkcji Netlify (Twoja domena) -->
-<script>window.HP_FUNCTION_URL='https://hybridplannerai.netlify.app/.netlify/functions/send-email';</script>
 </head>
 <body>
 
@@ -299,7 +296,7 @@ function buildPayload(){
   }
 }
 
-/* ---------- PROMPT do OpenAI (zawiera Twoje wymagania 1:1) ---------- */
+/* ---------- PROMPT do OpenAI (Twoje wymagania) ---------- */
 function buildPrompt(payload, lang){
   const L = (lang || localStorage.getItem('hp_lang') || 'pl').toLowerCase();
   const isEN = L === 'en';
@@ -386,49 +383,61 @@ Ułóż 4-tygodniowy plan hybrydowy. Podziel tydzień na dni treningowe i nietre
   ].join('\n');
 }
 
-/* ---------- (Opcjonalnie) Wywołanie backendu z promptem ---------- */
-/*
+/* ---------- Wywołanie backendu z promptem (AKTYWNE) ---------- */
 async function callBackendGenerateWithPrompt(payload){
   const prompt = buildPrompt(payload, localStorage.getItem('hp_lang')||'pl');
-  const res = await fetch('/.netlify/functions/generate-plan', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ prompt, mode: payload.mode, inputs: payload.inputs })
-  });
-  if(!res.ok) throw new Error(await res.text());
-  return await res.json(); // { planText, planName }
-}
-*/
 
-/* ---------- Fallback lokalny (na potrzeby testu bez backendu) ---------- */
+  // Twój stały adres funkcji Netlify
+  const API_URL = 'https://hybridplannerai.netlify.app/.netlify/functions/generate-plan';
+
+  const res = await fetch(API_URL, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      prompt,
+      mode: payload.mode,
+      title: payload.title,
+      inputs: payload.inputs
+    })
+  });
+
+  const text = await res.text();
+  let data; try{ data = JSON.parse(text); }catch(_){ data = null; }
+
+  if(!res.ok){
+    throw new Error(data?.error || text || ('HTTP '+res.status));
+  }
+  if(!data?.planText){
+    throw new Error('Brak planText w odpowiedzi funkcji.');
+  }
+  return data; // { planText, planName }
+}
+
+/* ---------- Fallback lokalny (bez promptu) ---------- */
 function localGenerateText(payload){
-  const prompt = buildPrompt(payload, localStorage.getItem('hp_lang')||'pl');
   const lines = [];
-  lines.push('=== PROMPT WYSYŁANY DO OPENAI (skrót) ===');
-  lines.push(prompt.substring(0, 800) + (prompt.length>800?' ...':''));
+  lines.push(payload.title);
   lines.push('');
-  lines.push('=== Szkic demonstracyjny (fallback bez AI) ===');
   if(payload.mode==='A'){
-    for(let w=1; w<=2; w++){
-      lines.push(`Tydzień ${w}`);
-      lines.push(`Dzień 1 — Poniedziałek (PUSH)`);
-      lines.push(`• Flat bench press — 4×8–12`);
-      lines.push(`• Incline bench press — 3×8–12`);
-      lines.push(`• Overhead press — 3×8–12`);
-      lines.push(`• Triceps extension — 3×8–12`);
-      lines.push(`• Lateral raise — 3×8–12`);
-      lines.push(`• Hanging knee raises — 3×8–12`);
-      lines.push('');
-    }
+    lines.push('Tydzień 1');
+    lines.push('Dzień 1 — Poniedziałek (PUSH)');
+    lines.push('• Flat bench press — 4×8–12');
+    lines.push('• Incline bench press — 3×8–12');
+    lines.push('• Overhead press — 3×8–12');
+    lines.push('• Triceps extension — 3×8–12');
+    lines.push('• Lateral raise — 3×8–12');
+    lines.push('• Hanging knee raises — 3×8–12');
+    lines.push('');
+    lines.push('Tydzień 1 — Dzień 3 — (PULL) …');
+    lines.push('Tydzień 1 — Dzień 5 — (LEGS) …');
   } else {
-    for(let w=1; w<=1; w++){
-      lines.push(`Tydzień ${w}`);
-      lines.push(`Poniedziałek — Siłownia (Upper)`);
-      lines.push(`Wtorek — Odpoczynek`);
-      lines.push(`Środa — Bieganie easy`);
-      lines.push(`Czwartek — Odpoczynek`);
-      lines.push(`Piątek — Siłownia (Lower)`);
-      lines.push(`Weekend — Regeneracja aktywna`);
-    }
+    lines.push('Tydzień 1');
+    lines.push('Poniedziałek — Siłownia (Upper)');
+    lines.push('Wtorek — Odpoczynek');
+    lines.push('Środa — Bieganie easy');
+    lines.push('Czwartek — Odpoczynek');
+    lines.push('Piątek — Siłownia (Lower)');
+    lines.push('Weekend — Regeneracja aktywna');
   }
   lines.push('');
   lines.push('To nie jest porada medyczna.');
@@ -465,83 +474,57 @@ function blobToBase64(blob){
     r.readAsDataURL(blob);
   });
 }
-
-/* === PODMIANA: wersja z fallbackiem CORS → no-cors === */
 async function sendPlanByEmail(pdfBlob, planName){
   try {
     const to = localStorage.getItem('hp_email');
     if(!to){ console.warn('Brak e-maila w localStorage (hp_email).'); return; }
-
     const b64 = pdfBlob ? await blobToBase64(pdfBlob) : null;
-    const API_URL = window.HP_FUNCTION_URL || '/.netlify/functions/send-email';
-    const payload = {
-      to,
-      subject: planName || 'Twój plan treningowy',
-      html: '<p>W załączniku Twój plan (PDF). Dziękujemy za skorzystanie z HybridPlanner.</p>',
-      attachmentBase64: b64,
-      filename: 'plan.pdf'
-    };
-
-    // 1) Próba standardowa (z CORS)
-    try{
-      const ctrl = new AbortController();
-      const tm = setTimeout(()=>ctrl.abort(), 12000);
-      const resp = await fetch(API_URL, {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify(payload),
-        signal: ctrl.signal,
-        cache: 'no-store',
-        credentials: 'omit'
-      });
-      clearTimeout(tm);
-      const text = await resp.text().catch(()=>'');
-
-      if(resp.ok){
-        console.log('send-email OK:', text || resp.status);
-        return;
-      }
-      console.warn('send-email not OK:', resp.status, text);
-      throw new Error('HTTP_'+resp.status);
-    }catch(err){
-      // 2) Fallback bez preflightu (simple request)
-      console.warn('CORS/Network problem, fallback no-cors →', err?.message);
-      await fetch(API_URL, {
-        method: 'POST',
-        // brak Content-Type aby NIE było preflightu
-        body: JSON.stringify(payload),
-        mode: 'no-cors',
-        keepalive: true
-      });
-      console.info('send-email (no-cors) wysłane w tle (opaque).');
-      return;
+    const resp = await fetch('/.netlify/functions/send-email', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        to,
+        subject: planName || 'Twój plan treningowy',
+        html: '<p>W załączniku Twój plan (PDF). Dziękujemy za skorzystanie z HybridPlanner.</p>',
+        attachmentBase64: b64,
+        filename: 'plan.pdf'
+      })
+    });
+    if(!resp.ok){
+      const t = await resp.text();
+      console.error('Resend error:', t);
+      alert('Nie udało się wysłać e-maila. Spróbuj ponownie.');
     }
-
-  } catch(e){
-    console.error(e);
-    alert('Nie udało się wysłać e-maila (wyjątek). Sprawdź działanie funkcji Netlify i nagłówki CORS.');
-  }
+  } catch(e){ console.error(e); }
 }
 window.hpOnPlanReady = async function(pdfBlob, planName){
   try { await sendPlanByEmail(pdfBlob, planName); }
   catch(e){ console.error(e); }
 };
 
-/* ---------- Generowanie (z backendem lub fallback) ---------- */
+/* ---------- Generowanie (najpierw backend, potem fallback) ---------- */
 const genBtn = document.getElementById('genBtn');
 const dlBtn  = document.getElementById('dlBtn');
+
 genBtn.addEventListener('click', async ()=>{
+  let planText, planName;
   try{
     genBtn.disabled = true; genBtn.textContent = 'Generowanie…';
     dlBtn.style.display='none'; dlBtn.removeAttribute('href');
 
     const payload = buildPayload();
 
-    // 1) Backend (jeśli dostępny):
-    // const { planText, planName } = await callBackendGenerateWithPrompt(payload);
-
-    // 2) Fallback lokalny:
-    const { planText, planName } = localGenerateText(payload);
+    // 1) BACKEND z OpenAI
+    try{
+      const out = await callBackendGenerateWithPrompt(payload);
+      planText = out.planText;
+      planName = out.planName || payload.title;
+    }catch(err){
+      console.warn('Backend error, używam fallbacku:', err);
+      // 2) FALLBACK lokalny (bez promptu)
+      const out = localGenerateText(payload);
+      planText = out.planText; planName = out.planName;
+    }
 
     // 3) PDF
     const { blob, url } = await makePdf(planText, planName);
