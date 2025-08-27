@@ -267,7 +267,7 @@ function buildPayload(){
   if(usingA){
     return {
       mode: 'A',
-      title: 'Plan Treningowy (12 tygodni)',
+      title: 'Plan Treningowy',
       inputs: {
         sessionsPerWeek: Number(document.getElementById('a1').value || 0),
         goal: document.getElementById('a2').value.trim(),
@@ -279,7 +279,7 @@ function buildPayload(){
   } else {
     return {
       mode: 'B',
-      title: 'Hybrydowy Plan Treningowy (4 tygodnie)',
+      title: 'Hybrydowy Plan Treningowy',
       inputs: {
         disciplines: document.getElementById('b1').value.trim(),
         prio1: document.getElementById('b2').value.trim(),
@@ -296,7 +296,7 @@ function buildPayload(){
   }
 }
 
-/* ---------- PROMPT do OpenAI (Twoje wymagania) ---------- */
+/* === ZAMIANA: buildPrompt – tygodniowy plan (bez „12 tygodni”) === */
 function buildPrompt(payload, lang){
   const L = (lang || localStorage.getItem('hp_lang') || 'pl').toLowerCase();
   const isEN = L === 'en';
@@ -304,27 +304,37 @@ function buildPrompt(payload, lang){
 
   const dayNamesPL = ['Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota','Niedziela'];
   const dayNamesEN = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  const daysList = isEN ? dayNamesEN.join(', ') : dayNamesPL.join(', ');
 
   const header = A
     ? (isEN
-      ? `ROLE: Experienced S&C coach. Create a structured 12-week plan.\nTITLE: Training Plan (12 weeks)`
-      : `ROLA: Doświadczony trener S&C. Stwórz uporządkowany plan na 12 tygodni.\nTYTUŁ: Plan Treningowy (12 tygodni)`)
+      ? `ROLE: Experienced S&C coach. Create a detailed WEEKLY training plan (one-week template).`
+      : `ROLA: Doświadczony trener S&C. Stwórz szczegółowy TYDZIEŃ planu (szablon jednego tygodnia).`)
     : (isEN
-      ? `ROLE: Experienced S&C coach. Create a structured 4-week hybrid plan.\nTITLE: Hybrid Training Plan (4 weeks)`
-      : `ROLA: Doświadczony trener S&C. Stwórz uporządkowany hybrydowy plan na 4 tygodnie.\nTYTUŁ: Hybrydowy Plan Treningowy (4 tygodnie)`);
+      ? `ROLE: Experienced S&C coach. Create a detailed 1-week HYBRID schedule.`
+      : `ROLA: Doświadczony trener S&C. Stwórz szczegółowy HYBRYDOWY plan na 1 tydzień.`);
 
   const inputsBlock = Object.entries(payload.inputs)
     .map(([k,v])=>`- ${k}: ${v ?? '—'}`).join('\n');
 
   const HARD_RULES_PL = `
-FORMAT planu treningowego:
-- każdy dzień treningowy ma mieć oznaczenie który to dzień tygodnia.
-- każdy dzień treningowy ma zawierać starannie dobranych od 5 do 8 ćwiczeń
-- każdy dzień treningowy ma zawierać ćwiczenia zgodne z zaplanowanym cyklem na dany dzień np. kiedy jest to dzień pull to w planie na ten dzień mają być wyłącznie ćwiczenia na plecy, biceps oraz przedramię i ewentualnie brzuch, w przypadku dnia push mają to być ćwiczenia na klatkę, barki, triceps oraz brzuch, jeżeli jest to dzień upper to mają być to ćwiczenia na klatkę, plecy, barki, biceps, triceps, brzuch, jeżeli jest to trening lower lub legs to mają być to ćwiczenia wyłącznie na przednią taśmę mięśni dolnych kończyn, tylną taśmę kończyn dolnych, łydki, jeżeli jest to trening fbw to mają to być ćwiczenia na klatkę, plecy, barki, biceps, triceps, brzuch, tylną i przednią taśmę dolnych kończyn.
-- każde ćwiczenie musi zawierać zakres powtórzeń: od 8 do 12 powtórzeń, liczbę serii do wykonania: od 3 do 4 serii.
-- w dniu treningowym na bardziej rozległe partie mięśniowe takie jak klatka, plecy powinny być 3 ćwiczenia, na mniej rozległe partie mięśniowe takie jak: biceps, triceps, barki, tylna oraz przednia taśma kończyn dolnych powinny być 2 ćwiczenia oraz jedno ćwiczenie na dodatkową partię mięśniową taką jak: brzuch, przedramię, łydki.
-- każdy tydzień treningowy ma uwzględniać odpoczynek od 24 do 48h pomiędzy jednostkami treningowymi danej partii mięśniowej
-- plan układaj z wyłącznie ćwiczeń podanych poniżej:
+FORMAT planu treningowego (tydzień):
+- zaplanuj dokładnie 7 dni (${daysList}); liczba DNI TRENINGOWYCH = "sessionsPerWeek" z formularza; pozostałe dni jako "Odpoczynek".
+- każdy dzień treningowy ma mieć oznaczenie, który to dzień tygodnia.
+- w dniu treningowym umieść 5–8 starannie dobranych ćwiczeń.
+- dobór ćwiczeń zgodny z cyklem dnia:
+  • PULL → wyłącznie plecy, biceps, przedramię (+ ewentualnie brzuch)
+  • PUSH → wyłącznie klatka, barki, triceps (+ brzuch)
+  • UPPER → klatka, plecy, barki, biceps, triceps, brzuch
+  • LOWER/LEGS → przednia taśma KD, tylna taśma KD, łydki
+  • FBW → klatka, plecy, barki, biceps, triceps, brzuch, tylna i przednia taśma KD
+- każde ćwiczenie MUSI mieć zakres: 8–12 powtórzeń oraz 3–4 serie (np. "3×8–12", "4×8–12").
+- w dniu treningowym:
+  • duże partie (klatka, plecy) → 3 ćwiczenia,
+  • mniejsze (biceps, triceps, barki, przednia/tylna taśma KD) → po 2 ćwiczenia,
+  • jedno ćwiczenie dodatkowe: brzuch / przedramię / łydki.
+- zachowaj 24–48 h przerwy między kolejnymi bodźcami dla tych samych grup mięśniowych (odpowiednio rozmieść dni).
+- używaj WYŁĄCZNIE tej listy ćwiczeń:
   klatka: Flat bench press, Incline bench press, Pec deck
   plecy: Lat pulldown, Close grip horizontal row, Horizontal row 45*, Bent over row
   barki: Overhead press, Face pull, Lateral raise
@@ -332,42 +342,48 @@ FORMAT planu treningowego:
   triceps: Triceps extension, Triceps overhead extension
   brzuch: Hanging knee raises
   przedramię: Forearm curl
-  tylna taśma kończyn dolnych: Deadlift, Leg curl
-  przednia taśma kończyn dolnych: Squat, Leg extension
+  tylna taśma KD: Deadlift, Leg curl
+  przednia taśma KD: Squat, Leg extension
   łydki: Calf raises
-- kolejność ćwiczeń w każdym dniu treningowym: na początku najbardziej rozległe partie mięśniowe, potem mniej rozległe, a na końcu dodatkowe.
-- rodzaj planu treningowego dostosowany do odpowiedzi z formularza.
-
-Hybrydowy Plan treningowy:
-- podział dni w tygodniu na dni treningowe i nietreningowe
-- podział dni treningowych na dyscypliny wybrane w formularzu
-- rozpisanie jaki to jest dzień treningowy jeżeli jest to dzień siłowni np. trening upper lub trening lower
-- uwzględnienie odpoczynku między treningami min 24h max 48h
+- kolejność w dniu: najpierw duże partie → potem mniejsze → na końcu dodatkowe.
+- rodzaj planu i split dostosuj do odpowiedzi z formularza (splitPreference).
 `.trim();
 
   const OUTPUT_RULES = isEN ? `
 OUTPUT:
 - Language: ${isEN?'English':'Polish'}.
-- Plain text only (no tables/HTML). Use headings and bullets.
-- Mark each week as "Week X", and each day as "Day N — ${isEN?'weekday name': 'nazwa dnia tygodnia'}".
+- Plain text only (no tables/HTML).
+- Write EXACTLY 7 sections (one per weekday: ${daysList}).
+- REST days must be a single line: "Rest".
+- TRAINING days: 5–8 bullets, each "Exercise — 3–4×8–12".
 - End with: "${isEN?'This is not medical advice.':'To nie jest porada medyczna.'}"
 `.trim() : `
 WYJŚCIE:
 - Język: ${isEN?'English':'Polski'}.
-- Tylko czysty tekst (bez tabel/HTML). Używaj nagłówków i wypunktowań.
-- Oznaczaj tydzień jako „Tydzień X”, dzień jako „Dzień N — ${isEN?'weekday name':'nazwa dnia tygodnia'}”.
+- Tylko czysty tekst (bez tabel/HTML).
+- Wypisz DOKŁADNIE 7 sekcji (dni tygodnia: ${daysList}).
+- Dni nietreningowe: jedna linia "Odpoczynek".
+- Dni treningowe: 5–8 punktów w formacie "Ćwiczenie — 3–4×8–12".
 - Zakończ zdaniem: „To nie jest porada medyczna.”
 `.trim();
 
   const PLAN_REQUEST = A
     ? (isEN ? `
-Create a 12-week program respecting the rules above. Choose the split based on "splitPreference" (FBW / PPL / Arnold / Upper-Lower / best match). Guarantee 24–48h spacing between hard stimuli of the same muscle groups and use ONLY the allowed exercise list. Provide 5–8 exercises per day with 8–12 reps and 3–4 sets each, in the prescribed order (large → small → additional). Name each day with the weekday (${dayNamesEN.join(', ')}).`
+Create a SINGLE-WEEK template. The number of TRAINING days must equal "sessionsPerWeek".
+Choose the split based on "splitPreference" (FBW / PPL / Arnold / Upper–Lower / best match).
+Distribute training days across the week to keep 24–48h between same muscle groups.
+Use ONLY the allowed exercise list and the required order (large → small → accessory).`
        : `
-Ułóż 12-tygodniowy program spełniający powyższe reguły. Dobierz split zgodnie z „splitPreference” (FBW / PPL / Arnold / Upper-Lower / dopasowany). Zapewnij odstępy 24–48h dla tych samych grup i korzystaj WYŁĄCZNIE z podanej listy ćwiczeń. W każdym dniu 5–8 ćwiczeń, każde 8–12 powt. i 3–4 serie, w wymaganej kolejności (duże → mniejsze → dodatkowe). Oznaczaj dni tygodnia (${dayNamesPL.join(', ')}).`)
+Ułóż SZABLON JEDNEGO TYGODNIA. Liczba DNI TRENINGOWYCH ma równać się "sessionsPerWeek".
+Dobierz split zgodnie z "splitPreference" (FBW / PPL / Arnold / Upper–Lower / dopasowany).
+Rozmieść dni tak, by zachować 24–48 h przerwy dla tych samych grup mięśniowych.
+Korzystaj WYŁĄCZNIE z dozwolonej listy ćwiczeń i wymaganej kolejności (duże → mniejsze → dodatkowe).`)
     : (isEN ? `
-Create a 4-week hybrid schedule. Split the week into training vs. non-training days, assign training days to the disciplines from the form, and when "gym" is one of them, label that day with a gym structure (e.g., Upper or Lower). Keep 24–48h between sessions of the same systems.`
+Create a ONE-WEEK hybrid schedule. Mark rest vs training days (training count = "sessionsPerWeek").
+Assign each training day to a discipline listed in "disciplines". When "gym" is included, label the gym day structure (e.g., Upper / Lower / FBW) and follow the same exercise rules and rest windows (24–48h).`
        : `
-Ułóż 4-tygodniowy plan hybrydowy. Podziel tydzień na dni treningowe i nietreningowe, przypisz dni treningowe do dyscyplin z formularza, a jeśli „siłownia” jest wśród nich, zaznacz czy to dzień Upper czy Lower. Zachowaj 24–48h przerwy pomiędzy sesjami tych samych układów.`);
+Ułóż HYBRYDOWY tydzień. Oznacz dni treningowe (ich liczba = "sessionsPerWeek") i dni odpoczynku.
+Każdy dzień treningowy przypisz do dyscypliny z pola "disciplines". Jeśli wśród nich jest siłownia, oznacz strukturę dnia (np. Upper / Lower / FBW) i zastosuj te same reguły ćwiczeń oraz przerwy 24–48 h.`);
 
   return [
     header,
@@ -383,44 +399,30 @@ Ułóż 4-tygodniowy plan hybrydowy. Podziel tydzień na dni treningowe i nietre
   ].join('\n');
 }
 
-/* ---------- Wywołanie backendu z promptem (AKTYWNE) ---------- */
+/* ---------- (Opcjonalnie) Wywołanie backendu z promptem ---------- */
+/*
 async function callBackendGenerateWithPrompt(payload){
   const prompt = buildPrompt(payload, localStorage.getItem('hp_lang')||'pl');
-
-  // Twój stały adres funkcji Netlify
-  const API_URL = 'https://hybridplannerai.netlify.app/.netlify/functions/generate-plan';
-
-  const res = await fetch(API_URL, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({
-      prompt,
-      mode: payload.mode,
-      title: payload.title,
-      inputs: payload.inputs
-    })
+  const res = await fetch('/.netlify/functions/generate-plan', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ prompt, mode: payload.mode, inputs: payload.inputs })
   });
-
-  const text = await res.text();
-  let data; try{ data = JSON.parse(text); }catch(_){ data = null; }
-
-  if(!res.ok){
-    throw new Error(data?.error || text || ('HTTP '+res.status));
-  }
-  if(!data?.planText){
-    throw new Error('Brak planText w odpowiedzi funkcji.');
-  }
-  return data; // { planText, planName }
+  if(!res.ok) throw new Error(await res.text());
+  return await res.json(); // oczekiwane { planText: "...", planName: "..." }
 }
+*/
 
-/* ---------- Fallback lokalny (bez promptu) ---------- */
+/* ---------- Fallback lokalny (na potrzeby testu bez backendu) ---------- */
 function localGenerateText(payload){
+  const prompt = buildPrompt(payload, localStorage.getItem('hp_lang')||'pl');
+  // tymczasowo zwracamy sam prompt + szkic
   const lines = [];
-  lines.push(payload.title);
+  lines.push('=== PROMPT WYSYŁANY DO OPENAI (skrót) ===');
+  lines.push(prompt.substring(0, 800) + (prompt.length>800?' ...':''));
   lines.push('');
+  lines.push('=== Szkic demonstracyjny (fallback bez AI) ===');
   if(payload.mode==='A'){
-    lines.push('Tydzień 1');
-    lines.push('Dzień 1 — Poniedziałek (PUSH)');
+    lines.push('Poniedziałek — PUSH');
     lines.push('• Flat bench press — 4×8–12');
     lines.push('• Incline bench press — 3×8–12');
     lines.push('• Overhead press — 3×8–12');
@@ -428,10 +430,8 @@ function localGenerateText(payload){
     lines.push('• Lateral raise — 3×8–12');
     lines.push('• Hanging knee raises — 3×8–12');
     lines.push('');
-    lines.push('Tydzień 1 — Dzień 3 — (PULL) …');
-    lines.push('Tydzień 1 — Dzień 5 — (LEGS) …');
+    lines.push('Wtorek — Odpoczynek');
   } else {
-    lines.push('Tydzień 1');
     lines.push('Poniedziałek — Siłownia (Upper)');
     lines.push('Wtorek — Odpoczynek');
     lines.push('Środa — Bieganie easy');
@@ -502,29 +502,21 @@ window.hpOnPlanReady = async function(pdfBlob, planName){
   catch(e){ console.error(e); }
 };
 
-/* ---------- Generowanie (najpierw backend, potem fallback) ---------- */
+/* ---------- Generowanie (z backendem lub fallback) ---------- */
 const genBtn = document.getElementById('genBtn');
 const dlBtn  = document.getElementById('dlBtn');
-
 genBtn.addEventListener('click', async ()=>{
-  let planText, planName;
   try{
     genBtn.disabled = true; genBtn.textContent = 'Generowanie…';
     dlBtn.style.display='none'; dlBtn.removeAttribute('href');
 
     const payload = buildPayload();
 
-    // 1) BACKEND z OpenAI
-    try{
-      const out = await callBackendGenerateWithPrompt(payload);
-      planText = out.planText;
-      planName = out.planName || payload.title;
-    }catch(err){
-      console.warn('Backend error, używam fallbacku:', err);
-      // 2) FALLBACK lokalny (bez promptu)
-      const out = localGenerateText(payload);
-      planText = out.planText; planName = out.planName;
-    }
+    // 1) Jeśli masz funkcję backendową — odkomentuj poniższe 3 linie:
+    // const { planText, planName } = await callBackendGenerateWithPrompt(payload);
+
+    // 2) Fallback lokalny (bez OpenAI):
+    const { planText, planName } = localGenerateText(payload);
 
     // 3) PDF
     const { blob, url } = await makePdf(planText, planName);
