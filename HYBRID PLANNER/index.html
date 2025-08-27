@@ -146,7 +146,7 @@ section.snap{ min-height: 100svh; }
 @media (max-width: 640px){
   .container{ padding: 0 16px; }
 
-  /* >>> DODANE: większy odstęp pomiędzy sekcjami na mobile <<< */
+  /* większy odstęp między sekcjami features/pricing */
   #features .container { padding-bottom: 28px; }
   #pricing  .container { padding-top: 28px; }
 
@@ -160,7 +160,7 @@ section.snap{ min-height: 100svh; }
   .right-stack{ grid-template-columns: 1fr; gap: 12px; }
   .round{
     width: 100%;
-    height: auto !important;  /* nadpisuje inline height */
+    height: auto !important;
     aspect-ratio: 4 / 3;
     object-fit: cover;
   }
@@ -173,6 +173,31 @@ section.snap{ min-height: 100svh; }
 
   .autoplay-toggle{ bottom: 10px; right: 10px; padding: 6px 10px; font-size: 12px; }
   .lang-toggle{ top: 10px; right: 10px; padding: 5px 8px; font-size: 11px; }
+}
+
+/* ===== Scroll-driven image sequence (NOWE) ===== */
+.scrolly{ position:relative; height: 400vh; width:100%; }
+.scrolly .sticky{ position: sticky; top:0; height:100vh; overflow:hidden; }
+.seq-canvas{ width:100%; height:100%; display:block; background:#000; }
+.seq-overlay{ position:absolute; inset:0; pointer-events:none; }
+.seq-box{
+  position:absolute; max-width:480px;
+  background:rgba(0,0,0,.55); color:#fff; border:1px solid #333;
+  border-radius:14px; padding:14px 16px;
+  opacity:0; transform:translateY(14px);
+  transition:opacity .35s ease, transform .35s ease;
+}
+.seq-box.show{ opacity:1; transform:none; }
+.seq-box.top-left{ top:10%; left:6%; }
+.seq-box.center-right{ top:40%; right:6%; }
+.seq-box.bottom-left{ bottom:10%; left:6%; }
+@media (max-width: 640px){
+  .seq-box{ max-width:86%; left:50% !important; right:auto !important;
+    transform:translate(-50%, 14px); }
+  .seq-box.show{ transform:translate(-50%, 0); }
+  .seq-box.top-left{ top:8%; }
+  .seq-box.center-right{ top:40%; }
+  .seq-box.bottom-left{ bottom:8%; }
 }
 </style>
 </head>
@@ -235,6 +260,29 @@ section.snap{ min-height: 100svh; }
             <a href="#pricing" class="joinhere-card" aria-label="Przejdź do oferty — Join here">
               <span class="joinhere-text">JOIN HERE</span>
             </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 1.5) SCROLL-SEQUENCE (NOWA SEKCJA) -->
+  <section id="sequence" class="snap">
+    <div class="scrolly">
+      <div class="sticky">
+        <canvas id="seqCanvas" class="seq-canvas" width="1920" height="1080" aria-label="Sekwencja obrazów"></canvas>
+        <div class="seq-overlay">
+          <div class="seq-box top-left" data-start="0" data-end="0.33">
+            <h3 style="margin:0 0 6px">Personalizacja AI</h3>
+            <p style="margin:0">Plan pod Twoje cele, poziom i sprzęt.</p>
+          </div>
+          <div class="seq-box center-right" data-start="0.33" data-end="0.66">
+            <h3 style="margin:0 0 6px">Bezpieczna progresja</h3>
+            <p style="margin:0">Odstępy 24–48 h, kontrola objętości.</p>
+          </div>
+          <div class="seq-box bottom-left" data-start="0.66" data-end="1">
+            <h3 style="margin:0 0 6px">Podgląd + Plik Excel</h3>
+            <p style="margin:0">Wynik trafia od razu na Twój e-mail.</p>
           </div>
         </div>
       </div>
@@ -363,14 +411,19 @@ const io = new IntersectionObserver((entries)=>{
     if(entry.isIntersecting){
       const sec = entry.target;
       const pre = sec.querySelector('.pre');
-      if(!sec.dataset.loaded){
-        pre.style.opacity = 1;
-        setTimeout(()=>{
-          pre.style.opacity = 0;
-          sec.dataset.loaded = "1";
+      if(pre){ // tylko jeśli sekcja ma preloader
+        if(!sec.dataset.loaded){
+          pre.style.opacity = 1;
+          setTimeout(()=>{
+            pre.style.opacity = 0;
+            sec.dataset.loaded = "1";
+            sec.querySelectorAll('.reveal, .reveal-stagger').forEach(x=>x.classList.add('show'));
+            sec.querySelectorAll('.typewriter').forEach(initTypewriter);
+          }, 450);
+        }else{
           sec.querySelectorAll('.reveal, .reveal-stagger').forEach(x=>x.classList.add('show'));
           sec.querySelectorAll('.typewriter').forEach(initTypewriter);
-        }, 450);
+        }
       }else{
         sec.querySelectorAll('.reveal, .reveal-stagger').forEach(x=>x.classList.add('show'));
         sec.querySelectorAll('.typewriter').forEach(initTypewriter);
@@ -399,8 +452,7 @@ setInterval(advance, 30000);
 window.addEventListener('load', ()=>{
   snaps[0].querySelectorAll('.typewriter').forEach(initTypewriter);
   const pre = snaps[0].querySelector('.pre');
-  pre.style.opacity = 1;
-  setTimeout(()=> pre.style.opacity = 0, 450);
+  if(pre){ pre.style.opacity = 1; setTimeout(()=> pre.style.opacity = 0, 450); }
 });
 
 /* ------- E-mail gate (modal + zgoda) ------- */
@@ -442,6 +494,77 @@ document.querySelectorAll('.requires-email').forEach(a=>{
 });
 </script>
 
+<!-- ===== Scroll-sequence logic (NOWE) ===== -->
+<script>
+(function(){
+  const canvas = document.getElementById('seqCanvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  // Użyj swoich obrazów: podmień/rozszerz listę.
+  const IMAGES = [
+    'assets/Bytol1.jpg',
+    'assets/Bytol2.jpg',
+    'assets/Bytol3.jpg'
+  ];
+
+  const imgs=[]; let loaded=0;
+  IMAGES.forEach((src,i)=>{
+    const img = new Image();
+    img.src = src;
+    img.onload = ()=>{ imgs[i]=img; loaded++; if(loaded===1) draw(0); };
+  });
+
+  function draw(index){
+    const img = imgs[Math.max(0, Math.min(IMAGES.length-1, index))];
+    if(!img) return;
+    const cw = canvas.width, ch = canvas.height;
+    const iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+    const s = Math.max(cw/iw, ch/ih);
+    const sw = iw*s, sh = ih*s;
+    const dx = (cw - sw)/2, dy = (ch - sh)/2;
+    ctx.clearRect(0,0,cw,ch);
+    ctx.drawImage(img, dx, dy, sw, sh);
+  }
+
+  const section = document.getElementById('sequence');
+  const scrolly = section.querySelector('.scrolly');
+  const boxes = Array.from(section.querySelectorAll('.seq-box'));
+
+  function progressInside(){
+    const vh = window.innerHeight;
+    const rect = section.getBoundingClientRect();
+    const total = scrolly.offsetHeight - vh;
+    const scrolled = Math.min(total, Math.max(0, -rect.top));
+    return total>0 ? scrolled/total : 0;
+  }
+
+  function onResize(){
+    const ratio = window.devicePixelRatio || 1;
+    canvas.width = Math.floor(canvas.clientWidth * ratio);
+    canvas.height = Math.floor(canvas.clientHeight * ratio);
+    ctx.setTransform(1,0,0,1,0,0);
+    draw(0);
+    onScroll();
+  }
+
+  function onScroll(){
+    const p = progressInside(); // 0..1
+    const idx = Math.round(p * (IMAGES.length-1));
+    draw(idx);
+    boxes.forEach(b=>{
+      const a = parseFloat(b.dataset.start || '0');
+      const z = parseFloat(b.dataset.end || '1');
+      b.classList.toggle('show', p >= a && p < z);
+    });
+  }
+
+  window.addEventListener('resize', onResize);
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onResize();
+})();
+</script>
+
 <!-- ------- Mini i18n: EN/PL toggle (pełne tłumaczenie) ------- -->
 <script>
 (function () {
@@ -452,14 +575,12 @@ document.querySelectorAll('.requires-email').forEach(a=>{
   const setText  = (id, val) => { const el = document.getElementById(id); if (el && val) el.textContent = val; };
   const toggleBtn = document.getElementById('langToggle');
 
-  // Elementy bez ID, które też tłumaczymy
-  const heroDisclaimer = document.querySelector('.hero-copy p:last-of-type'); // "To nie jest porada medyczna."
+  const heroDisclaimer = document.querySelector('.hero-copy p:last-of-type');
   const featuresCards = document.querySelectorAll('#features .card-light');
   const offerCards = document.querySelectorAll('#pricing .card-light');
   const pricingSmall = document.querySelector('#pricing small');
   const pricingButtons = document.querySelectorAll('#pricing .card-light .requires-email');
 
-  // Modal e-mail
   const modal = document.getElementById('emailModal');
   const modalH3 = modal ? modal.querySelector('h3') : null;
   const labelEmail = modal ? modal.querySelector('label[for="gateEmail"]') : null;
@@ -468,58 +589,46 @@ document.querySelectorAll('.requires-email').forEach(a=>{
   const gateClose = document.getElementById('gateClose');
   const gateError = document.getElementById('gateError');
 
-  // FAQ
   const faqDetails = document.querySelectorAll('#faq details');
 
   if (lang === 'en') {
-    // HERO
     setHTML('heroH1', 'You set the goals — we make them real.');
     setHTML('heroDesc', 'Training Plan (12 weeks) or Hybrid Training Plan (4 weeks). Minimum volume, maximum results.');
     setText('btnGenerate','Generate');
     setText('btnDetails','See details');
     if (heroDisclaimer) heroDisclaimer.textContent = 'This is not medical advice.';
 
-    // FEATURES
     setText('featuresTitle','What’s included');
     if (featuresCards.length >= 6) {
       featuresCards[0].querySelector('.icon-dot strong').textContent = 'AI Personalization';
       featuresCards[0].querySelector('p').textContent = 'Tailored to your goal, level, available weekly time and constraints.';
-
       featuresCards[1].querySelector('.icon-dot strong').textContent = 'Safe progression';
       featuresCards[1].querySelector('p').textContent = '24–48 h spacing between hard stimuli, deloads and volume control';
-
       featuresCards[2].querySelector('.icon-dot strong').textContent = 'Preview + Excel file';
       featuresCards[2].querySelector('p').textContent = 'Your plan is emailed as an Excel file right after generation.';
-
       featuresCards[3].querySelector('.icon-dot strong').textContent = 'Custom discipline selection';
       featuresCards[3].querySelector('p').textContent = 'Pick and combine disciplines according to your priorities and availability.';
-
       featuresCards[4].querySelector('.icon-dot strong').textContent = 'Universal exercise naming';
       featuresCards[4].querySelector('p').textContent = 'Unified PL/EN names — easy to recognise and search.';
-
       featuresCards[5].querySelector('.icon-dot strong').textContent = 'Detailed weekly layout';
       featuresCards[5].querySelector('p').textContent = 'A week laid out day by day with recovery placement and progression.';
     }
 
-    // OFFER
     setText('offerTitle','Offer');
     if (offerCards.length >= 2) {
       offerCards[0].querySelector('h3').textContent = 'Training Plan (12 weeks)';
       offerCards[0].querySelector('p').textContent = 'Full program with progression and recovery placement.';
-
       offerCards[1].querySelector('h3').textContent = 'Hybrid Training Plan (4 weeks)';
       offerCards[1].querySelector('p').textContent = 'Optimal weekly schedule for multiple disciplines.';
     }
     pricingButtons.forEach(b => b.textContent = 'Generate now');
     if (pricingSmall) pricingSmall.textContent = 'Minimum volume, maximum results.';
 
-    // LEGAL
     setText('legalPolicy','Policy');
     setText('legalTerms','Terms');
     setText('legalContact','Contact');
     setText('legalFaq','FAQ');
 
-    // MODAL
     if (modalH3) modalH3.textContent = 'Access to the generator';
     if (labelEmail) labelEmail.textContent = 'Your e-mail';
     if (labelConsent) labelConsent.textContent = 'I consent to the processing of my personal data.';
@@ -527,7 +636,6 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     if (gateClose) gateClose.textContent = 'Cancel';
     if (gateError) gateError.textContent = 'Enter a valid e-mail and tick the consent box.';
 
-    // FAQ
     if (faqDetails.length >= 6) {
       const map = [
         ['How is my plan created?', 'The plan is generated by AI based on your short questionnaire: goal, level, equipment, time and any constraints.'],
@@ -545,11 +653,9 @@ document.querySelectorAll('.requires-email').forEach(a=>{
       });
     }
 
-    // Toggle
     localStorage.setItem('hp_lang','en');
     if (toggleBtn){ toggleBtn.href='?lang=pl'; toggleBtn.textContent='PL'; toggleBtn.setAttribute('aria-label','Polish version'); }
 
-    // Typewriter EN
     const h1 = document.getElementById('heroH1');
     if (h1 && h1.classList.contains('typewriter')) {
       h1.dataset.typer = 'You set the goals — we make them real.';
@@ -558,7 +664,6 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     }
 
   } else {
-    // POLSKI (wartości jak w HTML)
     localStorage.setItem('hp_lang','pl');
     if (toggleBtn){ toggleBtn.href='?lang=en'; toggleBtn.textContent='EN'; toggleBtn.setAttribute('aria-label','English version'); }
 
@@ -566,25 +671,19 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     setHTML('heroDesc','Plan Treningowy (12 tygodni) lub Hybrydowy Plan Treningowy (4 tygodnie). Minimalna objętość, maksymalne efekty.');
     setText('btnGenerate','Wygeneruj');
     setText('btnDetails','Zobacz szczegóły');
-    if (heroDisclaimer) heroDisclaimer.textContent = 'To nie jest porada medyczna.';
 
     setText('featuresTitle','Co zawiera program');
     if (featuresCards.length >= 6) {
       featuresCards[0].querySelector('.icon-dot strong').textContent = 'Personalizacja AI';
       featuresCards[0].querySelector('p').textContent = 'Dopasowanie do celu, poziomu, dostępnego czasu/tydzień i ograniczeń.';
-
       featuresCards[1].querySelector('.icon-dot strong').textContent = 'Bezpieczna progresja';
       featuresCards[1].querySelector('p').textContent = '24–48 h odstępu między ciężkimi bodźcami, deload, kontrola objętości.';
-
       featuresCards[2].querySelector('.icon-dot strong').textContent = 'Podgląd + Plik Excel';
       featuresCards[2].querySelector('p').textContent = 'Plan wysyłany po wygenerowaniu na email w formacie pliku Excel.';
-
       featuresCards[3].querySelector('.icon-dot strong').textContent = 'Indywidualny wybór dyscyplin';
       featuresCards[3].querySelector('p').textContent = 'Wybierz i łącz dyscypliny zgodnie z priorytetami i dostępnością.';
-
       featuresCards[4].querySelector('.icon-dot strong').textContent = 'Uniwersalne nazewnictwo ćwiczeń';
       featuresCards[4].querySelector('p').textContent = 'Ujednolicone nazwy w PL/EN – szybkie do rozpoznania i wyszukania.';
-
       featuresCards[5].querySelector('.icon-dot strong').textContent = 'Dokładne rozplanowanie tygodnia treningowego';
       featuresCards[5].querySelector('p').textContent = 'Tydzień ułożony dzień po dniu z rozmieszczeniem regeneracji i progresją.';
     }
@@ -593,7 +692,6 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     if (offerCards.length >= 2) {
       offerCards[0].querySelector('h3').textContent = 'Plan Treningowy (12 tygodni)';
       offerCards[0].querySelector('p').textContent = 'Pełny plan z progresją i rozmieszczeniem regeneracji.';
-
       offerCards[1].querySelector('h3').textContent = 'Hybrydowy Plan Treningowy (4 tygodnie)';
       offerCards[1].querySelector('p').textContent = 'Optymalne rozłożenie treningów wielu dyscyplin.';
     }
@@ -605,7 +703,6 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     setText('legalContact','Kontakt');
     setText('legalFaq','FAQ');
 
-    // MODAL PL
     if (modalH3) modalH3.textContent = 'Dostęp do generatora';
     if (labelEmail) labelEmail.textContent = 'Twój e-mail';
     if (labelConsent) labelConsent.textContent = 'Wyrażam zgodę na przetwarzanie moich danych osobowych.';
@@ -613,7 +710,6 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     if (gateClose) gateClose.textContent = 'Anuluj';
     if (gateError) gateError.textContent = 'Podaj poprawny e-mail i zaznacz zgodę.';
 
-    // FAQ PL
     if (faqDetails.length >= 6) {
       const map = [
         ['Jak powstaje mój plan?', 'Plan generuje AI na podstawie Twoich odpowiedzi w krótkiej ankiecie. Uwzględniamy cel, poziom, sprzęt, czas oraz ewentualne ograniczenia.'],
