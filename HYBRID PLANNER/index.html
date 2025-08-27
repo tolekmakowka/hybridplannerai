@@ -79,7 +79,6 @@ section.snap{min-height:100vh;scroll-snap-align:start;position:relative;display:
 .reveal-stagger.show > *:nth-child(4){animation-delay:.35s}
 @keyframes st{to{opacity:1;transform:none}}
 .typewriter span{opacity:0;transition:opacity .08s}
-.typewriter.start span{opacity:1;transition-delay:calc(var(--i)*.02s)} /* dopisek: pokazuj litery */
 
 /* Autoplay toggle */
 .autoplay-toggle{position:fixed;right:16px;bottom:16px;z-index:50;background:#111;color:#fff;border:1px solid #333;padding:8px 12px;border-radius:10px;font:600 13px/1 Inter;cursor:pointer;opacity:.85}
@@ -147,6 +146,10 @@ section.snap{ min-height: 100svh; }
 @media (max-width: 640px){
   .container{ padding: 0 16px; }
 
+  /* >>> DODANE: większy odstęp pomiędzy sekcjami na mobile <<< */
+  #features .container { padding-bottom: 28px; }
+  #pricing  .container { padding-top: 28px; }
+
   .hero-bg{ padding: 18px; border-radius: 14px; }
   .kicker{ font-size: 12px; }
   h1{ font-size: clamp(26px, 7vw, 34px); }
@@ -171,10 +174,6 @@ section.snap{ min-height: 100svh; }
   .autoplay-toggle{ bottom: 10px; right: 10px; padding: 6px 10px; font-size: 12px; }
   .lang-toggle{ top: 10px; right: 10px; padding: 5px 8px; font-size: 11px; }
 }
-
-/* ====== DODANE: układ 2 kart oferty ====== */
-.offer-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
-@media (max-width: 640px){ .offer-grid{ grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -264,7 +263,7 @@ section.snap{ min-height: 100svh; }
           <div class="icon-dot">
             <img src="assets/note_13552540.svg" alt="Podgląd i Plik Excel"><strong>Podgląd + Plik Excel</strong>
           </div>
-          <p id="featPdfDesc">Plan wysyłany po wygenerowaniu na email w formacie Plik Excel.</p>
+          <p id="featPdfDesc">Plan wysyłany po wygenerowaniu na email w formacie pliku Excel.</p>
         </article>
         <article class="card-light reveal">
           <div class="icon-dot">
@@ -288,14 +287,12 @@ section.snap{ min-height: 100svh; }
     </div>
   </section>
 
-  <!-- 3) OFERTA (bez pakietu) -->
+  <!-- 3) OFERTA (2 karty) -->
   <section id="pricing" class="snap section-light">
     <div class="pre light"><div class="loader"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
     <div class="container">
       <h2 id="offerTitle" class="reveal">Oferta</h2>
-
-      <!-- ZAMIANA: dwie karty w schludnej siatce -->
-      <div class="offer-grid" style="margin-top:20px">
+      <div class="grid-3" style="grid-template-columns:repeat(2,1fr);gap:24px;margin-top:20px">
         <article class="card-light reveal" style="display:flex;flex-direction:column;min-height:220px">
           <div>
             <h3>Plan Treningowy (12 tygodni)</h3>
@@ -305,7 +302,6 @@ section.snap{ min-height: 100svh; }
             <a class="btn btn-brown requires-email" href="generator.html#plan=A">Wygeneruj teraz</a>
           </div>
         </article>
-
         <article class="card-light reveal" style="display:flex;flex-direction:column;min-height:220px">
           <div>
             <h3>Hybrydowy Plan Treningowy (4 tygodnie)</h3>
@@ -336,7 +332,7 @@ section.snap{ min-height: 100svh; }
       <h2 class="reveal">FAQ</h2>
       <div class="faq-list reveal-stagger">
         <details><summary>Jak powstaje mój plan?</summary><p>Plan generuje AI na podstawie Twoich odpowiedzi w krótkiej ankiecie. Uwzględniamy cel, poziom, sprzęt, czas oraz ewentualne ograniczenia.</p></details>
-        <details><summary>Ile to trwa?</summary><p>Zwykle kilkanaście sekund od wysłania odpowiedzi. Otrzymujesz podgląd i plik Plik Excel do pobrania.</p></details>
+        <details><summary>Ile to trwa?</summary><p>Zwykle kilkanaście sekund od wysłania odpowiedzi. Otrzymujesz podgląd i plik Excel do pobrania.</p></details>
         <details><summary>Czy mogę trenować kilka dyscyplin w tygodniu?</summary><p>Tak. Hybrydowy Plan Treningowy ustawia tygodniowy rozkład tak, aby łączyć dyscypliny i zminimalizować ryzyko przeciążeń.</p></details>
         <details><summary>W jakim języku dostanę plan?</summary><p>Interfejs i pliki dostępne są w dwóch wersjach językowych: PL oraz EN.</p></details>
         <details><summary>Co jeśli mam kontuzję lub chorobę?</summary><p>To nie jest porada medyczna. Jeśli masz uraz lub wątpliwości zdrowotne, skonsultuj się z lekarzem lub fizjoterapeutą przed rozpoczęciem.</p></details>
@@ -478,7 +474,7 @@ document.querySelectorAll('.requires-email').forEach(a=>{
   if (lang === 'en') {
     // HERO
     setHTML('heroH1', 'You set the goals — we make them real.');
-    setHTML('heroDesc', 'Training Plan (12 weeks) or Hybrid Training Plan (4 weeks). Minimal volume, maximum results.');
+    setHTML('heroDesc', 'Training Plan (12 weeks) or Hybrid Training Plan (4 weeks). Minimum volume, maximum results.');
     setText('btnGenerate','Generate');
     setText('btnDetails','See details');
     if (heroDisclaimer) heroDisclaimer.textContent = 'This is not medical advice.';
@@ -493,7 +489,7 @@ document.querySelectorAll('.requires-email').forEach(a=>{
       featuresCards[1].querySelector('p').textContent = '24–48 h spacing between hard stimuli, deloads and volume control';
 
       featuresCards[2].querySelector('.icon-dot strong').textContent = 'Preview + Excel file';
-      featuresCards[2].querySelector('p').textContent = 'Your plan is sent by email as an Excel file right after generation.';
+      featuresCards[2].querySelector('p').textContent = 'Your plan is emailed as an Excel file right after generation.';
 
       featuresCards[3].querySelector('.icon-dot strong').textContent = 'Custom discipline selection';
       featuresCards[3].querySelector('p').textContent = 'Pick and combine disciplines according to your priorities and availability.';
@@ -505,14 +501,14 @@ document.querySelectorAll('.requires-email').forEach(a=>{
       featuresCards[5].querySelector('p').textContent = 'A week laid out day by day with recovery placement and progression.';
     }
 
-    // OFFER (2 cards)
+    // OFFER
     setText('offerTitle','Offer');
     if (offerCards.length >= 2) {
       offerCards[0].querySelector('h3').textContent = 'Training Plan (12 weeks)';
-      offerCards[0].querySelector('p').textContent  = 'Full program with progression and recovery placement.';
+      offerCards[0].querySelector('p').textContent = 'Full program with progression and recovery placement.';
 
       offerCards[1].querySelector('h3').textContent = 'Hybrid Training Plan (4 weeks)';
-      offerCards[1].querySelector('p').textContent  = 'Optimal weekly schedule for multiple disciplines.';
+      offerCards[1].querySelector('p').textContent = 'Optimal weekly schedule for multiple disciplines.';
     }
     pricingButtons.forEach(b => b.textContent = 'Generate now');
     if (pricingSmall) pricingSmall.textContent = 'Minimum volume, maximum results.';
@@ -581,7 +577,7 @@ document.querySelectorAll('.requires-email').forEach(a=>{
       featuresCards[1].querySelector('p').textContent = '24–48 h odstępu między ciężkimi bodźcami, deload, kontrola objętości.';
 
       featuresCards[2].querySelector('.icon-dot strong').textContent = 'Podgląd + Plik Excel';
-      featuresCards[2].querySelector('p').textContent = 'Plan wysyłany po wygenerowaniu na email w formacie Plik Excel.';
+      featuresCards[2].querySelector('p').textContent = 'Plan wysyłany po wygenerowaniu na email w formacie pliku Excel.';
 
       featuresCards[3].querySelector('.icon-dot strong').textContent = 'Indywidualny wybór dyscyplin';
       featuresCards[3].querySelector('p').textContent = 'Wybierz i łącz dyscypliny zgodnie z priorytetami i dostępnością.';
@@ -593,14 +589,13 @@ document.querySelectorAll('.requires-email').forEach(a=>{
       featuresCards[5].querySelector('p').textContent = 'Tydzień ułożony dzień po dniu z rozmieszczeniem regeneracji i progresją.';
     }
 
-    // Oferta (2 karty)
     setText('offerTitle','Oferta');
     if (offerCards.length >= 2) {
       offerCards[0].querySelector('h3').textContent = 'Plan Treningowy (12 tygodni)';
-      offerCards[0].querySelector('p').textContent  = 'Pełny plan z progresją i rozmieszczeniem regeneracji.';
+      offerCards[0].querySelector('p').textContent = 'Pełny plan z progresją i rozmieszczeniem regeneracji.';
 
       offerCards[1].querySelector('h3').textContent = 'Hybrydowy Plan Treningowy (4 tygodnie)';
-      offerCards[1].querySelector('p').textContent  = 'Optymalne rozłożenie treningów wielu dyscyplin.';
+      offerCards[1].querySelector('p').textContent = 'Optymalne rozłożenie treningów wielu dyscyplin.';
     }
     pricingButtons.forEach(b => b.textContent = 'Wygeneruj teraz');
     if (pricingSmall) pricingSmall.textContent = 'Minimalna objętość, maksymalne efekty.';
@@ -622,7 +617,7 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     if (faqDetails.length >= 6) {
       const map = [
         ['Jak powstaje mój plan?', 'Plan generuje AI na podstawie Twoich odpowiedzi w krótkiej ankiecie. Uwzględniamy cel, poziom, sprzęt, czas oraz ewentualne ograniczenia.'],
-        ['Ile to trwa?', 'Zwykle kilkanaście sekund od wysłania odpowiedzi. Otrzymujesz podgląd i plik Plik Excel do pobrania.'],
+        ['Ile to trwa?', 'Zwykle kilkanaście sekund od wysłania odpowiedzi. Otrzymujesz podgląd i plik Excel do pobrania.'],
         ['Czy mogę trenować kilka dyscyplin w tygodniu?', 'Tak. Hybrydowy Plan Treningowy ustawia tygodniowy rozkład tak, aby łączyć dyscypliny i zminimalizować ryzyko przeciążeń.'],
         ['W jakim języku dostanę plan?', 'Interfejs i pliki dostępne są w dwóch wersjach językowych: PL oraz EN.'],
         ['Co jeśli mam kontuzję lub chorobę?', 'To nie jest porada medyczna. Jeśli masz uraz lub wątpliwości zdrowotne, skonsultuj się z lekarzem lub fizjoterapeutą przed rozpoczęciem.'],
