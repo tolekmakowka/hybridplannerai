@@ -143,6 +143,8 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
     <div class="actions">
       <button id="genBtn" class="btn btn-brown">Wygeneruj plan</button>
       <a id="dlBtn" class="btn btn-ghost" href="#" download="plan.pdf" style="display:none">Pobierz PDF</a>
+      <!-- NOWE: przycisk XLSX -->
+      <a id="dlXlsx" class="btn btn-ghost" href="#" download="plan.xlsx" style="display:none">Pobierz XLSX</a>
     </div>
 
     <div class="notice">
@@ -156,6 +158,8 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
 
 <!-- jsPDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!-- NOWE: SheetJS (XLSX) -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <script>
 /* ---------- Bramka e-mail ---------- */
@@ -296,12 +300,11 @@ function buildPayload(){
   }
 }
 
-/* === ZAMIANA: buildPrompt – tygodniowy plan (bez „12 tygodni”) === */
+/* ---------- ZAMIANA: PROMPT — 1 TYDZIEŃ + JSON ---------- */
 function buildPrompt(payload, lang){
   const L = (lang || localStorage.getItem('hp_lang') || 'pl').toLowerCase();
   const isEN = L === 'en';
   const A = payload.mode === 'A';
-
   const dayNamesPL = ['Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota','Niedziela'];
   const dayNamesEN = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
   const daysList = isEN ? dayNamesEN.join(', ') : dayNamesPL.join(', ');
@@ -314,134 +317,84 @@ function buildPrompt(payload, lang){
       ? `ROLE: Experienced S&C coach. Create a detailed 1-week HYBRID schedule.`
       : `ROLA: Doświadczony trener S&C. Stwórz szczegółowy HYBRYDOWY plan na 1 tydzień.`);
 
-  const inputsBlock = Object.entries(payload.inputs)
-    .map(([k,v])=>`- ${k}: ${v ?? '—'}`).join('\n');
+  const inputsBlock = Object.entries(payload.inputs).map(([k,v])=>`- ${k}: ${v ?? '—'}`).join('\n');
 
   const HARD_RULES_PL = `
-FORMAT planu treningowego (tydzień):
+FORMAT planu tygodniowego:
 - zaplanuj dokładnie 7 dni (${daysList}); liczba DNI TRENINGOWYCH = "sessionsPerWeek" z formularza; pozostałe dni jako "Odpoczynek".
 - każdy dzień treningowy ma mieć oznaczenie, który to dzień tygodnia.
-- w dniu treningowym umieść 5–8 starannie dobranych ćwiczeń.
+- w dniu treningowym umieść 5–8 ćwiczeń.
 - dobór ćwiczeń zgodny z cyklem dnia:
   • PULL → wyłącznie plecy, biceps, przedramię (+ ewentualnie brzuch)
   • PUSH → wyłącznie klatka, barki, triceps (+ brzuch)
   • UPPER → klatka, plecy, barki, biceps, triceps, brzuch
   • LOWER/LEGS → przednia taśma KD, tylna taśma KD, łydki
   • FBW → klatka, plecy, barki, biceps, triceps, brzuch, tylna i przednia taśma KD
-- każde ćwiczenie MUSI mieć zakres: 8–12 powtórzeń oraz 3–4 serie (np. "3×8–12", "4×8–12").
+- każde ćwiczenie MUSI mieć: "sets" (3–4), "reps" (8–12), "rest_min" (czas przerwy w minutach), "rir" (np. X), "rpe" (8–9), "tempo" (np. X), "comment" (może być pusty).
 - w dniu treningowym:
   • duże partie (klatka, plecy) → 3 ćwiczenia,
   • mniejsze (biceps, triceps, barki, przednia/tylna taśma KD) → po 2 ćwiczenia,
   • jedno ćwiczenie dodatkowe: brzuch / przedramię / łydki.
-- zachowaj 24–48 h przerwy między kolejnymi bodźcami dla tych samych grup mięśniowych (odpowiednio rozmieść dni).
-- używaj WYŁĄCZNIE tej listy ćwiczeń:
-  klatka: Flat bench press, Incline bench press, Pec deck
-  plecy: Lat pulldown, Close grip horizontal row, Horizontal row 45*, Bent over row
-  barki: Overhead press, Face pull, Lateral raise
-  biceps: Biceps curl, Hammer curl
-  triceps: Triceps extension, Triceps overhead extension
-  brzuch: Hanging knee raises
-  przedramię: Forearm curl
-  tylna taśma KD: Deadlift, Leg curl
-  przednia taśma KD: Squat, Leg extension
-  łydki: Calf raises
-- kolejność w dniu: najpierw duże partie → potem mniejsze → na końcu dodatkowe.
-- rodzaj planu i split dostosuj do odpowiedzi z formularza (splitPreference).
+- 24–48 h przerwy między kolejnymi bodźcami dla tych samych grup mięśniowych.
+- używaj WYŁĄCZNIE listy ćwiczeń z briefu użytkownika.
+- kolejność w dniu: najpierw duże → potem mniejsze → dodatkowe.
+- rodzaj planu i split dopasuj do "splitPreference".
 `.trim();
 
-  const OUTPUT_RULES = isEN ? `
-OUTPUT:
-- Language: ${isEN?'English':'Polish'}.
-- Plain text only (no tables/HTML).
-- Write EXACTLY 7 sections (one per weekday: ${daysList}).
-- REST days must be a single line: "Rest".
-- TRAINING days: 5–8 bullets, each "Exercise — 3–4×8–12".
-- End with: "${isEN?'This is not medical advice.':'To nie jest porada medyczna.'}"
-`.trim() : `
-WYJŚCIE:
-- Język: ${isEN?'English':'Polski'}.
-- Tylko czysty tekst (bez tabel/HTML).
-- Wypisz DOKŁADNIE 7 sekcji (dni tygodnia: ${daysList}).
-- Dni nietreningowe: jedna linia "Odpoczynek".
-- Dni treningowe: 5–8 punktów w formacie "Ćwiczenie — 3–4×8–12".
-- Zakończ zdaniem: „To nie jest porada medyczna.”
+  const OUTPUT_INSTRUCTIONS = `
+ZWRÓĆ DWA BLOKI:
+1) JSON w bloku \`\`\`json ... \`\`\` o dokładnie takim schemacie:
+{
+  "meta": {
+    "language": "${isEN?'en':'pl'}",
+    "sessionsPerWeek": <number>
+  },
+  "week": [
+    {
+      "weekday": "${isEN?'Monday':'Poniedziałek'}",
+      "type": "TRAINING" | "REST",
+      "label": "Upper | Lower | Push | Pull | Legs | FBW | ${isEN?'Rest':'Odpoczynek'}",
+      "exercises": [
+        {
+          "name": "Flat bench press",
+          "sets": 3,
+          "reps": "8-12",
+          "rest_min": 2,
+          "rir": "X",
+          "rpe": 8,
+          "tempo": "X",
+          "comment": ""
+        }
+      ]
+    }
+  ]
+}
+2) Po JSON krótki opis tekstowy tygodnia (plain text), zakończ zdaniem: "${isEN?'This is not medical advice.':'To nie jest porada medyczna.'}"
 `.trim();
 
   const PLAN_REQUEST = A
     ? (isEN ? `
-Create a SINGLE-WEEK template. The number of TRAINING days must equal "sessionsPerWeek".
-Choose the split based on "splitPreference" (FBW / PPL / Arnold / Upper–Lower / best match).
-Distribute training days across the week to keep 24–48h between same muscle groups.
-Use ONLY the allowed exercise list and the required order (large → small → accessory).`
+Make a ONE-WEEK template. Number of TRAINING days must equal "sessionsPerWeek".
+Pick the split from "splitPreference" (FBW / PPL / Arnold / Upper–Lower / best match).
+Keep 24–48h between stimuli of the same groups. Use only allowed exercises and required order.`
        : `
-Ułóż SZABLON JEDNEGO TYGODNIA. Liczba DNI TRENINGOWYCH ma równać się "sessionsPerWeek".
-Dobierz split zgodnie z "splitPreference" (FBW / PPL / Arnold / Upper–Lower / dopasowany).
-Rozmieść dni tak, by zachować 24–48 h przerwy dla tych samych grup mięśniowych.
-Korzystaj WYŁĄCZNIE z dozwolonej listy ćwiczeń i wymaganej kolejności (duże → mniejsze → dodatkowe).`)
+Ułóż SZABLON JEDNEGO TYGODNIA. Liczba DNI TRENINGOWYCH = "sessionsPerWeek".
+Wybierz split z "splitPreference" (FBW / PPL / Arnold / Upper–Lower / dopasowany).
+Zachowaj 24–48 h przerw. Używaj tylko dozwolonych ćwiczeń i wymaganej kolejności.`)
     : (isEN ? `
-Create a ONE-WEEK hybrid schedule. Mark rest vs training days (training count = "sessionsPerWeek").
-Assign each training day to a discipline listed in "disciplines". When "gym" is included, label the gym day structure (e.g., Upper / Lower / FBW) and follow the same exercise rules and rest windows (24–48h).`
+Create a ONE-WEEK hybrid schedule. Mark rest vs training (training count = "sessionsPerWeek").
+Assign each training day to listed disciplines; for "gym" label structure (Upper/Lower/FBW) and follow the same rules.`
        : `
-Ułóż HYBRYDOWY tydzień. Oznacz dni treningowe (ich liczba = "sessionsPerWeek") i dni odpoczynku.
-Każdy dzień treningowy przypisz do dyscypliny z pola "disciplines". Jeśli wśród nich jest siłownia, oznacz strukturę dnia (np. Upper / Lower / FBW) i zastosuj te same reguły ćwiczeń oraz przerwy 24–48 h.`);
+Stwórz HYBRYDOWY tydzień. Zaznacz dni treningowe (ich liczba = "sessionsPerWeek") i odpoczynku.
+Gdy jest siłownia – nazwij strukturę dnia (Upper/Lower/FBW) i stosuj te same reguły.`);
 
   return [
-    header,
-    '',
-    (isEN?'INPUTS:':'DANE WEJŚCIOWE:'),
-    inputsBlock,
-    '',
-    HARD_RULES_PL,
-    '',
-    OUTPUT_RULES,
-    '',
+    header,'',
+    (isEN?'INPUTS:':'DANE WEJŚCIOWE:'), inputsBlock,'',
+    HARD_RULES_PL,'',
+    OUTPUT_INSTRUCTIONS,'',
     PLAN_REQUEST
   ].join('\n');
-}
-
-/* ---------- (Opcjonalnie) Wywołanie backendu z promptem ---------- */
-/*
-async function callBackendGenerateWithPrompt(payload){
-  const prompt = buildPrompt(payload, localStorage.getItem('hp_lang')||'pl');
-  const res = await fetch('/.netlify/functions/generate-plan', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ prompt, mode: payload.mode, inputs: payload.inputs })
-  });
-  if(!res.ok) throw new Error(await res.text());
-  return await res.json(); // oczekiwane { planText: "...", planName: "..." }
-}
-*/
-
-/* ---------- Fallback lokalny (na potrzeby testu bez backendu) ---------- */
-function localGenerateText(payload){
-  const prompt = buildPrompt(payload, localStorage.getItem('hp_lang')||'pl');
-  // tymczasowo zwracamy sam prompt + szkic
-  const lines = [];
-  lines.push('=== PROMPT WYSYŁANY DO OPENAI (skrót) ===');
-  lines.push(prompt.substring(0, 800) + (prompt.length>800?' ...':''));
-  lines.push('');
-  lines.push('=== Szkic demonstracyjny (fallback bez AI) ===');
-  if(payload.mode==='A'){
-    lines.push('Poniedziałek — PUSH');
-    lines.push('• Flat bench press — 4×8–12');
-    lines.push('• Incline bench press — 3×8–12');
-    lines.push('• Overhead press — 3×8–12');
-    lines.push('• Triceps extension — 3×8–12');
-    lines.push('• Lateral raise — 3×8–12');
-    lines.push('• Hanging knee raises — 3×8–12');
-    lines.push('');
-    lines.push('Wtorek — Odpoczynek');
-  } else {
-    lines.push('Poniedziałek — Siłownia (Upper)');
-    lines.push('Wtorek — Odpoczynek');
-    lines.push('Środa — Bieganie easy');
-    lines.push('Czwartek — Odpoczynek');
-    lines.push('Piątek — Siłownia (Lower)');
-    lines.push('Weekend — Regeneracja aktywna');
-  }
-  lines.push('');
-  lines.push('To nie jest porada medyczna.');
-  return { planText: lines.join('\n'), planName: payload.title };
 }
 
 /* ---------- PDF ---------- */
@@ -465,65 +418,178 @@ async function makePdf(planText, planName){
   return { blob, url };
 }
 
-/* ---------- Send e-mail przez Netlify Function (Resend) ---------- */
-function blobToBase64(blob){
-  return new Promise((resolve, reject)=>{
-    const r = new FileReader();
-    r.onload = () => resolve(String(r.result).split(',')[1]);
-    r.onerror = reject;
-    r.readAsDataURL(blob);
-  });
+/* ---------- NOWE: parser JSON i XLSX ---------- */
+function extractPlanJson(planText){
+  const m = planText.match(/```json\s*([\s\S]*?)```/i);
+  if(!m) return null;
+  try { return JSON.parse(m[1]); } catch(e){ console.warn('JSON parse error', e); return null; }
 }
-async function sendPlanByEmail(pdfBlob, planName){
+function buildXlsxFromPlan(planJson, planName){
+  if(!planJson || !planJson.week) return null;
+  const wb = XLSX.utils.book_new();
+  const HEAD = ['ĆWICZENIE','SERIE','POWTÓRZENIA','PRZERWA','RIR','RPE','TEMPO','KOMENTARZ / WYKONANIE','NUMER SERII'];
+
+  planJson.week.forEach(day=>{
+    const isRest = (day.type||'').toUpperCase()==='REST' || /odp/i.test(day.label||'');
+    const title = (day.weekday || 'Dzień').slice(0,20) + (day.label ? ` — ${day.label}` : '');
+    if(isRest){
+      const ws = XLSX.utils.aoa_to_sheet([[title],[ 'Odpoczynek' ]]);
+      XLSX.utils.book_append_sheet(wb, ws, day.weekday?.substring(0,31) || 'REST');
+      return;
+    }
+    const rows = [HEAD];
+    (day.exercises||[]).forEach(ex=>{
+      rows.push([
+        ex.name || '',
+        ex.sets ?? '',
+        ex.reps || '8-12',
+        (ex.rest_min!=null? `${ex.rest_min}min` : ''),
+        ex.rir || 'X',
+        ex.rpe ?? '',
+        ex.tempo || 'X',
+        ex.comment || '',
+        ''
+      ]);
+    });
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [
+      {wch:34},{wch:6},{wch:12},{wch:10},{wch:6},{wch:6},{wch:8},{wch:24},{wch:10}
+    ];
+    XLSX.utils.book_append_sheet(wb, ws, (day.weekday||'Dzien').substring(0,31));
+  });
+
+  const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+  const blob = new Blob([wbout], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const url = URL.createObjectURL(blob);
+  return { blob, url, filename: (planName||'plan') + '.xlsx' };
+}
+
+/* ---------- ZAMIANA: wysyłka e-mail (dowolny plik) ---------- */
+async function sendPlanByEmail(fileBlob, planName, filename){
   try {
     const to = localStorage.getItem('hp_email');
     if(!to){ console.warn('Brak e-maila w localStorage (hp_email).'); return; }
-    const b64 = pdfBlob ? await blobToBase64(pdfBlob) : null;
+
+    function blobToBase64(b){
+      return new Promise((resolve, reject)=>{
+        const r = new FileReader();
+        r.onload = ()=> resolve(String(r.result).split(',')[1]);
+        r.onerror = reject;
+        r.readAsDataURL(b);
+      });
+    }
+    const b64 = fileBlob ? await blobToBase64(fileBlob) : null;
+
     const resp = await fetch('/.netlify/functions/send-email', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
         to,
         subject: planName || 'Twój plan treningowy',
-        html: '<p>W załączniku Twój plan (PDF). Dziękujemy za skorzystanie z HybridPlanner.</p>',
+        html: '<p>W załączniku Twój plan. Dziękujemy za skorzystanie z HybridPlanner.</p>',
         attachmentBase64: b64,
-        filename: 'plan.pdf'
+        filename: filename || 'plan.xlsx'
       })
     });
+
     if(!resp.ok){
       const t = await resp.text();
       console.error('Resend error:', t);
       alert('Nie udało się wysłać e-maila. Spróbuj ponownie.');
     }
-  } catch(e){ console.error(e); }
+  } catch(e){
+    console.error(e);
+    alert('Nie udało się wysłać e-maila (wyjątek).');
+  }
 }
-window.hpOnPlanReady = async function(pdfBlob, planName){
-  try { await sendPlanByEmail(pdfBlob, planName); }
+window.hpOnPlanReady = async function(fileBlob, planName, filename){
+  try { await sendPlanByEmail(fileBlob, planName, filename); }
   catch(e){ console.error(e); }
 };
 
-/* ---------- Generowanie (z backendem lub fallback) ---------- */
+/* ---------- (Opcjonalnie) backend OpenAI ---------- */
+/*
+async function callBackendGenerateWithPrompt(payload){
+  const prompt = buildPrompt(payload, localStorage.getItem('hp_lang')||'pl');
+  const res = await fetch('/.netlify/functions/generate-plan', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ prompt, mode: payload.mode, inputs: payload.inputs })
+  });
+  if(!res.ok) throw new Error(await res.text());
+  return await res.json(); // { planText: "...", planName: "..." }
+}
+*/
+
+/* ---------- Generowanie (XLSX z JSON + PDF opis) ---------- */
 const genBtn = document.getElementById('genBtn');
 const dlBtn  = document.getElementById('dlBtn');
 genBtn.addEventListener('click', async ()=>{
   try{
     genBtn.disabled = true; genBtn.textContent = 'Generowanie…';
     dlBtn.style.display='none'; dlBtn.removeAttribute('href');
+    const dlXlsx = document.getElementById('dlXlsx'); 
+    if(dlXlsx){ dlXlsx.style.display='none'; dlXlsx.removeAttribute('href'); }
 
     const payload = buildPayload();
 
-    // 1) Jeśli masz funkcję backendową — odkomentuj poniższe 3 linie:
+    // 1) (Jeśli masz backend) odkomentuj:
     // const { planText, planName } = await callBackendGenerateWithPrompt(payload);
 
-    // 2) Fallback lokalny (bez OpenAI):
-    const { planText, planName } = localGenerateText(payload);
+    // 2) Fallback DEMO bez backendu – generujemy prompt + przykładowy JSON,
+    //    żeby interfejs działał od razu. Backend nadpisze to realną odpowiedzią.
+    const { planText, planName } = (function demo(){
+      const txt = buildPrompt(payload, localStorage.getItem('hp_lang')||'pl');
+      const sampleJson = {
+        meta:{language:'pl', sessionsPerWeek: payload.inputs.sessionsPerWeek||3},
+        week:[
+          { weekday:'Poniedziałek', type:'TRAINING', label:'PUSH', exercises:[
+            {name:'Flat bench press', sets:4, reps:'8-12', rest_min:3, rir:'X', rpe:9, tempo:'X', comment:''},
+            {name:'Incline bench press', sets:3, reps:'8-12', rest_min:3, rir:'X', rpe:8, tempo:'X', comment:''},
+            {name:'Overhead press', sets:3, reps:'8-12', rest_min:3, rir:'X', rpe:8, tempo:'X', comment:''},
+            {name:'Triceps extension', sets:3, reps:'8-12', rest_min:2, rir:'X', rpe:8, tempo:'X', comment:''},
+            {name:'Lateral raise', sets:3, reps:'8-12', rest_min:2, rir:'X', rpe:8, tempo:'X', comment:''},
+            {name:'Hanging knee raises', sets:3, reps:'8-12', rest_min:2, rir:'X', rpe:8, tempo:'X', comment:''}
+          ]},
+          { weekday:'Wtorek', type:'REST', label:'Odpoczynek', exercises:[]},
+          { weekday:'Środa', type:'TRAINING', label:'PULL', exercises:[
+            {name:'Lat pulldown', sets:4, reps:'8-12', rest_min:3, rir:'X', rpe:9, tempo:'X', comment:''},
+            {name:'Horizontal row 45*', sets:3, reps:'8-12', rest_min:3, rir:'X', rpe:8, tempo:'X', comment:''},
+            {name:'Bent over row', sets:3, reps:'8-12', rest_min:3, rir:'X', rpe:8, tempo:'X', comment:''},
+            {name:'Biceps curl', sets:3, reps:'8-12', rest_min:2, rir:'X', rpe:8, tempo:'X', comment:''},
+            {name:'Hammer curl', sets:3, reps:'8-12', rest_min:2, rir:'X', rpe:8, tempo:'X', comment:''},
+            {name:'Forearm curl', sets:3, reps:'8-12', rest_min:2, rir:'X', rpe:8, tempo:'X', comment:''}
+          ]},
+          { weekday:'Czwartek', type:'REST', label:'Odpoczynek', exercises:[]},
+          { weekday:'Piątek', type:'TRAINING', label:'LEGS', exercises:[
+            {name:'Squat', sets:4, reps:'8-12', rest_min:3, rir:'X', rpe:9, tempo:'X', comment:''},
+            {name:'Leg extension', sets:3, reps:'8-12', rest_min:2, rir:'X', rpe:8, tempo:'X', comment:''},
+            {name:'Deadlift', sets:3, reps:'8-12', rest_min:3, rir:'X', rpe:9, tempo:'X', comment:''},
+            {name:'Leg curl', sets:3, reps:'8-12', rest_min:2, rir:'X', rpe:8, tempo:'X', comment:''},
+            {name:'Calf raises', sets:3, reps:'8-12', rest_min:2, rir:'X', rpe:8, tempo:'X', comment:''}
+          ]},
+          { weekday:'Sobota', type:'REST', label:'Odpoczynek', exercises:[]},
+          { weekday:'Niedziela', type:'REST', label:'Odpoczynek', exercises:[]}
+        ]
+      };
+      const combined = `\`\`\`json\n${JSON.stringify(sampleJson,null,2)}\n\`\`\`\n\nTo nie jest porada medyczna.`;
+      return { planText: combined, planName: 'Plan Treningowy' };
+    })();
 
-    // 3) PDF
-    const { blob, url } = await makePdf(planText, planName);
-    dlBtn.href = url; dlBtn.style.display='inline-flex';
+    // 3) JSON → XLSX
+    const planJson = extractPlanJson(planText);
+    let xlsxOut = null;
+    if(planJson){
+      xlsxOut = buildXlsxFromPlan(planJson, planName);
+      if(xlsxOut){
+        const dlXlsx = document.getElementById('dlXlsx');
+        if(dlXlsx){ dlXlsx.href = xlsxOut.url; dlXlsx.download = xlsxOut.filename; dlXlsx.style.display='inline-flex'; }
+        await window.hpOnPlanReady(xlsxOut.blob, planName, xlsxOut.filename);
+      }
+    }
 
-    // 4) E-mail
-    await window.hpOnPlanReady(blob, planName);
+    // 4) PDF z opisem (bez bloku JSON w treści)
+    const { blob:pdfBlob, url:pdfUrl } = await makePdf(planText.replace(/```json[\s\S]*?```/g,''), planName);
+    dlBtn.href = pdfUrl; dlBtn.style.display='inline-flex';
 
     genBtn.textContent = 'Gotowe ✓';
   }catch(e){
