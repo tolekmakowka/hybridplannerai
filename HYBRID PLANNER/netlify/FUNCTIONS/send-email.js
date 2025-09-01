@@ -17,7 +17,6 @@ function corsHeaders(origin) {
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Max-Age': '86400',
-    'Content-Type': 'application/json; charset=utf-8'
   };
 }
 
@@ -54,21 +53,22 @@ exports.handler = async (event) => {
       };
     }
 
-    const from = 'no-reply@tgmproject.net'; // zweryfikowana domena Resend
+    const from = 'no-reply@tgmproject.net';
     const payload = {
       from,
       to,
       subject: subject || 'Twój plan treningowy',
       html: html || '<p>W załączniku Twój plan.</p>',
-      attachments: (attachmentBase64 && filename)
-        ? [{ content: attachmentBase64, filename }]
-        : []
+      attachments: (attachmentBase64 && filename) ? [{
+        content: attachmentBase64,
+        filename
+      }] : []
     };
 
     const r = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Authorization': 'Bearer ' + RESEND_API_KEY,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
