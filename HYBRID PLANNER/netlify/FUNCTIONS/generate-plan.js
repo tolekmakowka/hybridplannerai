@@ -1,7 +1,6 @@
 // netlify/functions/generate-plan.js
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-// ORIGINS dopuszczone do CORS – te same co w send-email.js
 const ALLOWED_ORIGINS = new Set([
   'https://tgmproject.net',
   'https://www.tgmproject.net',
@@ -25,7 +24,6 @@ function corsHeaders(origin) {
 exports.handler = async (event) => {
   const origin = event.headers?.origin || '';
 
-  // Preflight
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: corsHeaders(origin) };
   }
@@ -57,15 +55,14 @@ exports.handler = async (event) => {
       };
     }
 
-    // Zapytanie do OpenAI (chat.completions)
-    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+    const oa = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',       // możesz zmienić na inny dostępny model
+        model: 'gpt-4o-mini',
         temperature: 0.4,
         max_tokens: 2200,
         messages: [
@@ -75,24 +72,20 @@ exports.handler = async (event) => {
       })
     });
 
-    const raw = await resp.text();
-    if (!resp.ok) {
+    const raw = await oa.text();
+    if (!oa.ok) {
       return {
-        statusCode: resp.status || 500,
+        statusCode: oa.status || 500,
         headers: corsHeaders(origin),
         body: JSON.stringify({ error: 'OpenAI error', details: raw })
       };
     }
 
-    let data;
-    try { data = JSON.parse(raw); } catch { data = {}; }
-    const planText =
-      data?.choices?.[0]?.message?.content?.trim?.() ||
-      'Nie udało się wygenerować planu.';
+    let data = {};
+    try { data = JSON.parse(raw); } catch {}
 
-    const planName = mode === 'A'
-      ? 'Plan Treningowy'
-      : 'Hybrydowy Plan Treningowy';
+    const planText = data?.choices?.[0]?.message?.content?.trim?.() || 'Nie udało się wygenerować planu.';
+    const planName = mode === 'A' ? 'Plan Treningowy' : 'Hybrydowy Plan Treningowy';
 
     return {
       statusCode: 200,
