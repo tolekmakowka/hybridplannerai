@@ -1,5 +1,4 @@
 // netlify/functions/generate-plan.js
-// Groq chat.completions (zgodne z API OpenAI)
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
 const ALLOWED_ORIGINS = new Set([
@@ -24,8 +23,9 @@ function corsHeaders(origin) {
 
 exports.handler = async (event) => {
   const origin = event.headers?.origin || '';
+  const qs = event.queryStringParameters || {};
 
-  // Preflight
+  // preflight
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: corsHeaders(origin) };
   }
@@ -33,29 +33,48 @@ exports.handler = async (event) => {
     return { statusCode: 405, headers: corsHeaders(origin), body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
+  // 🔍 1) HEALTH-CHECK: ?debug=1 — nie woła Groq, zwraca status
+  if (qs.debug === '1') {
+    return {
+      statusCode: 200,
+      headers: corsHeaders(origin),
+      body: JSON.stringify({
+        ok: true,
+        route: '/.netlify/functions/generate-plan',
+        method: event.httpMethod,
+        receivedOrigin: origin || null,
+        referer: event.headers?.referer || null,
+        hasGroqKey: Boolean(GROQ_API_KEY),
+        node: process.version,
+        netlifyRegion: process.env.AWS_REGION || null,
+        allowedOrigins: Array.from(ALLOWED_ORIGINS)
+      })
+    };
+  }
+
+  // 🔔 normalny tryb (Groq)
   try {
     if (!GROQ_API_KEY) {
       return { statusCode: 500, headers: corsHeaders(origin), body: JSON.stringify({ error: 'GROQ_API_KEY not set' }) };
     }
 
     let body = {};
-    try { body = JSON.parse(event.body || '{}'); }
-    catch { return { statusCode: 400, headers: corsHeaders(origin), body: JSON.stringify({ error: 'Bad JSON' }) }; }
-
+    try { body = JSON.parse(event.body || '{}'); } catch {
+      return { statusCode: 400, headers: corsHeaders(origin), body: JSON.stringify({ error: 'Bad JSON' }) };
+    }
     const { mode = 'A', prompt = '', lang = 'pl' } = body;
-    if (!prompt || typeof prompt !== 'string') {
+    if (!prompt) {
       return { statusCode: 400, headers: corsHeaders(origin), body: JSON.stringify({ error: 'Missing "prompt"' }) };
     }
 
-    // Wywołanie GROQ (ścieżka zgodna z OpenAI):
-    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${GROQ_API_KEY}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'llama3-70b-8192',       // ewentualnie 'mixtral-8x7b-32768'
+        model: 'llama3-70b-8192',
         temperature: 0.4,
         max_tokens: 3500,
         messages: [
@@ -65,38 +84,26 @@ exports.handler = async (event) => {
       })
     });
 
-    const rawText = await resp.text();
-    if (!resp.ok) {
-      // Zwróć treść błędu do przeglądarki — frontend pokaże fallback i zaloguje błąd
+    const raw = await r.text();
+    if (!r.ok) {
       return {
-        statusCode: resp.status || 500,
+        statusCode: r.status || 500,
         headers: corsHeaders(origin),
-        body: JSON.stringify({ error: 'Groq error', details: rawText })
+        body: JSON.stringify({ error: 'Groq error', details: raw })
       };
     }
-
-    let data = {};
-    try { data = JSON.parse(rawText); } catch {/* leave empty */}
-    const planText = data?.choices?.[0]?.message?.content?.trim?.() || '';
-
+    const data = JSON.parse(raw);
+    const planText = data?.choices?.[0]?.message?.content?.trim?.();
     if (!planText) {
       return { statusCode: 502, headers: corsHeaders(origin), body: JSON.stringify({ error: 'Empty completion from Groq' }) };
     }
 
-    const planName = mode === 'A' ? (lang.startsWith('en') ? 'Training Plan' : 'Plan Treningowy') 
-                                  : (lang.startsWith('en') ? 'Hybrid Training Plan' : 'Hybrydowy Plan Treningowy');
+    const planName = mode === 'A'
+      ? (lang.startsWith('en') ? 'Training Plan' : 'Plan Treningowy')
+      : (lang.startsWith('en') ? 'Hybrid Training Plan' : 'Hybrydowy Plan Treningowy');
 
-    // <<<<<<<<<<<<<<<<<<<<<<  WAŻNE: klucze zgodne z frontendem  >>>>>>>>>>>>>>>>>>>>>>
-    return {
-      statusCode: 200,
-      headers: corsHeaders(origin),
-      body: JSON.stringify({ planText, planName })
-    };
+    return { statusCode: 200, headers: corsHeaders(origin), body: JSON.stringify({ planText, planName }) };
   } catch (e) {
-    return {
-      statusCode: 500,
-      headers: corsHeaders(origin),
-      body: JSON.stringify({ error: 'Unhandled exception', message: String(e) })
-    };
+    return { statusCode: 500, headers: corsHeaders(origin), body: JSON.stringify({ error: 'Unhandled exception', message: String(e) }) };
   }
 };
