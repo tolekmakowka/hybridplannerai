@@ -124,7 +124,7 @@ section.snap{padding:64px 0}
 
   .grid-2{ grid-template-columns: 1fr; gap:20px; }
   .right-stack{ grid-template-columns: 1fr; gap: 12px; }
-  /* >>> teraz chowamy pierwsze zdjęcie (Bytol1), a widoczne zostaje „ścianka” (Bytol2) */
+  /* chowamy pierwsze zdjęcie (Bytol1) na mobile */
   .right-stack .climb-photo{ display:none; }
 
   .joinhere-card{ height: 180px; }
@@ -136,6 +136,10 @@ section.snap{padding:64px 0}
   .btn{ padding: 10px 14px; font-size: 15px; border-radius: 10px; }
   .card-light{ padding: 16px; border-radius: 14px; }
   #pricing .card-light .btn{ padding:16px 18px; font-size:18px; }
+
+  /* >>> NOWOŚĆ: więcej odstępu między ofertą a linkami (Polityka/Regulamin/...) */
+  #pricing .legal-row{ margin-top: 56px !important; padding-bottom: 24px; }
+  #pricing .legal-row nav{ width:100%; justify-content:center; gap:20px; }
 }
 </style>
 </head>
@@ -191,9 +195,9 @@ section.snap{padding:64px 0}
           </div>
 
           <div class="right-stack reveal-stagger">
-            <!-- Teraz to zdjęcie CHOWA się na mobile -->
+            <!-- To zdjęcie chowamy na mobile -->
             <img class="round climb-photo" src="assets/Bytol1.jpg" alt="Bytol 1" style="height:220px;object-fit:cover">
-            <!-- A to z „ścianką” zostaje widoczne także na mobile -->
+            <!-- „Ścianka” pozostaje widoczna -->
             <img class="round" src="assets/Bytol2.jpg" alt="Bytol 2" style="height:220px;object-fit:cover">
             <a href="#pricing" class="joinhere-card" aria-label="Przejdź do oferty — Join here">
               <span class="joinhere-text">JOIN HERE</span>
@@ -259,8 +263,8 @@ section.snap{padding:64px 0}
         </article>
       </div>
 
-      <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between;margin-top:24px">
-        <!-- Usunięto: „Minimalna objętość, maksymalne efekty.” -->
+      <!-- TU: dodana klasa legal-row (reszta bez zmian) -->
+      <div class="legal-row" style="display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between;margin-top:24px">
         <nav style="display:flex;gap:16px">
           <a id="legalPolicy" href="#" style="color:#6a6966">Polityka</a>
           <a id="legalTerms" href="#" style="color:#6a6966">Regulamin</a>
