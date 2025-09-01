@@ -26,7 +26,7 @@ p{font:400 16px/1.6 Inter;margin:0}
 
 /* ====== CONTINUOUS PAGE (bez snapów/stron) ====== */
 main{height:auto;overflow:visible;scroll-behavior:smooth}
-section.snap{padding:64px 0}                /* zwykłe sekcje zamiast 100vh */
+section.snap{padding:64px 0}
 .container{max-width:var(--maxw);margin:0 auto;padding:0 24px;width:100%}
 
 /* Layouty i komponenty */
@@ -46,7 +46,7 @@ section.snap{padding:64px 0}                /* zwykłe sekcje zamiast 100vh */
 .right-stack{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .right-stack .wide{grid-column:1/-1;position:relative}
 
-/* JOIN HERE — zawsze szeroki, czytelny */
+/* JOIN HERE */
 .joinhere-card{
   grid-column: 1 / -1;
   height: 220px;
@@ -69,7 +69,7 @@ section.snap{padding:64px 0}                /* zwykłe sekcje zamiast 100vh */
 }
 .joinhere-text{
   position:relative;
-  font:800 clamp(28px,7.5vw,72px)/1 Poppins;  /* responsywna wielkość */
+  font:800 clamp(28px,7.5vw,72px)/1 Poppins;
   letter-spacing:.06em;
   text-transform:uppercase;
   color:rgba(255,255,255,.18);
@@ -78,7 +78,7 @@ section.snap{padding:64px 0}                /* zwykłe sekcje zamiast 100vh */
 .joinhere-card:hover::before{ opacity:.35; filter:saturate(1.05) }
 .joinhere-card:hover .joinhere-text{ color:rgba(255,255,255,.92); transform:translateY(-1px) }
 
-/* Białe sekcje */
+/* Sekcje jasne */
 .section-light{background:#fff;color:#111}
 .section-light p{color:#5f5e5b}
 
@@ -88,7 +88,7 @@ section.snap{padding:64px 0}                /* zwykłe sekcje zamiast 100vh */
 .btn-brown{background:var(--brown);border-color:var(--brown);color:#fff}
 .btn-light{background:#fff;color:#111;border-color:#fff}
 
-/* Animacje na scroll — płynne, dla całej treści */
+/* Animacje scroll */
 .reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease, transform .6s ease}
 .reveal.show{opacity:1;transform:none}
 .reveal-stagger > *{opacity:0;transform:translateY(16px)}
@@ -119,17 +119,14 @@ section.snap{padding:64px 0}                /* zwykłe sekcje zamiast 100vh */
 }
 @media (max-width: 640px){
   .container{ padding: 0 16px; }
-
-  /* WIĘKSZE odstępy między sekcjami na mobile (kolor tła sekcji) */
-  section.snap{ padding: 72px 0; }              /* ↑ było 40px */
+  section.snap{ padding: 72px 0; }
   .section-light{ padding-top: 72px; padding-bottom: 72px; }
 
-  /* HERO jako jedna kolumna */
   .grid-2{ grid-template-columns: 1fr; gap:20px; }
-
-  /* UKRYJ zdjęcie ścianki wspinaczkowej na mobile */
   .right-stack{ grid-template-columns: 1fr; gap: 12px; }
-  .right-stack .climb-photo{ display:none; }    /* << kluczowa linia */
+  /* >>> teraz chowamy pierwsze zdjęcie (Bytol1), a widoczne zostaje „ścianka” (Bytol2) */
+  .right-stack .climb-photo{ display:none; }
+
   .joinhere-card{ height: 180px; }
   .joinhere-text{ font-size: clamp(22px, 9vw, 44px); }
 
@@ -144,10 +141,9 @@ section.snap{padding:64px 0}                /* zwykłe sekcje zamiast 100vh */
 </head>
 <body>
 
-<!-- EN/PL -->
 <a id="langToggle" class="lang-toggle" href="?lang=en" aria-label="English version">EN</a>
 
-<!-- Modal e-mail -->
+<!-- Modal e-mail (bramka) -->
 <div id="emailModal" aria-modal="true" role="dialog" style="position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center">
   <div class="box" style="background:#fff;color:#111;border-radius:16px;padding:22px;max-width:420px;width:92%;box-shadow:0 10px 40px rgba(0,0,0,.35)">
     <h3 style="margin-top:0">Dostęp do generatora</h3>
@@ -195,9 +191,10 @@ section.snap{padding:64px 0}                /* zwykłe sekcje zamiast 100vh */
           </div>
 
           <div class="right-stack reveal-stagger">
-            <img class="round" src="assets/Bytol1.jpg" alt="Bytol 1" style="height:220px;object-fit:cover">
-            <!-- ↓↓ to zdjęcie „ścianki wspinaczkowej” chowamy na mobile -->
-            <img class="round climb-photo" src="assets/Bytol2.jpg" alt="Bytol 2" style="height:220px;object-fit:cover">
+            <!-- Teraz to zdjęcie CHOWA się na mobile -->
+            <img class="round climb-photo" src="assets/Bytol1.jpg" alt="Bytol 1" style="height:220px;object-fit:cover">
+            <!-- A to z „ścianką” zostaje widoczne także na mobile -->
+            <img class="round" src="assets/Bytol2.jpg" alt="Bytol 2" style="height:220px;object-fit:cover">
             <a href="#pricing" class="joinhere-card" aria-label="Przejdź do oferty — Join here">
               <span class="joinhere-text">JOIN HERE</span>
             </a>
@@ -263,7 +260,7 @@ section.snap{padding:64px 0}                /* zwykłe sekcje zamiast 100vh */
       </div>
 
       <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between;margin-top:24px">
-        <small style="color:#6a6966">Minimalna objętość, maksymalne efekty.</small>
+        <!-- Usunięto: „Minimalna objętość, maksymalne efekty.” -->
         <nav style="display:flex;gap:16px">
           <a id="legalPolicy" href="#" style="color:#6a6966">Polityka</a>
           <a id="legalTerms" href="#" style="color:#6a6966">Regulamin</a>
@@ -292,7 +289,7 @@ section.snap{padding:64px 0}                /* zwykłe sekcje zamiast 100vh */
 </main>
 
 <script>
-/* ------- Animacje scroll (bez preloadera i auto-scroll) ------- */
+/* Animacje scroll */
 const observed = new IntersectionObserver((entries)=>{
   entries.forEach(entry=>{
     if(entry.isIntersecting){
@@ -303,7 +300,7 @@ const observed = new IntersectionObserver((entries)=>{
 },{root:null, rootMargin:'0px 0px -10% 0px', threshold:0.15});
 document.querySelectorAll('.reveal, .reveal-stagger').forEach(el=>observed.observe(el));
 
-/* ------- Bramka e-mail ------- */
+/* Bramka e-mail */
 const modal = document.getElementById('emailModal');
 const closeBtn = document.getElementById('gateClose');
 const confirmBtn = document.getElementById('gateConfirm');
@@ -346,7 +343,6 @@ document.querySelectorAll('.requires-email').forEach(a=>{
   const heroDisclaimer = document.querySelector('.hero-copy p:last-of-type');
   const featuresCards = document.querySelectorAll('#features .card-light');
   const offerCards = document.querySelectorAll('#pricing .card-light');
-  const pricingSmall = document.querySelector('#pricing small');
   const pricingButtons = document.querySelectorAll('#pricing .card-light .requires-email');
 
   const modal = document.getElementById('emailModal');
@@ -383,7 +379,6 @@ document.querySelectorAll('.requires-email').forEach(a=>{
       offerCards[0].querySelector('p').textContent = 'Full program with progression and recovery placement.';
     }
     pricingButtons.forEach(b => b.textContent = 'Generate now');
-    if (pricingSmall) pricingSmall.textContent = 'Minimum volume, maximum results.';
 
     setText('legalPolicy','Policy'); setText('legalTerms','Terms');
     setText('legalContact','Contact'); setText('legalFaq','FAQ');
@@ -425,8 +420,6 @@ document.querySelectorAll('.requires-email').forEach(a=>{
       offerCards[0].querySelector('h3').textContent = 'Plan Treningowy';
       offerCards[0].querySelector('p').textContent = 'Pełny plan z progresją i rozmieszczeniem regeneracji.';
     }
-    pricingButtons.forEach(b => b.textContent = 'Wygeneruj teraz');
-    if (pricingSmall) pricingSmall.textContent = 'Minimalna objętość, maksymalne efekty.';
 
     setText('legalPolicy','Polityka'); setText('legalTerms','Regulamin');
     setText('legalContact','Kontakt'); setText('legalFaq','FAQ');
