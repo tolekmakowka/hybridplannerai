@@ -29,7 +29,7 @@ main{height:100vh;overflow-y:auto;scroll-snap-type:y mandatory;scroll-behavior:s
 section.snap{min-height:100vh;scroll-snap-align:start;position:relative;display:flex;align-items:center}
 .container{max-width:var(--maxw);margin:0 auto;padding:0 24px;width:100%}
 
-/* Preloader na każdej sekcji */
+/* Preloader */
 .pre{position:absolute;inset:0;display:grid;place-items:center;z-index:3;pointer-events:none;opacity:0;transition:opacity .35s}
 .pre.dark{background:rgba(0,0,0,.55)}
 .pre.light{background:rgba(255,255,255,.9)}
@@ -48,7 +48,7 @@ section.snap{min-height:100vh;scroll-snap-align:start;position:relative;display:
 .icon-dot{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .icon-dot img{width:22px;height:22px;object-fit:contain}
 
-/* Hero (ciemny kontener) */
+/* Hero */
 .hero-bg{width:100%;border-radius:24px;border:1px solid var(--border);padding:28px;background:linear-gradient(180deg,#191919,#121212);box-shadow:var(--shadow);overflow:hidden;position:relative}
 .curves{position:absolute;inset:0;pointer-events:none;opacity:.25}
 .curves svg{width:100%;height:100%}
@@ -68,7 +68,7 @@ section.snap{min-height:100vh;scroll-snap-align:start;position:relative;display:
 .btn-brown{background:var(--brown);border-color:var(--brown);color:#fff}
 .btn-light{background:#fff;color:#111;border-color:#fff}
 
-/* Animacje treści */
+/* Animacje treści (zostawione lekkie fade-in dla elementów, bez „typewriter”) */
 .reveal{opacity:0;transform:translateY(14px);transition:opacity .6s ease, transform .6s ease}
 .reveal.show{opacity:1;transform:none}
 .reveal-stagger > *{opacity:0;transform:translateY(16px)}
@@ -78,7 +78,6 @@ section.snap{min-height:100vh;scroll-snap-align:start;position:relative;display:
 .reveal-stagger.show > *:nth-child(3){animation-delay:.25s}
 .reveal-stagger.show > *:nth-child(4){animation-delay:.35s}
 @keyframes st{to{opacity:1;transform:none}}
-.typewriter span{opacity:0;transition:opacity .08s}
 
 /* Autoplay toggle */
 .autoplay-toggle{position:fixed;right:16px;bottom:16px;z-index:50;background:#111;color:#fff;border:1px solid #333;padding:8px 12px;border-radius:10px;font:600 13px/1 Inter;cursor:pointer;opacity:.85}
@@ -132,35 +131,34 @@ section.snap{min-height:100vh;scroll-snap-align:start;position:relative;display:
 }
 .lang-toggle:hover{opacity:1}
 
-/* ========= MOBILE POLISH (dopisek) ========= */
-
-/* stabilna wysokość viewportu na mobile */
+/* ========= MOBILE TUNING ========= */
 section.snap{ min-height: 100svh; }
 
-/* 2 kolumny na tablet */
 @media (max-width: 900px){
   .grid-3{ grid-template-columns: repeat(2, 1fr); }
 }
 
-/* 1 kolumna i dopracowane proporcje na telefonie */
 @media (max-width: 640px){
   .container{ padding: 0 16px; }
 
-  /* >>> DODANE: większy odstęp pomiędzy sekcjami na mobile <<< */
+  /* większy odstęp pomiędzy sekcjami na mobile */
   #features .container { padding-bottom: 28px; }
   #pricing  .container { padding-top: 28px; }
 
+  /* HERO: proporcjonalny układ */
+  .grid-2{ grid-template-columns:1fr; gap:18px; }
   .hero-bg{ padding: 18px; border-radius: 14px; }
   .kicker{ font-size: 12px; }
   h1{ font-size: clamp(26px, 7vw, 34px); }
   h2{ font-size: 24px; }
   p{  font-size: 15px; }
+
   .btn{ padding: 10px 14px; font-size: 15px; border-radius: 10px; }
 
   .right-stack{ grid-template-columns: 1fr; gap: 12px; }
   .round{
     width: 100%;
-    height: auto !important;  /* nadpisuje inline height */
+    height: auto !important;
     aspect-ratio: 4 / 3;
     object-fit: cover;
   }
@@ -218,7 +216,8 @@ section.snap{ min-height: 100svh; }
         <div class="grid-2">
           <div class="hero-copy">
             <span class="kicker reveal">HybridPlanner • AI</span>
-            <h1 id="heroH1" class="typewriter" data-typer="Ty masz cele, dzięki nam stają się rzeczywistością."></h1>
+            <!-- BEZ ANIMACJI: tekst widoczny od razu -->
+            <h1 id="heroH1" class="reveal">Ty masz cele, dzięki nam stają się rzeczywistością.</h1>
             <p id="heroDesc" class="reveal" style="max-width:560px;margin-top:12px">
               Plan Treningowy (12 tygodni) lub Hybrydowy Plan Treningowy (4 tygodnie). Minimalna objętość, maksymalne efekty.
             </p>
@@ -245,7 +244,8 @@ section.snap{ min-height: 100svh; }
   <section id="features" class="snap section-light">
     <div class="pre light"><div class="loader"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
     <div class="container">
-      <h2 id="featuresTitle" class="reveal typewriter" data-typer="Co zawiera program"></h2>
+      <!-- BEZ „typewriter” -->
+      <h2 id="featuresTitle" class="reveal">Co zawiera program</h2>
       <div class="grid-3" style="margin-top:20px">
         <article class="card-light reveal">
           <div class="icon-dot">
@@ -346,17 +346,7 @@ section.snap{ min-height: 100svh; }
 <button id="autoBtn" class="autoplay-toggle" aria-pressed="true">Auto: ON</button>
 
 <script>
-/* ------- Typewriter + preloader + auto-scroll (30s) ------- */
-function initTypewriter(el){
-  if(!el || el.dataset.ready) return;
-  const text = el.dataset.typer || "";
-  el.dataset.ready = "1";
-  el.innerHTML = [...text].map((ch,i)=>{
-    if(ch === '\n' || ch === '\r'){ return '<br>'; }
-    return `<span style="--i:${i}">${ch}</span>`;
-  }).join('');
-  requestAnimationFrame(()=> el.classList.add('start'));
-}
+/* ------- Preloader + reveal (bez „typewriter”) ------- */
 const snaps = document.querySelectorAll('section.snap');
 const io = new IntersectionObserver((entries)=>{
   entries.forEach(entry=>{
@@ -369,11 +359,9 @@ const io = new IntersectionObserver((entries)=>{
           pre.style.opacity = 0;
           sec.dataset.loaded = "1";
           sec.querySelectorAll('.reveal, .reveal-stagger').forEach(x=>x.classList.add('show'));
-          sec.querySelectorAll('.typewriter').forEach(initTypewriter);
         }, 450);
       }else{
         sec.querySelectorAll('.reveal, .reveal-stagger').forEach(x=>x.classList.add('show'));
-        sec.querySelectorAll('.typewriter').forEach(initTypewriter);
       }
     }
   });
@@ -397,7 +385,6 @@ function advance(){
 setInterval(advance, 30000);
 
 window.addEventListener('load', ()=>{
-  snaps[0].querySelectorAll('.typewriter').forEach(initTypewriter);
   const pre = snaps[0].querySelector('.pre');
   pre.style.opacity = 1;
   setTimeout(()=> pre.style.opacity = 0, 450);
@@ -442,7 +429,7 @@ document.querySelectorAll('.requires-email').forEach(a=>{
 });
 </script>
 
-<!-- ------- Mini i18n: EN/PL toggle (pełne tłumaczenie) ------- -->
+<!-- ------- Mini i18n: EN/PL toggle ------- -->
 <script>
 (function () {
   const params = new URLSearchParams(location.search);
@@ -452,14 +439,14 @@ document.querySelectorAll('.requires-email').forEach(a=>{
   const setText  = (id, val) => { const el = document.getElementById(id); if (el && val) el.textContent = val; };
   const toggleBtn = document.getElementById('langToggle');
 
-  // Elementy bez ID, które też tłumaczymy
-  const heroDisclaimer = document.querySelector('.hero-copy p:last-of-type'); // "To nie jest porada medyczna."
+  // Elementy pomocnicze
+  const heroDisclaimer = document.querySelector('.hero-copy p:last-of-type');
   const featuresCards = document.querySelectorAll('#features .card-light');
   const offerCards = document.querySelectorAll('#pricing .card-light');
   const pricingSmall = document.querySelector('#pricing small');
   const pricingButtons = document.querySelectorAll('#pricing .card-light .requires-email');
 
-  // Modal e-mail
+  // Modal
   const modal = document.getElementById('emailModal');
   const modalH3 = modal ? modal.querySelector('h3') : null;
   const labelEmail = modal ? modal.querySelector('label[for="gateEmail"]') : null;
@@ -467,9 +454,6 @@ document.querySelectorAll('.requires-email').forEach(a=>{
   const gateConfirm = document.getElementById('gateConfirm');
   const gateClose = document.getElementById('gateClose');
   const gateError = document.getElementById('gateError');
-
-  // FAQ
-  const faqDetails = document.querySelectorAll('#faq details');
 
   if (lang === 'en') {
     // HERO
@@ -527,38 +511,11 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     if (gateClose) gateClose.textContent = 'Cancel';
     if (gateError) gateError.textContent = 'Enter a valid e-mail and tick the consent box.';
 
-    // FAQ
-    if (faqDetails.length >= 6) {
-      const map = [
-        ['How is my plan created?', 'The plan is generated by AI based on your short questionnaire: goal, level, equipment, time and any constraints.'],
-        ['How long does it take?', 'Usually a few seconds after submitting. You see a preview and receive an Excel file.'],
-        ['Can I train multiple disciplines per week?', 'Yes. The Hybrid Training Plan arranges the week to combine disciplines while reducing overload risk.'],
-        ['Which language will I get?', 'The interface and files are available in two languages: PL and EN.'],
-        ['What if I have an injury or condition?', 'This is not medical advice. If you have an injury or doubts, consult a doctor or physiotherapist before you start.'],
-        ['I lack full equipment. Will it work?', 'Yes. The AI adapts exercises and volume to whatever equipment you have.']
-      ];
-      map.forEach((arr, i) => {
-        const [q, a] = arr, el = faqDetails[i];
-        const sum = el.querySelector('summary'), p = el.querySelector('p');
-        if (sum) sum.textContent = q;
-        if (p) p.textContent = a;
-      });
-    }
-
-    // Toggle
     localStorage.setItem('hp_lang','en');
     if (toggleBtn){ toggleBtn.href='?lang=pl'; toggleBtn.textContent='PL'; toggleBtn.setAttribute('aria-label','Polish version'); }
 
-    // Typewriter EN
-    const h1 = document.getElementById('heroH1');
-    if (h1 && h1.classList.contains('typewriter')) {
-      h1.dataset.typer = 'You set the goals — we make them real.';
-      h1.dataset.ready = ''; h1.innerHTML = '';
-      if (typeof initTypewriter === 'function') initTypewriter(h1);
-    }
-
   } else {
-    // POLSKI (wartości jak w HTML)
+    // POLSKI
     localStorage.setItem('hp_lang','pl');
     if (toggleBtn){ toggleBtn.href='?lang=en'; toggleBtn.textContent='EN'; toggleBtn.setAttribute('aria-label','English version'); }
 
@@ -604,32 +561,6 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     setText('legalTerms','Regulamin');
     setText('legalContact','Kontakt');
     setText('legalFaq','FAQ');
-
-    // MODAL PL
-    if (modalH3) modalH3.textContent = 'Dostęp do generatora';
-    if (labelEmail) labelEmail.textContent = 'Twój e-mail';
-    if (labelConsent) labelConsent.textContent = 'Wyrażam zgodę na przetwarzanie moich danych osobowych.';
-    if (gateConfirm) gateConfirm.textContent = 'Kontynuuj';
-    if (gateClose) gateClose.textContent = 'Anuluj';
-    if (gateError) gateError.textContent = 'Podaj poprawny e-mail i zaznacz zgodę.';
-
-    // FAQ PL
-    if (faqDetails.length >= 6) {
-      const map = [
-        ['Jak powstaje mój plan?', 'Plan generuje AI na podstawie Twoich odpowiedzi w krótkiej ankiecie. Uwzględniamy cel, poziom, sprzęt, czas oraz ewentualne ograniczenia.'],
-        ['Ile to trwa?', 'Zwykle kilkanaście sekund od wysłania odpowiedzi. Otrzymujesz podgląd i plik Excel do pobrania.'],
-        ['Czy mogę trenować kilka dyscyplin w tygodniu?', 'Tak. Hybrydowy Plan Treningowy ustawia tygodniowy rozkład tak, aby łączyć dyscypliny i zminimalizować ryzyko przeciążeń.'],
-        ['W jakim języku dostanę plan?', 'Interfejs i pliki dostępne są w dwóch wersjach językowych: PL oraz EN.'],
-        ['Co jeśli mam kontuzję lub chorobę?', 'To nie jest porada medyczna. Jeśli masz uraz lub wątpliwości zdrowotne, skonsultuj się z lekarzem lub fizjoterapeutą przed rozpoczęciem.'],
-        ['Nie mam pełnego dostępu do sprzętu. Czy plan zadziała?', 'Tak. W ankiecie podajesz dostępny sprzęt, a AI dopasuje ćwiczenia i objętość do Twoich warunków.']
-      ];
-      map.forEach((arr, i) => {
-        const [q, a] = arr, el = faqDetails[i];
-        const sum = el.querySelector('summary'), p = el.querySelector('p');
-        if (sum) sum.textContent = q;
-        if (p) p.textContent = a;
-      });
-    }
   }
 })();
 </script>
