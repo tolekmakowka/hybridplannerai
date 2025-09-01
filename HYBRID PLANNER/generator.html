@@ -159,6 +159,52 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
 <!-- jsPDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
+<!-- ▼▼▼ DODANE: KONFIG + wywołanie backendu (Netlify) ▼▼▼ -->
+<script>
+/* ---------- KONFIG: stałe do Netlify Functions ---------- */
+window.HP_ORIGIN = 'https://hybridplannerai.netlify.app';
+window.HP_ENDPOINTS = {
+  generate: window.HP_ORIGIN + '/.netlify/functions/generate-plan',
+  sendEmail: window.HP_ORIGIN + '/.netlify/functions/send-email'
+};
+
+/* ---------- Wywołanie backendu: generate-plan ---------- */
+async function callBackendGenerateWithPrompt(payload){
+  const lang = (localStorage.getItem('hp_lang') || 'pl').toLowerCase();
+  const prompt = buildPrompt(payload, lang);
+
+  const res = await fetch(window.HP_ENDPOINTS.generate, {
+    method: 'POST',
+    mode: 'cors',
+    headers: {'Content-Type':'application/json', 'Accept':'application/json'},
+    body: JSON.stringify({
+      mode: payload.mode,
+      inputs: payload.inputs,
+      lang,
+      prompt
+    })
+  });
+
+  const text = await res.text();
+  if(!res.ok){
+    throw new Error(`generate-plan HTTP ${res.status}: ${text}`);
+  }
+
+  let data;
+  try { data = JSON.parse(text); }
+  catch { throw new Error('Nieprawidłowy JSON z generate-plan: ' + text.slice(0,200)); }
+
+  if(!data || !data.planText){
+    throw new Error('Brak planText w odpowiedzi generate-plan.');
+  }
+  return {
+    planText: data.planText,
+    planName: data.planName || (payload.mode === 'A' ? 'Plan treningowy' : 'Hybrydowy plan')
+  };
+}
+</script>
+<!-- ▲▲▲ KONIEC DODANEGO BLOKU ▲▲▲ -->
+
 <script>
 /* ---------- Bramka e-mail ---------- */
 (function(){
@@ -470,8 +516,11 @@ async function sendPlanByEmail(pdfBlob, planName){
     const to = localStorage.getItem('hp_email');
     if(!to){ console.warn('Brak e-maila w localStorage (hp_email).'); return; }
     const b64 = pdfBlob ? await blobToBase64(pdfBlob) : null;
-    const resp = await fetch('/.netlify/functions/send-email', {
+
+    /* ▼▼▼ PODMIANA: wywołanie przez Netlify ORIGIN + CORS ▼▼▼ */
+    const resp = await fetch(window.HP_ENDPOINTS.sendEmail, {
       method: 'POST',
+      mode: 'cors',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
         to,
@@ -481,6 +530,8 @@ async function sendPlanByEmail(pdfBlob, planName){
         filename: 'plan.pdf'
       })
     });
+    /* ▲▲▲ KONIEC PODMIANY ▲▲▲ */
+
     if(!resp.ok){
       const t = await resp.text();
       console.error('Resend error:', t);
@@ -493,27 +544,39 @@ window.hpOnPlanReady = async function(pdfBlob, planName){
   catch(e){ console.error(e); }
 };
 
-/* ---------- Generowanie (z backendem lub fallback) ---------- */
+/* ---------- Generowanie (najpierw backend, potem fallback) ---------- */
 const genBtn = document.getElementById('genBtn');
 const dlBtn  = document.getElementById('dlBtn');
+
 genBtn.addEventListener('click', async ()=>{
+  let planText, planName;
+
   try{
-    genBtn.disabled = true; genBtn.textContent = 'Generowanie…';
-    dlBtn.style.display='none'; dlBtn.removeAttribute('href');
+    genBtn.disabled = true; 
+    genBtn.textContent = 'Generowanie…';
+    dlBtn.style.display='none'; 
+    dlBtn.removeAttribute('href');
 
     const payload = buildPayload();
 
-    // 1) Jeśli masz funkcję backendową — odkomentuj poniższe 3 linie:
-    // const { planText, planName } = await callBackendGenerateWithPrompt(payload);
+    // 1) PRÓBA BACKENDU (OpenAI po stronie Netlify)
+    try {
+      const res = await callBackendGenerateWithPrompt(payload);
+      planText = res.planText;
+      planName = res.planName;
+    } catch (e) {
+      console.warn('generate-plan nie zadziałał, używam fallbacku:', e);
+      const res = localGenerateText(payload);
+      planText = res.planText;
+      planName = res.planName;
+    }
 
-    // 2) Fallback lokalny (bez OpenAI):
-    const { planText, planName } = localGenerateText(payload);
-
-    // 3) PDF
+    // 2) PDF
     const { blob, url } = await makePdf(planText, planName);
-    dlBtn.href = url; dlBtn.style.display='inline-flex';
+    dlBtn.href = url; 
+    dlBtn.style.display='inline-flex';
 
-    // 4) E-mail
+    // 3) E-mail
     await window.hpOnPlanReady(blob, planName);
 
     genBtn.textContent = 'Gotowe ✓';
