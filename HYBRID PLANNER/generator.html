@@ -162,7 +162,7 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
 <!-- ▼▼▼ DODANE: KONFIG + wywołanie backendu (Netlify) ▼▼▼ -->
 <script>
 /* ---------- KONFIG: stałe do Netlify Functions ---------- */
-window.HP_ORIGIN = 'https://hybridplannerai.netlify.app';
+window.HP_ORIGIN = location.origin; // <<< POPRAWKA: zawsze ta sama domena co strona
 window.HP_ENDPOINTS = {
   generate: window.HP_ORIGIN + '/.netlify/functions/generate-plan',
   sendEmail: window.HP_ORIGIN + '/.netlify/functions/send-email'
@@ -234,9 +234,15 @@ async function callBackendGenerateWithPrompt(payload){
     t('a1lbl','How many sessions per week would you like?');
     t('a2lbl','What is your main goal?');
     t('a3lbl','What is your activity/experience level?');
-    document.querySelector('#a3 option[value="Zaawansowany"]').textContent='Advanced';
-    document.querySelector('#a3 option[value="Średniozaawansowany"]').textContent='Intermediate';
-    document.querySelector('#a3 option[value="Początkujący"]').textContent='Beginner';
+
+    // <<< POPRAWKA: bezpieczna zmiana etykiet opcji selecta #a3
+    const a3 = document.getElementById('a3');
+    if (a3 && a3.options.length >= 3) {
+      a3.options[0].text = 'Advanced';
+      a3.options[1].text = 'Intermediate';
+      a3.options[2].text = 'Beginner';
+    }
+
     t('a4lbl','What equipment do you have access to?');
     t('a5lbl','Do you want a specific split or should I pick the best match?');
     const a5 = document.getElementById('a5');
