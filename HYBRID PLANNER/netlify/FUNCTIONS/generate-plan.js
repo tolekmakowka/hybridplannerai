@@ -1,68 +1,109 @@
 // netlify/functions/generate-plan.js
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-const ALLOWED = (process.env.ALLOWED_ORIGINS ||
-  'https://tgmproject.net,https://www.tgmproject.net,https://hybridplannerai.netlify.app'
-).split(',').map(s => s.trim());
+// ORIGINS dopuszczone do CORS – te same co w send-email.js
+const ALLOWED_ORIGINS = new Set([
+  'https://tgmproject.net',
+  'https://www.tgmproject.net',
+  'https://hybridplannerai.netlify.app',
+  'http://localhost:8888',
+  'http://localhost:5173',
+  'http://localhost:3000'
+]);
 
-function cors(origin) {
-  const allow = ALLOWED.includes(origin) ? origin : ALLOWED[0];
+function corsHeaders(origin) {
+  const allow = (origin && ALLOWED_ORIGINS.has(origin)) ? origin : '*';
   return {
     'Access-Control-Allow-Origin': allow,
-    'Access-Control-Allow-Methods': 'POST,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Max-Age': '86400',
+    'Content-Type': 'application/json; charset=utf-8'
   };
 }
 
 exports.handler = async (event) => {
-  const origin = event.headers.origin || '';
-  const headers = cors(origin);
+  const origin = event.headers?.origin || '';
 
+  // Preflight
   if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers };
+    return { statusCode: 204, headers: corsHeaders(origin) };
   }
-
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers, body: 'Method Not Allowed' };
+    return {
+      statusCode: 405,
+      headers: corsHeaders(origin),
+      body: JSON.stringify({ error: 'Method not allowed' })
+    };
   }
 
   try {
-    const { prompt, mode } = JSON.parse(event.body || '{}');
-    if (!prompt) {
-      return { statusCode: 400, headers, body: 'Missing prompt' };
+    if (!OPENAI_API_KEY) {
+      return {
+        statusCode: 500,
+        headers: corsHeaders(origin),
+        body: JSON.stringify({ error: 'OPENAI_API_KEY not set' })
+      };
     }
 
-    // Call OpenAI (bez SDK – czysty fetch)
+    const body = JSON.parse(event.body || '{}');
+    const { mode = 'A', inputs = {}, lang = 'pl', prompt } = body;
+
+    if (!prompt || typeof prompt !== 'string') {
+      return {
+        statusCode: 400,
+        headers: corsHeaders(origin),
+        body: JSON.stringify({ error: 'Missing "prompt" in body' })
+      };
+    }
+
+    // Zapytanie do OpenAI (chat.completions)
     const resp = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',        // szybki/tani. Możesz użyć "gpt-4o".
-        temperature: 0.6,
+        model: 'gpt-4o-mini',       // możesz zmienić na inny dostępny model
+        temperature: 0.4,
+        max_tokens: 2200,
         messages: [
-          { role: 'system', content: 'You are a precise workout-planning assistant. Always follow the user’s format and return a JSON code block when asked.' },
+          { role: 'system', content: 'You are an experienced strength & conditioning coach. Output plain text only (no tables or markdown tables).' },
           { role: 'user', content: prompt }
         ]
       })
     });
 
+    const raw = await resp.text();
     if (!resp.ok) {
-      const text = await resp.text();
-      return { statusCode: resp.status, headers, body: text };
+      return {
+        statusCode: resp.status || 500,
+        headers: corsHeaders(origin),
+        body: JSON.stringify({ error: 'OpenAI error', details: raw })
+      };
     }
 
-    const data = await resp.json();
-    const planText = data?.choices?.[0]?.message?.content || '';
-    const planName = mode === 'A' ? 'Plan Treningowy' : 'Hybrydowy Plan Treningowy';
+    let data;
+    try { data = JSON.parse(raw); } catch { data = {}; }
+    const planText =
+      data?.choices?.[0]?.message?.content?.trim?.() ||
+      'Nie udało się wygenerować planu.';
+
+    const planName = mode === 'A'
+      ? 'Plan Treningowy'
+      : 'Hybrydowy Plan Treningowy';
 
     return {
       statusCode: 200,
-      headers,
+      headers: corsHeaders(origin),
       body: JSON.stringify({ planText, planName })
     };
   } catch (e) {
-    return { statusCode: 500, headers, body: `OpenAI error: ${e.message}` };
+    return {
+      statusCode: 500,
+      headers: corsHeaders(origin),
+      body: JSON.stringify({ error: 'Unhandled exception', message: String(e) })
+    };
   }
 };
