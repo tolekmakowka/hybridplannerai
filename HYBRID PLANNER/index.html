@@ -113,17 +113,26 @@ section.snap{padding:64px 0}                /* zwykłe sekcje zamiast 100vh */
 /* Auto-fit siatka features */
 #features .grid-3{grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); align-items: stretch}
 
-/* MOBILE */
+/* ====== MOBILE ====== */
 @media (max-width: 900px){
   .grid-3{ grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 640px){
   .container{ padding: 0 16px; }
-  section.snap{ padding: 40px 0; }      /* naturalne sekcje, zero snapów */
-  .grid-2{ grid-template-columns: 1fr; gap:20px; }   /* hero = jedna kolumna */
+
+  /* WIĘKSZE odstępy między sekcjami na mobile (kolor tła sekcji) */
+  section.snap{ padding: 72px 0; }              /* ↑ było 40px */
+  .section-light{ padding-top: 72px; padding-bottom: 72px; }
+
+  /* HERO jako jedna kolumna */
+  .grid-2{ grid-template-columns: 1fr; gap:20px; }
+
+  /* UKRYJ zdjęcie ścianki wspinaczkowej na mobile */
   .right-stack{ grid-template-columns: 1fr; gap: 12px; }
-  .joinhere-card{ height: 180px; }      /* szerszy „JOIN HERE” i czytelny */
+  .right-stack .climb-photo{ display:none; }    /* << kluczowa linia */
+  .joinhere-card{ height: 180px; }
   .joinhere-text{ font-size: clamp(22px, 9vw, 44px); }
+
   .hero-bg{ padding: 18px; border-radius: 14px; }
   .kicker{ font-size: 12px; }
   p{  font-size: 15px; }
@@ -187,7 +196,8 @@ section.snap{padding:64px 0}                /* zwykłe sekcje zamiast 100vh */
 
           <div class="right-stack reveal-stagger">
             <img class="round" src="assets/Bytol1.jpg" alt="Bytol 1" style="height:220px;object-fit:cover">
-            <img class="round" src="assets/Bytol2.jpg" alt="Bytol 2" style="height:220px;object-fit:cover">
+            <!-- ↓↓ to zdjęcie „ścianki wspinaczkowej” chowamy na mobile -->
+            <img class="round climb-photo" src="assets/Bytol2.jpg" alt="Bytol 2" style="height:220px;object-fit:cover">
             <a href="#pricing" class="joinhere-card" aria-label="Przejdź do oferty — Join here">
               <span class="joinhere-text">JOIN HERE</span>
             </a>
@@ -268,7 +278,7 @@ section.snap{padding:64px 0}                /* zwykłe sekcje zamiast 100vh */
   <section id="faq" class="snap section-light">
     <div class="container">
       <h2 class="reveal">FAQ</h2>
-      <div class="faq-list reveal-stagger">
+      <div class="faq-list reveal-stagger" style="display:grid;gap:14px;margin-top:14px">
         <details><summary>Jak powstaje mój plan?</summary><p>Plan generuje AI na podstawie Twoich odpowiedzi w krótkiej ankiecie. Uwzględniamy cel, poziom, sprzęt, czas oraz ewentualne ograniczenia.</p></details>
         <details><summary>Ile to trwa?</summary><p>Zwykle kilkanaście sekund od wysłania odpowiedzi. Otrzymujesz podgląd i plik Excel do pobrania.</p></details>
         <details><summary>Czy mogę trenować kilka dyscyplin w tygodniu?</summary><p>Tak — tygodniowy rozkład optymalizujemy pod Twoje priorytety i regenerację.</p></details>
@@ -291,10 +301,9 @@ const observed = new IntersectionObserver((entries)=>{
     }
   });
 },{root:null, rootMargin:'0px 0px -10% 0px', threshold:0.15});
-
 document.querySelectorAll('.reveal, .reveal-stagger').forEach(el=>observed.observe(el));
 
-/* ------- Bramka e-mail (bez zmian) ------- */
+/* ------- Bramka e-mail ------- */
 const modal = document.getElementById('emailModal');
 const closeBtn = document.getElementById('gateClose');
 const confirmBtn = document.getElementById('gateConfirm');
@@ -325,7 +334,7 @@ document.querySelectorAll('.requires-email').forEach(a=>{
 });
 </script>
 
-<!-- i18n (zostawione jak było, tylko bez odniesień do preloadera) -->
+<!-- i18n -->
 <script>
 (function () {
   const params = new URLSearchParams(location.search);
