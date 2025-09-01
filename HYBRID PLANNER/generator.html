@@ -159,35 +159,14 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
 <!-- jsPDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-<!-- ▼▼▼ KONFIG: wymuszamy origin Netlify dla funkcji ▼▼▼ -->
+<!-- === KONFIG BACKENDU (relative paths – ten sam host) === -->
 <script>
-  window.HP_ORIGIN = 'https://hybridplannerai.netlify.app';
+  // Relatywne ścieżki → brak CORS, działa zarówno na tgmproject.net, jak i na netlify.app
   window.HP_ENDPOINTS = {
-    generate: window.HP_ORIGIN + '/.netlify/functions/generate-plan',
-    sendEmail: window.HP_ORIGIN + '/.netlify/functions/send-email'
+    generate: '/.netlify/functions/generate-plan',
+    sendEmail: '/.netlify/functions/send-email'
   };
-
-  async function callBackendGenerateWithPrompt(payload){
-    const lang = (localStorage.getItem('hp_lang') || 'pl').toLowerCase();
-    const prompt = buildPrompt(payload, lang);
-
-    const res = await fetch(window.HP_ENDPOINTS.generate, {
-      method: 'POST',
-      mode: 'cors',
-      headers: {'Content-Type':'application/json','Accept':'application/json'},
-      body: JSON.stringify({ mode: payload.mode, inputs: payload.inputs, lang, prompt })
-    });
-
-    const text = await res.text();
-    if(!res.ok) throw new Error(`generate-plan HTTP ${res.status}: ${text}`);
-
-    let data; try{ data = JSON.parse(text); }catch{ throw new Error('Nieprawidłowy JSON z generate-plan: ' + text.slice(0,200)); }
-    if(!data || !data.planText) throw new Error('Brak planText w odpowiedzi generate-plan.');
-
-    return { planText: data.planText, planName: data.planName || (payload.mode==='A'?'Plan treningowy':'Hybrydowy plan') };
-  }
 </script>
-<!-- ▲▲▲ KONIEC KONFIG ▲▲▲ -->
 
 <script>
 /* ---------- Bramka e-mail ---------- */
@@ -213,7 +192,6 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
     document.getElementById('btnA').textContent='Plan A — 12 weeks';
     document.getElementById('btnB').textContent='Plan B — Hybrid week (4 weeks)';
 
-    // Plan A (5 questions)
     t('hA','Plan A — questions (5)');
     t('a1lbl','How many sessions per week would you like?');
     t('a2lbl','What is your main goal?');
@@ -226,7 +204,6 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
     const a5 = document.getElementById('a5');
     a5.options[0].text='FBW'; a5.options[1].text='PPL'; a5.options[2].text='Arnold Split'; a5.options[3].text='Upper Lower'; a5.options[4].text='Best match for your needs';
 
-    // Plan B
     t('hB','Plan B — questions (10)');
     t('b1lbl','Disciplines (pick or type)'); t('b1hint','Quick pick below — click to add:');
     t('b2lbl','Priority 1'); t('b3lbl','Priority 2');
@@ -328,7 +305,7 @@ function buildPayload(){
   }
 }
 
-/* ---------- PROMPT do OpenAI ---------- */
+/* ---------- PROMPT do modelu (bez zmian merytorycznych) ---------- */
 function buildPrompt(payload, lang){
   const L = (lang || localStorage.getItem('hp_lang') || 'pl').toLowerCase();
   const isEN = L === 'en';
@@ -402,16 +379,57 @@ Create a 4-week hybrid schedule. Split the week into training vs. non-training d
 Ułóż 4-tygodniowy plan hybrydowy. Podziel tydzień na dni treningowe i nietreningowe, przypisz dni treningowe do dyscyplin z formularza, a jeśli „siłownia” jest wśród nich, zaznacz czy to dzień Upper czy Lower. Zachowaj 24–48h przerwy pomiędzy sesjami tych samych układów.`);
 
   return [
-    header, '', (isEN?'INPUTS:':'DANE WEJŚCIOWE:'), inputsBlock, '',
-    HARD_RULES_PL, '', OUTPUT_RULES, '', PLAN_REQUEST
+    header,
+    '',
+    (isEN?'INPUTS:':'DANE WEJŚCIOWE:'),
+    inputsBlock,
+    '',
+    HARD_RULES_PL,
+    '',
+    OUTPUT_RULES,
+    '',
+    PLAN_REQUEST
   ].join('\n');
 }
 
-/* ---------- Fallback lokalny ---------- */
+/* ---------- Wywołanie backendu (Netlify Functions / Groq) ---------- */
+async function callBackendGenerateWithPrompt(payload){
+  const lang = (localStorage.getItem('hp_lang') || 'pl').toLowerCase();
+  const prompt = buildPrompt(payload, lang);
+
+  const res = await fetch(window.HP_ENDPOINTS.generate, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','Accept':'application/json'},
+    body: JSON.stringify({
+      mode: payload.mode,
+      inputs: payload.inputs,
+      lang,
+      prompt
+    })
+  });
+
+  const text = await res.text();
+  if(!res.ok){
+    throw new Error(`generate-plan HTTP ${res.status}: ${text}`);
+  }
+  let data;
+  try { data = JSON.parse(text); }
+  catch { throw new Error('Nieprawidłowy JSON z generate-plan: ' + text.slice(0,200)); }
+
+  if(!data || !data.planText){
+    throw new Error('Brak planText w odpowiedzi generate-plan.');
+  }
+  return {
+    planText: data.planText,
+    planName: data.planName || (payload.mode === 'A' ? 'Plan treningowy' : 'Hybrydowy plan')
+  };
+}
+
+/* ---------- Fallback lokalny (tylko na wypadek awarii backendu) ---------- */
 function localGenerateText(payload){
   const prompt = buildPrompt(payload, localStorage.getItem('hp_lang')||'pl');
   const lines = [];
-  lines.push('=== PROMPT WYSYŁANY DO OPENAI (skrót) ===');
+  lines.push('=== PROMPT WYSYŁANY DO MODELu (skrót) ===');
   lines.push(prompt.substring(0, 800) + (prompt.length>800?' ...':''));
   lines.push('');
   lines.push('=== Szkic demonstracyjny (fallback bez AI) ===');
@@ -428,13 +446,15 @@ function localGenerateText(payload){
       lines.push('');
     }
   } else {
-    lines.push(`Tydzień 1`);
-    lines.push(`Poniedziałek — Siłownia (Upper)`);
-    lines.push(`Wtorek — Odpoczynek`);
-    lines.push(`Środa — Bieganie easy`);
-    lines.push(`Czwartek — Odpoczynek`);
-    lines.push(`Piątek — Siłownia (Lower)`);
-    lines.push(`Weekend — Regeneracja aktywna`);
+    for(let w=1; w<=1; w++){
+      lines.push(`Tydzień ${w}`);
+      lines.push(`Poniedziałek — Siłownia (Upper)`);
+      lines.push(`Wtorek — Odpoczynek`);
+      lines.push(`Środa — Bieganie easy`);
+      lines.push(`Czwartek — Odpoczynek`);
+      lines.push(`Piątek — Siłownia (Lower)`);
+      lines.push(`Weekend — Regeneracja aktywna`);
+    }
   }
   lines.push('');
   lines.push('To nie jest porada medyczna.');
@@ -462,7 +482,7 @@ async function makePdf(planText, planName){
   return { blob, url };
 }
 
-/* ---------- Mail (Resend przez Netlify Function) ---------- */
+/* ---------- E-mail przez Netlify Function (Resend) ---------- */
 function blobToBase64(blob){
   return new Promise((resolve, reject)=>{
     const r = new FileReader();
@@ -479,7 +499,6 @@ async function sendPlanByEmail(pdfBlob, planName){
 
     const resp = await fetch(window.HP_ENDPOINTS.sendEmail, {
       method: 'POST',
-      mode: 'cors',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
         to,
@@ -502,13 +521,12 @@ window.hpOnPlanReady = async function(pdfBlob, planName){
   catch(e){ console.error(e); }
 };
 
-/* ---------- Generowanie ---------- */
+/* ---------- Generowanie: backend (Groq) → PDF → e-mail ---------- */
 const genBtn = document.getElementById('genBtn');
 const dlBtn  = document.getElementById('dlBtn');
 
 genBtn.addEventListener('click', async ()=>{
   let planText, planName;
-
   try{
     genBtn.disabled = true; 
     genBtn.textContent = 'Generowanie…';
@@ -517,7 +535,7 @@ genBtn.addEventListener('click', async ()=>{
 
     const payload = buildPayload();
 
-    // Próba przez backend (OpenAI)
+    // 1) Najpierw backend (Groq przez Netlify Function)
     try {
       const res = await callBackendGenerateWithPrompt(payload);
       planText = res.planText;
@@ -529,12 +547,12 @@ genBtn.addEventListener('click', async ()=>{
       planName = res.planName;
     }
 
-    // PDF
+    // 2) PDF do pobrania
     const { blob, url } = await makePdf(planText, planName);
     dlBtn.href = url; 
     dlBtn.style.display='inline-flex';
 
-    // Mail
+    // 3) E-mail z załącznikiem
     await window.hpOnPlanReady(blob, planName);
 
     genBtn.textContent = 'Gotowe ✓';
