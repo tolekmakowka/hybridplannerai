@@ -45,7 +45,7 @@ exports.handler = async (event) => {
     }
 
     const body = JSON.parse(event.body || '{}');
-    const { mode = 'A', inputs = {}, lang = 'pl', prompt } = body;
+    const { mode = 'A', prompt } = body;
 
     if (!prompt || typeof prompt !== 'string') {
       return {
