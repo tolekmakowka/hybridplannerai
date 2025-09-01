@@ -1,7 +1,6 @@
 // netlify/functions/send-email.js
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
-// ORIGINS dopuszczone do CORS (dopisz tu, jeśli potrzebujesz inne)
 const ALLOWED_ORIGINS = new Set([
   'https://tgmproject.net',
   'https://www.tgmproject.net',
@@ -12,24 +11,23 @@ const ALLOWED_ORIGINS = new Set([
 ]);
 
 function corsHeaders(origin) {
-  const allow = (origin && ALLOWED_ORIGINS.has(origin)) ? origin : '*'; // ← na czas testów może być '*' (poluzowane)
+  const allow = (origin && ALLOWED_ORIGINS.has(origin)) ? origin : '*';
   return {
     'Access-Control-Allow-Origin': allow,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Max-Age': '86400',
+    'Content-Type': 'application/json; charset=utf-8'
   };
 }
 
 exports.handler = async (event) => {
   const origin = event.headers?.origin || '';
 
-  // 1) PRE-FLIGHT (musi zwrócić 204 + nagłówki CORS)
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: corsHeaders(origin) };
   }
 
-  // 2) Guard na metodę
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
@@ -56,16 +54,15 @@ exports.handler = async (event) => {
       };
     }
 
-    const from = 'no-reply@tgmproject.net'; // domena zweryfikowana w Resend
+    const from = 'no-reply@tgmproject.net';
     const payload = {
       from,
       to,
       subject: subject || 'Twój plan treningowy',
       html: html || '<p>W załączniku Twój plan.</p>',
-      attachments: (attachmentBase64 && filename) ? [{
-        content: attachmentBase64,
-        filename
-      }] : []
+      attachments: (attachmentBase64 && filename)
+        ? [{ content: attachmentBase64, filename }]
+        : []
     };
 
     const r = await fetch('https://api.resend.com/emails', {
