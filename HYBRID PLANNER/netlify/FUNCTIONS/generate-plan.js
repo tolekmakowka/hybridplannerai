@@ -1,6 +1,7 @@
 // netlify/functions/generate-plan.js
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
+// ORIGINS dopuszczone do CORS – te same co w send-email.js
 const ALLOWED_ORIGINS = new Set([
   'https://tgmproject.net',
   'https://www.tgmproject.net',
@@ -45,7 +46,7 @@ exports.handler = async (event) => {
     }
 
     const body = JSON.parse(event.body || '{}');
-    const { mode = 'A', prompt } = body;
+    const { mode = 'A', inputs = {}, lang = 'pl', prompt } = body;
 
     if (!prompt || typeof prompt !== 'string') {
       return {
@@ -55,10 +56,10 @@ exports.handler = async (event) => {
       };
     }
 
-    const oa = await fetch('https://api.openai.com/v1/chat/completions', {
+    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Authorization': 'Bearer ' + OPENAI_API_KEY,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -72,10 +73,11 @@ exports.handler = async (event) => {
       })
     });
 
-    const raw = await oa.text();
-    if (!oa.ok) {
+    const raw = await resp.text();
+    if (!resp.ok) {
+      console.error('OpenAI error:', raw);
       return {
-        statusCode: oa.status || 500,
+        statusCode: resp.status || 500,
         headers: corsHeaders(origin),
         body: JSON.stringify({ error: 'OpenAI error', details: raw })
       };
@@ -83,9 +85,13 @@ exports.handler = async (event) => {
 
     let data = {};
     try { data = JSON.parse(raw); } catch {}
+    const planText =
+      data?.choices?.[0]?.message?.content?.trim?.() ||
+      'Nie udało się wygenerować planu.';
 
-    const planText = data?.choices?.[0]?.message?.content?.trim?.() || 'Nie udało się wygenerować planu.';
-    const planName = mode === 'A' ? 'Plan Treningowy' : 'Hybrydowy Plan Treningowy';
+    const planName = mode === 'A'
+      ? 'Plan Treningowy'
+      : 'Hybrydowy Plan Treningowy';
 
     return {
       statusCode: 200,
@@ -93,6 +99,7 @@ exports.handler = async (event) => {
       body: JSON.stringify({ planText, planName })
     };
   } catch (e) {
+    console.error('Unhandled exception:', e);
     return {
       statusCode: 500,
       headers: corsHeaders(origin),
