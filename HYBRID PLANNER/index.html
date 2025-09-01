@@ -44,7 +44,7 @@ section.snap{min-height:100vh;scroll-snap-align:start;position:relative;display:
 .grid-2{display:grid;grid-template-columns:1.1fr .9fr;gap:32px;align-items:center}
 .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
 .card-light{background:#fff;border:1px solid #EEE;border-radius:16px;padding:20px}
-.round{border-radius:16px;border:1px solid var(--border);background:#1a1a1a}
+.round{border-radius:16px;border:1px solid --border;background:#1a1a1a}
 .icon-dot{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .icon-dot img{width:22px;height:22px;object-fit:contain}
 
@@ -133,25 +133,27 @@ section.snap{min-height:100vh;scroll-snap-align:start;position:relative;display:
 
 /* ====== ZMIANA: pełna szerokość CTA w ofercie ====== */
 #pricing .card-light .btn{
-  display:block;           /* było inline-flex */
-  width:100%;              /* pełna szerokość wnętrza karty */
-  text-align:center;       /* wyśrodkowanie tekstu */
+  display:block;
+  width:100%;
+  text-align:center;
   padding:16px 20px;
   font-size:17px;
 }
 
-/* MOBILE dopracowanie */
-section.snap{ min-height: 100svh; }
+/* ====== ZMIANA: siatka features auto-fit (ładny układ po usunięciu 1 karty) ====== */
+#features .grid-3{
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  align-items: stretch;
+}
 
-/* przerwy i łagodniejsze snapowanie na telefonie */
+/* MOBILE */
+section.snap{ min-height: 100svh; }
 @media (max-width: 640px){
   main{ scroll-snap-type: y proximity; }
   section.snap{ margin-bottom: 12px; }
   .container{ padding: 0 16px; }
-
   #features .container { padding-bottom: 28px; }
   #pricing  .container { padding-top: 28px; }
-
   .hero-bg{ padding: 18px; border-radius: 14px; }
   .kicker{ font-size: 12px; }
   h1{ font-size: clamp(26px, 7vw, 34px); }
@@ -164,11 +166,10 @@ section.snap{ min-height: 100svh; }
   .bigcta{ font-size: 28px; }
   .grid-3{ grid-template-columns: 1fr; gap: 16px; }
   .card-light{ padding: 16px; border-radius: 14px; }
-
   #pricing .card-light .btn{ padding:16px 18px; font-size:18px; }
 }
 
-/* 2 kolumny na tablet */
+/* Tablet */
 @media (max-width: 900px){
   .grid-3{ grid-template-columns: repeat(2, 1fr); }
 }
@@ -207,7 +208,7 @@ section.snap{ min-height: 100svh; }
         <div class="curves" aria-hidden="true">
           <svg viewBox="0 0 1200 500" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M-50 430C200 290 380 560 650 430C920 300 1040 380 1250 260" stroke="#2A2A2A" stroke-width="1.2"/>
-            <path d="M-120 360C120 220 360 420 620 320C880 220 1040 320 1260 180" stroke="#2A2AA" stroke-width="1.2"/>
+            <path d="M-120 360C120 220 360 420 620 320C880 220 1040 320 1260 180" stroke="#2A2A2A" stroke-width="1.2"/>
             <path d="M-90 300C150 180 350 300 580 220C820 140 1030 220 1240 120" stroke="#2A2A2A" stroke-width="1.2"/>
           </svg>
         </div>
@@ -262,12 +263,7 @@ section.snap{ min-height: 100svh; }
           </div>
           <p id="featPdfDesc">Plan wysyłany po wygenerowaniu na email w formacie pliku Excel.</p>
         </article>
-        <article class="card-light reveal">
-          <div class="icon-dot">
-            <img src="assets/target_15023730.svg" alt="Indywidualny wybór dyscyplin"><strong>Indywidualny wybór dyscyplin</strong>
-          </div>
-          <p>Wybierz i łącz dyscypliny zgodnie z priorytetami i dostępnością.</p>
-        </article>
+        <!-- USUNIĘTA karta „Indywidualny wybór dyscyplin” -->
         <article class="card-light reveal">
           <div class="icon-dot">
             <img src="assets/clipboard_15409277.svg" alt="Uniwersalne nazewnictwo ćwiczeń"><strong>Uniwersalne nazewnictwo ćwiczeń</strong>
@@ -433,13 +429,21 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     if (heroDisclaimer) heroDisclaimer.textContent = 'This is not medical advice.';
 
     setText('featuresTitle','What’s included');
-    if (featuresCards.length >= 6) {
+    if (featuresCards.length === 5) {
       featuresCards[0].querySelector('.icon-dot strong').textContent = 'AI Personalization';
+      featuresCards[0].querySelector('p').textContent = 'Tailored to your goal, level, available weekly time and constraints.';
+
       featuresCards[1].querySelector('.icon-dot strong').textContent = 'Safe progression';
+      featuresCards[1].querySelector('p').textContent = '24–48 h spacing between hard stimuli, deloads and volume control.';
+
       featuresCards[2].querySelector('.icon-dot strong').textContent = 'Preview + Excel file';
-      featuresCards[3].querySelector('.icon-dot strong').textContent = 'Custom discipline selection';
-      featuresCards[4].querySelector('.icon-dot strong').textContent = 'Universal exercise naming';
-      featuresCards[5].querySelector('.icon-dot strong').textContent = 'Detailed weekly layout';
+      featuresCards[2].querySelector('p').textContent = 'Your plan is emailed as an Excel file right after generation.';
+
+      featuresCards[3].querySelector('.icon-dot strong').textContent = 'Universal exercise naming';
+      featuresCards[3].querySelector('p').textContent = 'Unified PL/EN names — easy to recognise and search.';
+
+      featuresCards[4].querySelector('.icon-dot strong').textContent = 'Detailed weekly layout';
+      featuresCards[4].querySelector('p').textContent = 'A week laid out day by day with recovery placement and progression.';
     }
 
     setText('offerTitle','Offer');
@@ -472,13 +476,21 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     if (heroDisclaimer) heroDisclaimer.textContent = 'To nie jest porada medyczna.';
 
     setText('featuresTitle','Co zawiera program');
-    if (featuresCards.length >= 6) {
+    if (featuresCards.length === 5) {
       featuresCards[0].querySelector('.icon-dot strong').textContent = 'Personalizacja AI';
+      featuresCards[0].querySelector('p').textContent = 'Dopasowanie do celu, poziomu, dostępnego czasu/tydzień i ograniczeń.';
+
       featuresCards[1].querySelector('.icon-dot strong').textContent = 'Bezpieczna progresja';
+      featuresCards[1].querySelector('p').textContent = '24–48 h odstępu między ciężkimi bodźcami, deload, kontrola objętości.';
+
       featuresCards[2].querySelector('.icon-dot strong').textContent = 'Podgląd + Plik Excel';
-      featuresCards[3].querySelector('.icon-dot strong').textContent = 'Indywidualny wybór dyscyplin';
-      featuresCards[4].querySelector('.icon-dot strong').textContent = 'Uniwersalne nazewnictwo ćwiczeń';
-      featuresCards[5].querySelector('.icon-dot strong').textContent = 'Dokładne rozplanowanie tygodnia treningowego';
+      featuresCards[2].querySelector('p').textContent = 'Plan wysyłany po wygenerowaniu na email w formacie pliku Excel.';
+
+      featuresCards[3].querySelector('.icon-dot strong').textContent = 'Uniwersalne nazewnictwo ćwiczeń';
+      featuresCards[3].querySelector('p').textContent = 'Ujednolicone nazwy w PL/EN – szybkie do rozpoznania i wyszukania.';
+
+      featuresCards[4].querySelector('.icon-dot strong').textContent = 'Dokładne rozplanowanie tygodnia treningowego';
+      featuresCards[4].querySelector('p').textContent = 'Tydzień ułożony dzień po dniu z rozmieszczeniem regeneracji i progresją.';
     }
 
     setText('offerTitle','Oferta');
