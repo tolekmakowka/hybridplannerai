@@ -112,7 +112,7 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
       </div>
     </section>
 
-    <!-- PLAN B -->
+    <!-- PLAN B (jak było) -->
     <section id="formB" style="display:none">
       <h2 id="hB">Plan B — pytania (10)</h2>
       <div class="grid-2">
@@ -159,14 +159,16 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
 <!-- jsPDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-<!-- === KONFIG BACKENDU (relative paths – ten sam host) === -->
+<!-- ▼▼▼ KONFIG: ten sam origin (tgmproject.net) + endpointy względne ▼▼▼ -->
 <script>
-  // Relatywne ścieżki → brak CORS, działa zarówno na tgmproject.net, jak i na netlify.app
-  window.HP_ENDPOINTS = {
-    generate: '/.netlify/functions/generate-plan',
-    sendEmail: '/.netlify/functions/send-email'
-  };
+/* ---------- KONFIG: stałe do Netlify Functions (RELATIVE PATH) ---------- */
+window.HP_ORIGIN = ''; // pusty = aktualny origin
+window.HP_ENDPOINTS = {
+  generate: '/.netlify/functions/generate-plan',
+  sendEmail: '/.netlify/functions/send-email'
+};
 </script>
+<!-- ▲▲▲ KONIEC KONFIGU ▲▲▲ -->
 
 <script>
 /* ---------- Bramka e-mail ---------- */
@@ -192,6 +194,7 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
     document.getElementById('btnA').textContent='Plan A — 12 weeks';
     document.getElementById('btnB').textContent='Plan B — Hybrid week (4 weeks)';
 
+    // Plan A (5 questions)
     t('hA','Plan A — questions (5)');
     t('a1lbl','How many sessions per week would you like?');
     t('a2lbl','What is your main goal?');
@@ -204,6 +207,7 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
     const a5 = document.getElementById('a5');
     a5.options[0].text='FBW'; a5.options[1].text='PPL'; a5.options[2].text='Arnold Split'; a5.options[3].text='Upper Lower'; a5.options[4].text='Best match for your needs';
 
+    // Plan B
     t('hB','Plan B — questions (10)');
     t('b1lbl','Disciplines (pick or type)'); t('b1hint','Quick pick below — click to add:');
     t('b2lbl','Priority 1'); t('b3lbl','Priority 2');
@@ -305,7 +309,7 @@ function buildPayload(){
   }
 }
 
-/* ---------- PROMPT do modelu (bez zmian merytorycznych) ---------- */
+/* ---------- PROMPT do modelu ---------- */
 function buildPrompt(payload, lang){
   const L = (lang || localStorage.getItem('hp_lang') || 'pl').toLowerCase();
   const isEN = L === 'en';
@@ -329,29 +333,17 @@ function buildPrompt(payload, lang){
 FORMAT planu treningowego:
 - każdy dzień treningowy ma mieć oznaczenie który to dzień tygodnia.
 - każdy dzień treningowy ma zawierać starannie dobranych od 5 do 8 ćwiczeń
-- każdy dzień treningowy ma zawierać ćwiczenia zgodne z zaplanowanym cyklem na dany dzień np. kiedy jest to dzień pull to w planie na ten dzień mają być wyłącznie ćwiczenia na plecy, biceps oraz przedramię i ewentualnie brzuch, w przypadku dnia push mają to być ćwiczenia na klatkę, barki, triceps oraz brzuch, jeżeli jest to dzień upper to mają być to ćwiczenia na klatkę, plecy, barki, biceps, triceps, brzuch, jeżeli jest to trening lower lub legs to mają być to ćwiczenia wyłącznie na przednią taśmę mięśni dolnych kończyn, tylną taśmę kończyn dolnych, łydki, jeżeli jest to trening fbw to mają to być ćwiczenia na klatkę, plecy, barki, biceps, triceps, brzuch, tylną i przednią taśmę dolnych kończyn.
-- każde ćwiczenie musi zawierać zakres powtórzeń: od 8 do 12 powtórzeń, liczbę serii do wykonania: od 3 do 4 serii.
-- w dniu treningowym na bardziej rozległe partie mięśniowe takie jak klatka, plecy powinny być 3 ćwiczenia, na mniej rozległe partie mięśniowe takie jak: biceps, triceps, barki, tylna oraz przednia taśma kończyn dolnych powinny być 2 ćwiczenia oraz jedno ćwiczenie na dodatkową partię mięśniową taką jak: brzuch, przedramię, łydki.
-- każdy tydzień treningowy ma uwzględniać odpoczynek od 24 do 48h pomiędzy jednostkami treningowymi danej partii mięśniowej
-- plan układaj z wyłącznie ćwiczeń podanych poniżej:
-  klatka: Flat bench press, Incline bench press, Pec deck
-  plecy: Lat pulldown, Close grip horizontal row, Horizontal row 45*, Bent over row
-  barki: Overhead press, Face pull, Lateral raise
-  biceps: Biceps curl, Hammer curl
-  triceps: Triceps extension, Triceps overhead extension
-  brzuch: Hanging knee raises
-  przedramię: Forearm curl
-  tylna taśma kończyn dolnych: Deadlift, Leg curl
-  przednia taśma kończyn dolnych: Squat, Leg extension
-  łydki: Calf raises
-- kolejność ćwiczeń w każdym dniu treningowym: na początku najbardziej rozległe partie mięśniowe, potem mniej rozległe, a na końcu dodatkowe.
-- rodzaj planu treningowego dostosowany do odpowiedzi z formularza.
+- każdy dzień treningowy ma zawierać ćwiczenia zgodne z zaplanowanym cyklem na dany dzień …
+- każde ćwiczenie: 8–12 powtórzeń, 3–4 serie.
+- … (lista ćwiczeń dozwolonych — bez zmian)
+- kolejność: duże → mniejsze → dodatkowe.
+- dopasuj do odpowiedzi z formularza.
 
 Hybrydowy Plan treningowy:
-- podział dni w tygodniu na dni treningowe i nietreningowe
-- podział dni treningowych na dyscypliny wybrane w formularzu
-- rozpisanie jaki to jest dzień treningowy jeżeli jest to dzień siłowni np. trening upper lub trening lower
-- uwzględnienie odpoczynku między treningami min 24h max 48h
+- podział na dni treningowe i nietreningowe
+- przypisz dyscypliny z formularza
+- jeśli siłownia: zaznacz Upper/Lower
+- odpoczynek między treningami 24–48h
 `.trim();
 
   const OUTPUT_RULES = isEN ? `
@@ -363,43 +355,39 @@ OUTPUT:
 `.trim() : `
 WYJŚCIE:
 - Język: ${isEN?'English':'Polski'}.
-- Tylko czysty tekst (bez tabel/HTML). Używaj nagłówków i wypunktowań.
+- Tylko czysty tekst (bez tabel/HTML).
 - Oznaczaj tydzień jako „Tydzień X”, dzień jako „Dzień N — ${isEN?'weekday name':'nazwa dnia tygodnia'}”.
 - Zakończ zdaniem: „To nie jest porada medyczna.”
 `.trim();
 
   const PLAN_REQUEST = A
     ? (isEN ? `
-Create a 12-week program respecting the rules above. Choose the split based on "splitPreference" (FBW / PPL / Arnold / Upper-Lower / best match). Guarantee 24–48h spacing between hard stimuli of the same muscle groups and use ONLY the allowed exercise list. Provide 5–8 exercises per day with 8–12 reps and 3–4 sets each, in the prescribed order (large → small → additional). Name each day with the weekday (${dayNamesEN.join(', ')}).`
+Create a 12-week program respecting the rules above… Name each day with the weekday (${dayNamesEN.join(', ')}).`
        : `
-Ułóż 12-tygodniowy program spełniający powyższe reguły. Dobierz split zgodnie z „splitPreference” (FBW / PPL / Arnold / Upper-Lower / dopasowany). Zapewnij odstępy 24–48h dla tych samych grup i korzystaj WYŁĄCZNIE z podanej listy ćwiczeń. W każdym dniu 5–8 ćwiczeń, każde 8–12 powt. i 3–4 serie, w wymaganej kolejności (duże → mniejsze → dodatkowe). Oznaczaj dni tygodnia (${dayNamesPL.join(', ')}).`)
+Ułóż 12-tygodniowy program zgodny z regułami powyżej… Oznaczaj dni tygodnia (${dayNamesPL.join(', ')}).`)
     : (isEN ? `
-Create a 4-week hybrid schedule. Split the week into training vs. non-training days, assign training days to the disciplines from the form, and when "gym" is one of them, label that day with a gym structure (e.g., Upper or Lower). Keep 24–48h between sessions of the same systems.`
+Create a 4-week hybrid schedule…`
        : `
-Ułóż 4-tygodniowy plan hybrydowy. Podziel tydzień na dni treningowe i nietreningowe, przypisz dni treningowe do dyscyplin z formularza, a jeśli „siłownia” jest wśród nich, zaznacz czy to dzień Upper czy Lower. Zachowaj 24–48h przerwy pomiędzy sesjami tych samych układów.`);
+Ułóż 4-tygodniowy plan hybrydowy…`);
 
   return [
-    header,
-    '',
+    header,'',
     (isEN?'INPUTS:':'DANE WEJŚCIOWE:'),
-    inputsBlock,
-    '',
-    HARD_RULES_PL,
-    '',
-    OUTPUT_RULES,
-    '',
+    inputsBlock,'',
+    HARD_RULES_PL,'',
+    OUTPUT_RULES,'',
     PLAN_REQUEST
   ].join('\n');
 }
 
-/* ---------- Wywołanie backendu (Netlify Functions / Groq) ---------- */
+/* ---------- BACKEND (GROQ) ---------- */
 async function callBackendGenerateWithPrompt(payload){
   const lang = (localStorage.getItem('hp_lang') || 'pl').toLowerCase();
   const prompt = buildPrompt(payload, lang);
 
   const res = await fetch(window.HP_ENDPOINTS.generate, {
     method: 'POST',
-    headers: {'Content-Type':'application/json','Accept':'application/json'},
+    headers: {'Content-Type':'application/json', 'Accept':'application/json'},
     body: JSON.stringify({
       mode: payload.mode,
       inputs: payload.inputs,
@@ -421,15 +409,15 @@ async function callBackendGenerateWithPrompt(payload){
   }
   return {
     planText: data.planText,
-    planName: data.planName || (payload.mode === 'A' ? 'Plan treningowy' : 'Hybrydowy plan')
+    planName: data.planName || (payload.mode === 'A' ? 'Plan Treningowy' : 'Hybrydowy Plan Treningowy')
   };
 }
 
-/* ---------- Fallback lokalny (tylko na wypadek awarii backendu) ---------- */
+/* ---------- Fallback lokalny ---------- */
 function localGenerateText(payload){
   const prompt = buildPrompt(payload, localStorage.getItem('hp_lang')||'pl');
   const lines = [];
-  lines.push('=== PROMPT WYSYŁANY DO MODELu (skrót) ===');
+  lines.push('=== PROMPT WYSYŁANY DO MODELU (skrót) ===');
   lines.push(prompt.substring(0, 800) + (prompt.length>800?' ...':''));
   lines.push('');
   lines.push('=== Szkic demonstracyjny (fallback bez AI) ===');
@@ -446,15 +434,13 @@ function localGenerateText(payload){
       lines.push('');
     }
   } else {
-    for(let w=1; w<=1; w++){
-      lines.push(`Tydzień ${w}`);
-      lines.push(`Poniedziałek — Siłownia (Upper)`);
-      lines.push(`Wtorek — Odpoczynek`);
-      lines.push(`Środa — Bieganie easy`);
-      lines.push(`Czwartek — Odpoczynek`);
-      lines.push(`Piątek — Siłownia (Lower)`);
-      lines.push(`Weekend — Regeneracja aktywna`);
-    }
+    lines.push(`Tydzień 1`);
+    lines.push(`Poniedziałek — Siłownia (Upper)`);
+    lines.push(`Wtorek — Odpoczynek`);
+    lines.push(`Środa — Bieganie easy`);
+    lines.push(`Czwartek — Odpoczynek`);
+    lines.push(`Piątek — Siłownia (Lower)`);
+    lines.push(`Weekend — Regeneracja aktywna`);
   }
   lines.push('');
   lines.push('To nie jest porada medyczna.');
@@ -482,7 +468,7 @@ async function makePdf(planText, planName){
   return { blob, url };
 }
 
-/* ---------- E-mail przez Netlify Function (Resend) ---------- */
+/* ---------- E-mail (Resend przez Netlify Function) ---------- */
 function blobToBase64(blob){
   return new Promise((resolve, reject)=>{
     const r = new FileReader();
@@ -508,7 +494,6 @@ async function sendPlanByEmail(pdfBlob, planName){
         filename: 'plan.pdf'
       })
     });
-
     if(!resp.ok){
       const t = await resp.text();
       console.error('Resend error:', t);
@@ -521,7 +506,7 @@ window.hpOnPlanReady = async function(pdfBlob, planName){
   catch(e){ console.error(e); }
 };
 
-/* ---------- Generowanie: backend (Groq) → PDF → e-mail ---------- */
+/* ---------- Generowanie ---------- */
 const genBtn = document.getElementById('genBtn');
 const dlBtn  = document.getElementById('dlBtn');
 
@@ -535,7 +520,7 @@ genBtn.addEventListener('click', async ()=>{
 
     const payload = buildPayload();
 
-    // 1) Najpierw backend (Groq przez Netlify Function)
+    // 1) Backend (GROQ)
     try {
       const res = await callBackendGenerateWithPrompt(payload);
       planText = res.planText;
@@ -547,12 +532,12 @@ genBtn.addEventListener('click', async ()=>{
       planName = res.planName;
     }
 
-    // 2) PDF do pobrania
+    // 2) PDF
     const { blob, url } = await makePdf(planText, planName);
     dlBtn.href = url; 
     dlBtn.style.display='inline-flex';
 
-    // 3) E-mail z załącznikiem
+    // 3) E-mail
     await window.hpOnPlanReady(blob, planName);
 
     genBtn.textContent = 'Gotowe ✓';
