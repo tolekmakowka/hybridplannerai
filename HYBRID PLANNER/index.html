@@ -19,32 +19,21 @@ html,body{height:100%;margin:0}
 body{font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);color:var(--text)}
 img{max-width:100%;display:block}
 a{color:inherit;text-decoration:none}
-h1{font:700 44px/1.15 Poppins;margin:0 0 12px}
-h2{font:700 34px/1.2 Poppins;margin:0 0 12px;color:#111}
+h1{font:700 clamp(28px,5.5vw,44px)/1.15 Poppins;margin:0 0 12px}
+h2{font:700 clamp(22px,4vw,34px)/1.2 Poppins;margin:0 0 12px;color:#111}
 h3{font:600 20px/1.3 Poppins;margin:0 0 8px}
 p{font:400 16px/1.6 Inter;margin:0}
 
-/* Scroll container = MAIN */
-main{height:100vh;overflow-y:auto;scroll-snap-type:y mandatory;scroll-behavior:smooth}
-section.snap{min-height:100vh;scroll-snap-align:start;position:relative;display:flex;align-items:center}
+/* ====== CONTINUOUS PAGE (bez snapów/stron) ====== */
+main{height:auto;overflow:visible;scroll-behavior:smooth}
+section.snap{padding:64px 0}                /* zwykłe sekcje zamiast 100vh */
 .container{max-width:var(--maxw);margin:0 auto;padding:0 24px;width:100%}
-
-/* Preloader */
-.pre{position:absolute;inset:0;display:grid;place-items:center;z-index:3;pointer-events:none;opacity:0;transition:opacity .35s}
-.pre.dark{background:rgba(0,0,0,.55)}
-.pre.light{background:rgba(255,255,255,.9)}
-.loader{display:flex;gap:8px}
-.dot{width:8px;height:8px;border-radius:50%;animation:bounce .9s infinite ease-in-out}
-.dark .dot{background:#fff}
-.light .dot{background:var(--brown)}
-.dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
-@keyframes bounce{0%,100%{transform:translateY(0);opacity:.4}50%{transform:translateY(-6px);opacity:1}}
 
 /* Layouty i komponenty */
 .grid-2{display:grid;grid-template-columns:1.1fr .9fr;gap:32px;align-items:center}
 .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
 .card-light{background:#fff;border:1px solid #EEE;border-radius:16px;padding:20px}
-.round{border-radius:16px;border:1px solid --border;background:#1a1a1a}
+.round{border-radius:16px;border:1px solid var(--border);background:#1a1a1a}
 .icon-dot{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .icon-dot img{width:22px;height:22px;object-fit:contain}
 
@@ -56,34 +45,8 @@ section.snap{min-height:100vh;scroll-snap-align:start;position:relative;display:
 .hero-copy p{color:#C9C7C2}
 .right-stack{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .right-stack .wide{grid-column:1/-1;position:relative}
-.bigcta{position:absolute;inset:0;display:grid;place-items:center;font:700 clamp(34px, 6vw, 72px)/1 Poppins;color:rgba(255,255,255,.12);letter-spacing:.06em}
 
-/* Białe sekcje */
-.section-light{background:#fff;color:#111}
-.section-light p{color:#5f5e5b}
-
-/* Buttons */
-.btn{display:inline-flex;align-items:center;gap:10px;padding:12px 18px;border-radius:12px;border:2px solid var(--text);color:var(--text);background:transparent;font:600 16px/1 Inter;transition:.25s;cursor:pointer}
-.btn:hover{transform:translateY(-1px)}
-.btn-brown{background:var(--brown);border-color:var(--brown);color:#fff}
-.btn-light{background:#fff;color:#111;border-color:#fff}
-
-/* Animacje treści */
-.reveal{opacity:0;transform:translateY(14px);transition:opacity .6s ease, transform .6s ease}
-.reveal.show{opacity:1;transform:none}
-.reveal-stagger > *{opacity:0;transform:translateY(16px)}
-.reveal-stagger.show > *{animation:st .9s ease forwards}
-.reveal-stagger.show > *:nth-child(1){animation-delay:.05s}
-.reveal-stagger.show > *:nth-child(2){animation-delay:.15s}
-.reveal-stagger.show > *:nth-child(3){animation-delay:.25s}
-.reveal-stagger.show > *:nth-child(4){animation-delay:.35s}
-@keyframes st{to{opacity:1;transform:none}}
-
-/* Autoplay toggle */
-.autoplay-toggle{position:fixed;right:16px;bottom:16px;z-index:50;background:#111;color:#fff;border:1px solid #333;padding:8px 12px;border-radius:10px;font:600 13px/1 Inter;cursor:pointer;opacity:.85}
-.autoplay-toggle:hover{opacity:1}
-
-/* JOIN HERE */
+/* JOIN HERE — zawsze szeroki, czytelny */
 .joinhere-card{
   grid-column: 1 / -1;
   height: 220px;
@@ -102,84 +65,80 @@ section.snap{min-height:100vh;scroll-snap-align:start;position:relative;display:
   position:absolute; inset:0;
   background: url('assets/Bytol3.jpg') center/cover no-repeat;
   opacity:.55;
-  transition: opacity .25s ease, transform .25s ease, filter .25s ease;
+  transition: opacity .3s ease, transform .3s ease, filter .3s ease;
 }
 .joinhere-text{
   position:relative;
-  font:800 clamp(34px, 6vw, 72px)/1 Poppins;
+  font:800 clamp(28px,7.5vw,72px)/1 Poppins;  /* responsywna wielkość */
   letter-spacing:.06em;
   text-transform:uppercase;
   color:rgba(255,255,255,.18);
-  transition: color .25s ease, transform .25s ease;
+  transition: color .3s ease, transform .3s ease;
 }
 .joinhere-card:hover::before{ opacity:.35; filter:saturate(1.05) }
 .joinhere-card:hover .joinhere-text{ color:rgba(255,255,255,.92); transform:translateY(-1px) }
-@media (max-width:640px){ .joinhere-card{ height:160px } }
 
-/* FAQ */
-.faq-list{display:grid;gap:14px;margin-top:14px}
-.faq-list details{background:#fff;border:1px solid #EEE;border-radius:12px;padding:16px 18px}
-.faq-list summary{font:600 16px/1.3 Poppins;cursor:pointer;outline:none}
-.faq-list p{margin-top:10px;color:#5f5e5b}
+/* Białe sekcje */
+.section-light{background:#fff;color:#111}
+.section-light p{color:#5f5e5b}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:10px;padding:12px 18px;border-radius:12px;border:2px solid var(--text);color:var(--text);background:transparent;font:600 16px/1 Inter;transition:.25s;cursor:pointer}
+.btn:hover{transform:translateY(-1px)}
+.btn-brown{background:var(--brown);border-color:var(--brown);color:#fff}
+.btn-light{background:#fff;color:#111;border-color:#fff}
+
+/* Animacje na scroll — płynne, dla całej treści */
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease, transform .6s ease}
+.reveal.show{opacity:1;transform:none}
+.reveal-stagger > *{opacity:0;transform:translateY(16px)}
+.reveal-stagger.show > *{animation:st .8s ease forwards}
+.reveal-stagger.show > *:nth-child(1){animation-delay:.05s}
+.reveal-stagger.show > *:nth-child(2){animation-delay:.12s}
+.reveal-stagger.show > *:nth-child(3){animation-delay:.19s}
+.reveal-stagger.show > *:nth-child(4){animation-delay:.26s}
+@keyframes st{to{opacity:1;transform:none}}
 
 /* EN toggle */
 .lang-toggle{
   position:fixed; top:14px; right:14px; z-index:9999;
   background:#111; color:#fff; border:1px solid #333;
-  padding:6px 10px; border-radius:10px; font:600 12px/1 Inter; text-decoration:none;
-  opacity:.9
+  padding:6px 10px; border-radius:10px; font:600 12px/1 Inter; text-decoration:none; opacity:.9
 }
 .lang-toggle:hover{opacity:1}
 
-/* ====== ZMIANA: pełna szerokość CTA w ofercie ====== */
-#pricing .card-light .btn{
-  display:block;
-  width:100%;
-  text-align:center;
-  padding:16px 20px;
-  font-size:17px;
-}
+/* CTA pełna szerokość w ofercie */
+#pricing .card-light .btn{display:block;width:100%;text-align:center;padding:16px 20px;font-size:17px}
 
-/* ====== ZMIANA: siatka features auto-fit (ładny układ po usunięciu 1 karty) ====== */
-#features .grid-3{
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  align-items: stretch;
-}
+/* Auto-fit siatka features */
+#features .grid-3{grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); align-items: stretch}
 
 /* MOBILE */
-section.snap{ min-height: 100svh; }
-@media (max-width: 640px){
-  main{ scroll-snap-type: y proximity; }
-  section.snap{ margin-bottom: 12px; }
-  .container{ padding: 0 16px; }
-  #features .container { padding-bottom: 28px; }
-  #pricing  .container { padding-top: 28px; }
-  .hero-bg{ padding: 18px; border-radius: 14px; }
-  .kicker{ font-size: 12px; }
-  h1{ font-size: clamp(26px, 7vw, 34px); }
-  h2{ font-size: 24px; }
-  p{  font-size: 15px; }
-  .btn{ padding: 10px 14px; font-size: 15px; border-radius: 10px; }
-  .right-stack{ grid-template-columns: 1fr; gap: 12px; }
-  .round{ width: 100%; height: auto !important; aspect-ratio: 4 / 3; object-fit: cover; }
-  .joinhere-card{ height: 140px; }
-  .bigcta{ font-size: 28px; }
-  .grid-3{ grid-template-columns: 1fr; gap: 16px; }
-  .card-light{ padding: 16px; border-radius: 14px; }
-  #pricing .card-light .btn{ padding:16px 18px; font-size:18px; }
-}
-
-/* Tablet */
 @media (max-width: 900px){
   .grid-3{ grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px){
+  .container{ padding: 0 16px; }
+  section.snap{ padding: 40px 0; }      /* naturalne sekcje, zero snapów */
+  .grid-2{ grid-template-columns: 1fr; gap:20px; }   /* hero = jedna kolumna */
+  .right-stack{ grid-template-columns: 1fr; gap: 12px; }
+  .joinhere-card{ height: 180px; }      /* szerszy „JOIN HERE” i czytelny */
+  .joinhere-text{ font-size: clamp(22px, 9vw, 44px); }
+  .hero-bg{ padding: 18px; border-radius: 14px; }
+  .kicker{ font-size: 12px; }
+  p{  font-size: 15px; }
+  .btn{ padding: 10px 14px; font-size: 15px; border-radius: 10px; }
+  .card-light{ padding: 16px; border-radius: 14px; }
+  #pricing .card-light .btn{ padding:16px 18px; font-size:18px; }
 }
 </style>
 </head>
 <body>
 
+<!-- EN/PL -->
 <a id="langToggle" class="lang-toggle" href="?lang=en" aria-label="English version">EN</a>
 
-<!-- Modal e-mail + zgoda -->
+<!-- Modal e-mail -->
 <div id="emailModal" aria-modal="true" role="dialog" style="position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center">
   <div class="box" style="background:#fff;color:#111;border-radius:16px;padding:22px;max-width:420px;width:92%;box-shadow:0 10px 40px rgba(0,0,0,.35)">
     <h3 style="margin-top:0">Dostęp do generatora</h3>
@@ -202,9 +161,8 @@ section.snap{ min-height: 100svh; }
 
   <!-- 1) HERO -->
   <section class="snap">
-    <div class="pre dark"><div class="loader"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
     <div class="container">
-      <div class="hero-bg">
+      <div class="hero-bg reveal">
         <div class="curves" aria-hidden="true">
           <svg viewBox="0 0 1200 500" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M-50 430C200 290 380 560 650 430C920 300 1040 380 1250 260" stroke="#2A2A2A" stroke-width="1.2"/>
@@ -241,7 +199,6 @@ section.snap{ min-height: 100svh; }
 
   <!-- 2) CO ZAWIERA -->
   <section id="features" class="snap section-light">
-    <div class="pre light"><div class="loader"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
     <div class="container">
       <h2 id="featuresTitle" class="reveal">Co zawiera program</h2>
       <div class="grid-3" style="margin-top:20px">
@@ -263,7 +220,6 @@ section.snap{ min-height: 100svh; }
           </div>
           <p id="featPdfDesc">Plan wysyłany po wygenerowaniu na email w formacie pliku Excel.</p>
         </article>
-        <!-- USUNIĘTA karta „Indywidualny wybór dyscyplin” -->
         <article class="card-light reveal">
           <div class="icon-dot">
             <img src="assets/clipboard_15409277.svg" alt="Uniwersalne nazewnictwo ćwiczeń"><strong>Uniwersalne nazewnictwo ćwiczeń</strong>
@@ -282,7 +238,6 @@ section.snap{ min-height: 100svh; }
 
   <!-- 3) OFERTA -->
   <section id="pricing" class="snap section-light">
-    <div class="pre light"><div class="loader"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
     <div class="container">
       <h2 id="offerTitle" class="reveal">Oferta</h2>
       <div class="grid-3" style="grid-template-columns:minmax(260px,520px);justify-content:center;margin-top:20px">
@@ -311,7 +266,6 @@ section.snap{ min-height: 100svh; }
 
   <!-- 4) FAQ -->
   <section id="faq" class="snap section-light">
-    <div class="pre light"><div class="loader"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
     <div class="container">
       <h2 class="reveal">FAQ</h2>
       <div class="faq-list reveal-stagger">
@@ -327,49 +281,20 @@ section.snap{ min-height: 100svh; }
 
 </main>
 
-<button id="autoBtn" class="autoplay-toggle" aria-pressed="true">Auto: ON</button>
-
 <script>
-function initTypewriter(){} 
-const snaps = document.querySelectorAll('section.snap');
-const io = new IntersectionObserver((entries)=>{
+/* ------- Animacje scroll (bez preloadera i auto-scroll) ------- */
+const observed = new IntersectionObserver((entries)=>{
   entries.forEach(entry=>{
     if(entry.isIntersecting){
-      const sec = entry.target;
-      const pre = sec.querySelector('.pre');
-      if(!sec.dataset.loaded){
-        pre.style.opacity = 1;
-        setTimeout(()=>{
-          pre.style.opacity = 0;
-          sec.dataset.loaded = "1";
-          sec.querySelectorAll('.reveal, .reveal-stagger').forEach(x=>x.classList.add('show'));
-        }, 450);
-      }else{
-        sec.querySelectorAll('.reveal, .reveal-stagger').forEach(x=>x.classList.add('show'));
-      }
+      entry.target.classList.add('show');
+      observed.unobserve(entry.target);
     }
   });
-},{threshold:0.55});
-snaps.forEach(s=>io.observe(s));
+},{root:null, rootMargin:'0px 0px -10% 0px', threshold:0.15});
 
-let auto = true;
-const btn = document.getElementById('autoBtn');
-btn.addEventListener('click',()=>{
-  auto = !auto;
-  btn.textContent = 'Auto: ' + (auto ? 'ON' : 'OFF');
-  btn.setAttribute('aria-pressed', String(auto));
-});
-const list = Array.from(snaps);
-let idx = 0;
-function advance(){ if(!auto) return; idx = (idx + 1) % list.length; list[idx].scrollIntoView({behavior:'smooth', block:'start'}); }
-setInterval(advance, 30000);
+document.querySelectorAll('.reveal, .reveal-stagger').forEach(el=>observed.observe(el));
 
-window.addEventListener('load', ()=>{
-  const pre = snaps[0].querySelector('.pre'); pre.style.opacity = 1;
-  setTimeout(()=> pre.style.opacity = 0, 450);
-});
-
-/* E-mail gate */
+/* ------- Bramka e-mail (bez zmian) ------- */
 const modal = document.getElementById('emailModal');
 const closeBtn = document.getElementById('gateClose');
 const confirmBtn = document.getElementById('gateConfirm');
@@ -400,6 +325,7 @@ document.querySelectorAll('.requires-email').forEach(a=>{
 });
 </script>
 
+<!-- i18n (zostawione jak było, tylko bez odniesień do preloadera) -->
 <script>
 (function () {
   const params = new URLSearchParams(location.search);
@@ -432,16 +358,12 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     if (featuresCards.length === 5) {
       featuresCards[0].querySelector('.icon-dot strong').textContent = 'AI Personalization';
       featuresCards[0].querySelector('p').textContent = 'Tailored to your goal, level, available weekly time and constraints.';
-
       featuresCards[1].querySelector('.icon-dot strong').textContent = 'Safe progression';
       featuresCards[1].querySelector('p').textContent = '24–48 h spacing between hard stimuli, deloads and volume control.';
-
       featuresCards[2].querySelector('.icon-dot strong').textContent = 'Preview + Excel file';
       featuresCards[2].querySelector('p').textContent = 'Your plan is emailed as an Excel file right after generation.';
-
       featuresCards[3].querySelector('.icon-dot strong').textContent = 'Universal exercise naming';
       featuresCards[3].querySelector('p').textContent = 'Unified PL/EN names — easy to recognise and search.';
-
       featuresCards[4].querySelector('.icon-dot strong').textContent = 'Detailed weekly layout';
       featuresCards[4].querySelector('p').textContent = 'A week laid out day by day with recovery placement and progression.';
     }
@@ -479,16 +401,12 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     if (featuresCards.length === 5) {
       featuresCards[0].querySelector('.icon-dot strong').textContent = 'Personalizacja AI';
       featuresCards[0].querySelector('p').textContent = 'Dopasowanie do celu, poziomu, dostępnego czasu/tydzień i ograniczeń.';
-
       featuresCards[1].querySelector('.icon-dot strong').textContent = 'Bezpieczna progresja';
       featuresCards[1].querySelector('p').textContent = '24–48 h odstępu między ciężkimi bodźcami, deload, kontrola objętości.';
-
       featuresCards[2].querySelector('.icon-dot strong').textContent = 'Podgląd + Plik Excel';
       featuresCards[2].querySelector('p').textContent = 'Plan wysyłany po wygenerowaniu na email w formacie pliku Excel.';
-
       featuresCards[3].querySelector('.icon-dot strong').textContent = 'Uniwersalne nazewnictwo ćwiczeń';
       featuresCards[3].querySelector('p').textContent = 'Ujednolicone nazwy w PL/EN – szybkie do rozpoznania i wyszukania.';
-
       featuresCards[4].querySelector('.icon-dot strong').textContent = 'Dokładne rozplanowanie tygodnia treningowego';
       featuresCards[4].querySelector('p').textContent = 'Tydzień ułożony dzień po dniu z rozmieszczeniem regeneracji i progresją.';
     }
@@ -501,10 +419,8 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     pricingButtons.forEach(b => b.textContent = 'Wygeneruj teraz');
     if (pricingSmall) pricingSmall.textContent = 'Minimalna objętość, maksymalne efekty.';
 
-    setText('legalPolicy','Polityka');
-    setText('legalTerms','Regulamin');
-    setText('legalContact','Kontakt');
-    setText('legalFaq','FAQ');
+    setText('legalPolicy','Polityka'); setText('legalTerms','Regulamin');
+    setText('legalContact','Kontakt'); setText('legalFaq','FAQ');
   }
 })();
 </script>
