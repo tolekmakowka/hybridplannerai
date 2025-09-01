@@ -83,7 +83,7 @@ section.snap{min-height:100vh;scroll-snap-align:start;position:relative;display:
 .autoplay-toggle{position:fixed;right:16px;bottom:16px;z-index:50;background:#111;color:#fff;border:1px solid #333;padding:8px 12px;border-radius:10px;font:600 13px/1 Inter;cursor:pointer;opacity:.85}
 .autoplay-toggle:hover{opacity:1}
 
-/* JOIN HERE (Bytol 3) */
+/* JOIN HERE */
 .joinhere-card{
   grid-column: 1 / -1;
   height: 220px;
@@ -131,12 +131,12 @@ section.snap{min-height:100vh;scroll-snap-align:start;position:relative;display:
 }
 .lang-toggle:hover{opacity:1}
 
-/* ====== DODANE: pełna szerokość CTA w ofercie ====== */
+/* ====== ZMIANA: pełna szerokość CTA w ofercie ====== */
 #pricing .card-light .btn{
-  width:100%;
-  justify-content:center;
-  display:flex;
-  padding:14px 18px;
+  display:block;           /* było inline-flex */
+  width:100%;              /* pełna szerokość wnętrza karty */
+  text-align:center;       /* wyśrodkowanie tekstu */
+  padding:16px 20px;
   font-size:17px;
 }
 
@@ -145,8 +145,8 @@ section.snap{ min-height: 100svh; }
 
 /* przerwy i łagodniejsze snapowanie na telefonie */
 @media (max-width: 640px){
-  main{ scroll-snap-type: y proximity; }           /* z mandatory → proximity */
-  section.snap{ margin-bottom: 12px; }             /* mała przerwa między „stronami” */
+  main{ scroll-snap-type: y proximity; }
+  section.snap{ margin-bottom: 12px; }
   .container{ padding: 0 16px; }
 
   #features .container { padding-bottom: 28px; }
@@ -165,7 +165,6 @@ section.snap{ min-height: 100svh; }
   .grid-3{ grid-template-columns: 1fr; gap: 16px; }
   .card-light{ padding: 16px; border-radius: 14px; }
 
-  /* większy, czytelny CTA w ofercie na mobile */
   #pricing .card-light .btn{ padding:16px 18px; font-size:18px; }
 }
 
@@ -177,7 +176,6 @@ section.snap{ min-height: 100svh; }
 </head>
 <body>
 
-<!-- EN/PL -->
 <a id="langToggle" class="lang-toggle" href="?lang=en" aria-label="English version">EN</a>
 
 <!-- Modal e-mail + zgoda -->
@@ -209,7 +207,7 @@ section.snap{ min-height: 100svh; }
         <div class="curves" aria-hidden="true">
           <svg viewBox="0 0 1200 500" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M-50 430C200 290 380 560 650 430C920 300 1040 380 1250 260" stroke="#2A2A2A" stroke-width="1.2"/>
-            <path d="M-120 360C120 220 360 420 620 320C880 220 1040 320 1260 180" stroke="#2A2A2A" stroke-width="1.2"/>
+            <path d="M-120 360C120 220 360 420 620 320C880 220 1040 320 1260 180" stroke="#2A2AA" stroke-width="1.2"/>
             <path d="M-90 300C150 180 350 300 580 220C820 140 1030 220 1240 120" stroke="#2A2A2A" stroke-width="1.2"/>
           </svg>
         </div>
@@ -286,7 +284,7 @@ section.snap{ min-height: 100svh; }
     </div>
   </section>
 
-  <!-- 3) OFERTA (jedna karta, CTA full-width) -->
+  <!-- 3) OFERTA -->
   <section id="pricing" class="snap section-light">
     <div class="pre light"><div class="loader"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
     <div class="container">
@@ -336,8 +334,7 @@ section.snap{ min-height: 100svh; }
 <button id="autoBtn" class="autoplay-toggle" aria-pressed="true">Auto: ON</button>
 
 <script>
-/* Reveal + preload + auto-scroll (bez zmian istotnych) */
-function initTypewriter(){} /* brak animacji tekstu w hero */
+function initTypewriter(){} 
 const snaps = document.querySelectorAll('section.snap');
 const io = new IntersectionObserver((entries)=>{
   entries.forEach(entry=>{
@@ -376,7 +373,7 @@ window.addEventListener('load', ()=>{
   setTimeout(()=> pre.style.opacity = 0, 450);
 });
 
-/* E-mail gate (bez zmian) */
+/* E-mail gate */
 const modal = document.getElementById('emailModal');
 const closeBtn = document.getElementById('gateClose');
 const confirmBtn = document.getElementById('gateConfirm');
@@ -407,7 +404,6 @@ document.querySelectorAll('.requires-email').forEach(a=>{
 });
 </script>
 
-<!-- Mini i18n: EN/PL (bez zmian poza ofertą jednoelementową) -->
 <script>
 (function () {
   const params = new URLSearchParams(location.search);
@@ -439,11 +435,8 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     setText('featuresTitle','What’s included');
     if (featuresCards.length >= 6) {
       featuresCards[0].querySelector('.icon-dot strong').textContent = 'AI Personalization';
-      featuresCards[0].querySelector('p').textContent = 'Tailored to your goal, level, available weekly time and constraints.';
       featuresCards[1].querySelector('.icon-dot strong').textContent = 'Safe progression';
-      featuresCards[1].querySelector('p').textContent = '24–48 h spacing between hard stimuli, deloads and volume control.';
       featuresCards[2].querySelector('.icon-dot strong').textContent = 'Preview + Excel file';
-      featuresCards[2].querySelector('p').textContent = 'Your plan is emailed as an Excel file right after generation.';
       featuresCards[3].querySelector('.icon-dot strong').textContent = 'Custom discipline selection';
       featuresCards[4].querySelector('.icon-dot strong').textContent = 'Universal exercise naming';
       featuresCards[5].querySelector('.icon-dot strong').textContent = 'Detailed weekly layout';
