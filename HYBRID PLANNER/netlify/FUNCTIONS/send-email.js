@@ -54,7 +54,7 @@ exports.handler = async (event) => {
       };
     }
 
-    const from = 'no-reply@tgmproject.net';
+    const from = 'no-reply@tgmproject.net'; // zweryfikowana domena Resend
     const payload = {
       from,
       to,
