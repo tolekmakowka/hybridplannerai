@@ -68,7 +68,7 @@ section.snap{min-height:100vh;scroll-snap-align:start;position:relative;display:
 .btn-brown{background:var(--brown);border-color:var(--brown);color:#fff}
 .btn-light{background:#fff;color:#111;border-color:#fff}
 
-/* Animacje treści (zostawione) */
+/* Animacje treści */
 .reveal{opacity:0;transform:translateY(14px);transition:opacity .6s ease, transform .6s ease}
 .reveal.show{opacity:1;transform:none}
 .reveal-stagger > *{opacity:0;transform:translateY(16px)}
@@ -131,13 +131,27 @@ section.snap{min-height:100vh;scroll-snap-align:start;position:relative;display:
 }
 .lang-toggle:hover{opacity:1}
 
+/* ====== DODANE: pełna szerokość CTA w ofercie ====== */
+#pricing .card-light .btn{
+  width:100%;
+  justify-content:center;
+  display:flex;
+  padding:14px 18px;
+  font-size:17px;
+}
+
 /* MOBILE dopracowanie */
 section.snap{ min-height: 100svh; }
-@media (max-width: 900px){ .grid-3{ grid-template-columns: repeat(2, 1fr); } }
+
+/* przerwy i łagodniejsze snapowanie na telefonie */
 @media (max-width: 640px){
+  main{ scroll-snap-type: y proximity; }           /* z mandatory → proximity */
+  section.snap{ margin-bottom: 12px; }             /* mała przerwa między „stronami” */
   .container{ padding: 0 16px; }
+
   #features .container { padding-bottom: 28px; }
   #pricing  .container { padding-top: 28px; }
+
   .hero-bg{ padding: 18px; border-radius: 14px; }
   .kicker{ font-size: 12px; }
   h1{ font-size: clamp(26px, 7vw, 34px); }
@@ -150,8 +164,14 @@ section.snap{ min-height: 100svh; }
   .bigcta{ font-size: 28px; }
   .grid-3{ grid-template-columns: 1fr; gap: 16px; }
   .card-light{ padding: 16px; border-radius: 14px; }
-  .autoplay-toggle{ bottom: 10px; right: 10px; padding: 6px 10px; font-size: 12px; }
-  .lang-toggle{ top: 10px; right: 10px; padding: 5px 8px; font-size: 11px; }
+
+  /* większy, czytelny CTA w ofercie na mobile */
+  #pricing .card-light .btn{ padding:16px 18px; font-size:18px; }
+}
+
+/* 2 kolumny na tablet */
+@media (max-width: 900px){
+  .grid-3{ grid-template-columns: repeat(2, 1fr); }
 }
 </style>
 </head>
@@ -160,7 +180,7 @@ section.snap{ min-height: 100svh; }
 <!-- EN/PL -->
 <a id="langToggle" class="lang-toggle" href="?lang=en" aria-label="English version">EN</a>
 
-<!-- Modal e-mail + zgoda (bez zmian) -->
+<!-- Modal e-mail + zgoda -->
 <div id="emailModal" aria-modal="true" role="dialog" style="position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center">
   <div class="box" style="background:#fff;color:#111;border-radius:16px;padding:22px;max-width:420px;width:92%;box-shadow:0 10px 40px rgba(0,0,0,.35)">
     <h3 style="margin-top:0">Dostęp do generatora</h3>
@@ -181,7 +201,7 @@ section.snap{ min-height: 100svh; }
 
 <main id="main">
 
-  <!-- HERO -->
+  <!-- 1) HERO -->
   <section class="snap">
     <div class="pre dark"><div class="loader"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
     <div class="container">
@@ -220,7 +240,7 @@ section.snap{ min-height: 100svh; }
     </div>
   </section>
 
-  <!-- CO ZAWIERA -->
+  <!-- 2) CO ZAWIERA -->
   <section id="features" class="snap section-light">
     <div class="pre light"><div class="loader"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
     <div class="container">
@@ -266,7 +286,7 @@ section.snap{ min-height: 100svh; }
     </div>
   </section>
 
-  <!-- OFERTA: jedna karta, wyśrodkowana -->
+  <!-- 3) OFERTA (jedna karta, CTA full-width) -->
   <section id="pricing" class="snap section-light">
     <div class="pre light"><div class="loader"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
     <div class="container">
@@ -295,7 +315,7 @@ section.snap{ min-height: 100svh; }
     </div>
   </section>
 
-  <!-- FAQ (bez zmian) -->
+  <!-- 4) FAQ -->
   <section id="faq" class="snap section-light">
     <div class="pre light"><div class="loader"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
     <div class="container">
@@ -316,7 +336,7 @@ section.snap{ min-height: 100svh; }
 <button id="autoBtn" class="autoplay-toggle" aria-pressed="true">Auto: ON</button>
 
 <script>
-/* Reveal + preload + auto-scroll — bez zmian */
+/* Reveal + preload + auto-scroll (bez zmian istotnych) */
 function initTypewriter(){} /* brak animacji tekstu w hero */
 const snaps = document.querySelectorAll('section.snap');
 const io = new IntersectionObserver((entries)=>{
@@ -366,7 +386,7 @@ const gateError = document.getElementById('gateError');
 function showModal(){ modal.style.display='flex'; emailInput.focus(); }
 function hideModal(){ modal.style.display='none'; }
 if(closeBtn){ closeBtn.addEventListener('click', hideModal); }
-function validEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+function validEmail(v){ return /^[^\s@]+@[^\s@]+$/.test(v) && /\.[^\s@]{2,}$/.test(v); }
 if(confirmBtn){
   confirmBtn.addEventListener('click', ()=>{
     gateError.style.display='none';
@@ -387,7 +407,7 @@ document.querySelectorAll('.requires-email').forEach(a=>{
 });
 </script>
 
-<!-- Mini i18n: EN/PL -->
+<!-- Mini i18n: EN/PL (bez zmian poza ofertą jednoelementową) -->
 <script>
 (function () {
   const params = new URLSearchParams(location.search);
