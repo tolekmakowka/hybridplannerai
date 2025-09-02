@@ -26,7 +26,10 @@ small{color:#a9a7a3}
 .container{max-width:var(--maxw);margin:0 auto;padding:20px}
 .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .back{display:inline-flex;gap:8px;align-items:center;border:1px solid var(--border);padding:8px 12px;border-radius:10px}
-.lang-toggle{background:#111;color:#fff;border:1px solid #333;padding:6px 10px;border-radius:10px;font:600 12px/1 Inter;text-decoration:none;}
+.lang-toggle{
+  background:#111; color:#fff; border:1px solid #333;
+  padding:6px 10px; border-radius:10px; font:600 12px/1 Inter; text-decoration:none;
+}
 
 .card{background:#141414;border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
@@ -36,7 +39,9 @@ input[type="text"], input[type="number"], input[type="email"], select, textarea{
   width:100%;background:#0f0f0f;color:#fff;border:1px solid #3a3a3a;border-radius:10px;padding:10px;font:400 14px/1.4 Inter
 }
 textarea{min-height:90px;resize:vertical}
-.badge{display:inline-block;background:#1e1e1e;border:1px solid #303030;border-radius:999px;padding:6px 10px;font:600 12px/1 Inter;margin-right:8px;margin-bottom:8px;color:#fff;}
+.badge{
+  display:inline-block;background:#1e1e1e;border:1px solid #303030;border-radius:999px;padding:6px 10px;font:600 12px/1 Inter;margin-right:8px;margin-bottom:8px;color:#fff;
+}
 .btn{display:inline-flex;align-items:center;gap:10px;padding:12px 18px;border-radius:12px;border:2px solid var(--text);color:var(--text);background:transparent;font:600 16px/1 Inter;cursor:pointer}
 .btn-brown{background:var(--brown);border-color:var(--brown);color:#fff}
 .btn-ghost{background:transparent;border-color:#3a3a3a;color:#ddd}
@@ -57,7 +62,7 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
 
   <div class="card">
     <h1 id="title">Generator planów</h1>
-    <p id="subtitle" style="margin:6px 0 14px;color:#C9C7C2">Wybierz tryb, odpowiedz na pytania i wygeneruj plan. <strong>Plik Excel</strong> zostanie wysłany na Twój e-mail.</p>
+    <p id="subtitle" style="margin:6px 0 14px;color:#C9C7C2">Wybierz tryb, odpowiedz na pytania i wygeneruj plan. PDF zostanie wysłany na Twój e-mail.</p>
 
     <!-- wybór trybu -->
     <div class="row">
@@ -70,7 +75,7 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
 
     <div class="hr"></div>
 
-    <!-- PLAN A — 5 pytań (zamiana #5 na PŁEĆ) -->
+    <!-- PLAN A — 5 pytań -->
     <section id="formA" style="display:none">
       <h2 id="hA">Plan A — pytania (5)</h2>
       <div class="grid-2">
@@ -95,16 +100,19 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
           <input id="a4" type="text" placeholder="np. siłownia pełna / hantle + drążek / dom">
         </div>
         <div class="row">
-          <label id="a5lbl">Płeć</label>
+          <label id="a5lbl">Czy chcesz trenować konkretnym schematem czy mam dopasować?</label>
           <select id="a5">
-            <option value="Mężczyzna">Mężczyzna</option>
-            <option value="Kobieta">Kobieta</option>
+            <option>FBW</option>
+            <option>PPL</option>
+            <option>Arnold Split</option>
+            <option>Upper Lower</option>
+            <option>Dopasowany do twoich potrzeb</option>
           </select>
         </div>
       </div>
     </section>
 
-    <!-- PLAN B (pozostawione bez zmian) -->
+    <!-- PLAN B (jak było) -->
     <section id="formB" style="display:none">
       <h2 id="hB">Plan B — pytania (10)</h2>
       <div class="grid-2">
@@ -136,7 +144,7 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
 
     <div class="actions">
       <button id="genBtn" class="btn btn-brown">Wygeneruj plan</button>
-      <a id="dlBtn" class="btn btn-ghost" href="#" download="Plan_Treningowy.xlsx" style="display:none">Pobierz plik Excel</a>
+      <a id="dlBtn" class="btn btn-ghost" href="#" download="plan.pdf" style="display:none">Pobierz PDF</a>
     </div>
 
     <div class="notice">
@@ -148,17 +156,20 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
   <footer>© 2025 Anatol Makówka</footer>
 </div>
 
-<!-- XLSX (XlsxPopulate) -->
-<script src="https://unpkg.com/xlsx-populate/browser/xlsx-populate.min.js"></script>
+<!-- jsPDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
+<!-- ▼▼▼ KONFIG: endpointy (RELATYWNE) ▼▼▼ -->
 <script>
-/* ---------- KONFIG: Netlify Functions (Groq) ---------- */
-window.HP_ORIGIN = location.origin; // działa z tgmproject.net i lokalnie
+/* ---------- KONFIG: stałe do Netlify Functions (RELATYWNE) ---------- */
 window.HP_ENDPOINTS = {
   generate: '/.netlify/functions/generate-plan',
   sendEmail: '/.netlify/functions/send-email'
 };
+</script>
+<!-- ▲▲▲ KONIEC KONFIGU ▲▲▲ -->
 
+<script>
 /* ---------- Bramka e-mail ---------- */
 (function(){
   const mail = localStorage.getItem('hp_email');
@@ -167,7 +178,7 @@ window.HP_ENDPOINTS = {
   else { document.getElementById('who').textContent = mail; }
 })();
 
-/* ---------- I18N skrót (pozostawione) ---------- */
+/* ---------- I18N EN/PL ---------- */
 (function(){
   const params = new URLSearchParams(location.search);
   const lang = (params.get('lang') || localStorage.getItem('hp_lang') || 'pl').toLowerCase();
@@ -177,10 +188,12 @@ window.HP_ENDPOINTS = {
   if(lang==='en'){
     t('backLbl','← Back');
     t('title','Plan generator');
-    t('subtitle','Choose mode, answer the questions, and generate the plan. The Excel file will be emailed to you.');
+    t('subtitle','Choose mode, answer the questions, and generate the plan. The PDF will be emailed to you.');
     t('modeLbl','Generator mode');
     document.getElementById('btnA').textContent='Plan A — 12 weeks';
     document.getElementById('btnB').textContent='Plan B — Hybrid week (4 weeks)';
+
+    // Plan A (5 questions)
     t('hA','Plan A — questions (5)');
     t('a1lbl','How many sessions per week would you like?');
     t('a2lbl','What is your main goal?');
@@ -189,12 +202,11 @@ window.HP_ENDPOINTS = {
     document.querySelector('#a3 option[value="Średniozaawansowany"]').textContent='Intermediate';
     document.querySelector('#a3 option[value="Początkujący"]').textContent='Beginner';
     t('a4lbl','What equipment do you have access to?');
-    t('a5lbl','Sex');
-    document.querySelector('#a5 option[value="Mężczyzna"]').textContent='Male';
-    document.querySelector('#a5 option[value="Kobieta"]').textContent='Female';
-    document.getElementById('dlBtn').textContent='Download Excel';
-    t('whoLbl','The plan will be sent to: ');
-    t('rodoLbl','This is not medical advice. Use at your own risk.');
+    t('a5lbl','Do you want a specific split or should I pick the best match?');
+    const a5 = document.getElementById('a5');
+    a5.options[0].text='FBW'; a5.options[1].text='PPL'; a5.options[2].text='Arnold Split'; a5.options[3].text='Upper Lower'; a5.options[4].text='Best match for your needs';
+
+    // Plan B
     t('hB','Plan B — questions (10)');
     t('b1lbl','Disciplines (pick or type)'); t('b1hint','Quick pick below — click to add:');
     t('b2lbl','Priority 1'); t('b3lbl','Priority 2');
@@ -202,6 +214,12 @@ window.HP_ENDPOINTS = {
     t('b6lbl','Time per session (min)'); t('b7lbl','Level');
     t('b8lbl','Equipment'); t('b9lbl','Limitations'); t('b10lbl','Notes');
     t('quickLbl','Quick pick (20 disciplines)');
+
+    document.getElementById('genBtn').textContent='Generate plan';
+    document.getElementById('dlBtn').textContent='Download PDF';
+    t('whoLbl','The plan will be sent to: ');
+    t('rodoLbl','This is not medical advice. Use at your own risk.');
+
     localStorage.setItem('hp_lang','en');
     if(toggleBtn){ toggleBtn.href='?lang=pl'; toggleBtn.textContent='PL'; toggleBtn.setAttribute('aria-label','Polish version'); }
   } else {
@@ -210,7 +228,7 @@ window.HP_ENDPOINTS = {
   }
 })();
 
-/* ---------- Lista 20 dyscyplin (bez zmian) ---------- */
+/* ---------- Lista 20 dyscyplin ---------- */
 const DISC = [
   'Siłownia','Bieganie','Wspinaczka','Jazda na rowerze','Pływanie',
   'Joga','Mobility','HIIT','Cross-training','Trening obwodowy',
@@ -242,25 +260,32 @@ const formA = document.getElementById('formA');
 const formB = document.getElementById('formB');
 const btnA  = document.getElementById('btnA');
 const btnB  = document.getElementById('btnB');
+
 function showA(){ formA.style.display='block'; formB.style.display='none'; btnA.classList.add('btn-brown'); btnB.classList.remove('btn-brown'); }
 function showB(){ formA.style.display='none'; formB.style.display='block'; btnB.classList.add('btn-brown'); btnA.classList.remove('btn-brown'); }
+
 btnA.addEventListener('click', showA);
 btnB.addEventListener('click', showB);
-(function(){ const h=location.hash; if(h && /plan=B/i.test(h)) showB(); else showA(); })();
+(function(){
+  const h = location.hash;
+  if(h && /plan=B/i.test(h)) showB();
+  else if(h && /plan=A|plan=BUNDLE/i.test(h)) showA();
+  else showA();
+})();
 
-/* ---------- Zbieranie pól ---------- */
+/* ---------- Payload z formularza ---------- */
 function buildPayload(){
   const usingA = formA.style.display==='block';
   if(usingA){
     return {
       mode: 'A',
-      title: 'Plan Treningowy',
+      title: 'Plan Treningowy (12 tygodni)',
       inputs: {
         sessionsPerWeek: Number(document.getElementById('a1').value || 0),
         goal: document.getElementById('a2').value.trim(),
         level: document.getElementById('a3').value,
         equipment: document.getElementById('a4').value.trim(),
-        sex: document.getElementById('a5').value   // <— NOWE
+        splitPreference: document.getElementById('a5').value
       }
     };
   } else {
@@ -283,81 +308,151 @@ function buildPayload(){
   }
 }
 
-/* ---------- Wywołanie backendu (Groq → JSON) ---------- */
-async function callBackendGenerate(payload){
-  const lang = (localStorage.getItem('hp_lang') || 'pl').toLowerCase();
-  const res = await fetch(window.HP_ENDPOINTS.generate, {
-    method: 'POST',
-    headers: {'Content-Type':'application/json','Accept':'application/json'},
-    body: JSON.stringify({ mode: payload.mode, inputs: payload.inputs, lang })
-  });
-  const text = await res.text();
-  if(!res.ok) throw new Error(`generate-plan HTTP ${res.status}: ${text}`);
-  let data; try{ data=JSON.parse(text); }catch{ throw new Error('Bad JSON from generate-plan'); }
-  return data; // {planJson, planText, planName}
+/* ---------- PROMPT do AI ---------- */
+function buildPrompt(payload, lang){
+  const L = (lang || localStorage.getItem('hp_lang') || 'pl').toLowerCase();
+  const isEN = L === 'en';
+  const A = payload.mode === 'A';
+
+  const dayNamesPL = ['Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota','Niedziela'];
+  const dayNamesEN = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+  const header = A
+    ? (isEN
+      ? `ROLE: Experienced S&C coach. Create a structured 12-week plan.\nTITLE: Training Plan (12 weeks)`
+      : `ROLA: Doświadczony trener S&C. Stwórz uporządkowany plan na 12 tygodni.\nTYTUŁ: Plan Treningowy (12 tygodni)`)
+    : (isEN
+      ? `ROLE: Experienced S&C coach. Create a structured 4-week hybrid plan.\nTITLE: Hybrid Training Plan (4 weeks)`
+      : `ROLA: Doświadczony trener S&C. Stwórz uporządkowany hybrydowy plan na 4 tygodnie.\nTYTUŁ: Hybrydowy Plan Treningowy (4 tygodnie)`);
+
+  const inputsBlock = Object.entries(payload.inputs)
+    .map(([k,v])=>`- ${k}: ${v ?? '—'}`).join('\n');
+
+  const HARD_RULES_PL = `
+FORMAT planu treningowego:
+- każdy dzień treningowy ma mieć oznaczenie który to dzień tygodnia.
+- każdy dzień treningowy ma zawierać starannie dobranych od 5 do 8 ćwiczeń
+- każdy dzień treningowy ma zawierać ćwiczenia zgodne z zaplanowanym cyklem na dany dzień...
+- każde ćwiczenie musi zawierać zakres powtórzeń: 8–12, liczba serii: 3–4.
+- kolejność ćwiczeń: duże partie → mniejsze → dodatkowe.
+- zachowaj odpoczynek 24–48h pomiędzy jednostkami tych samych grup.
+`.trim();
+
+  const OUTPUT_RULES = isEN ? `
+OUTPUT:
+- Language: ${isEN?'English':'Polish'}.
+- Plain text only (no tables/HTML). Use headings and bullets.
+- Mark each week as "Week X", and each day as "Day N — ${isEN?'weekday name': 'nazwa dnia tygodnia'}".
+- End with: "${isEN?'This is not medical advice.':'To nie jest porada medyczna.'}"
+`.trim() : `
+WYJŚCIE:
+- Język: ${isEN?'English':'Polski'}.
+- Tylko czysty tekst (bez tabel/HTML). Używaj nagłówków i wypunktowań.
+- Oznaczaj tydzień jako „Tydzień X”, dzień jako „Dzień N — ${isEN?'weekday name':'nazwa dnia tygodnia'}”.
+- Zakończ zdaniem: „To nie jest porada medyczna.”
+`.trim();
+
+  const PLAN_REQUEST = A
+    ? (isEN ? `
+Create a 12-week program ... Name each day with the weekday (${dayNamesEN.join(', ')}).`
+       : `
+Ułóż 12-tygodniowy program ... Oznaczaj dni tygodnia (${dayNamesPL.join(', ')}).`)
+    : (isEN ? `
+Create a 4-week hybrid schedule ...`
+       : `
+Ułóż 4-tygodniowy plan hybrydowy ...`);
+
+  return [
+    header,'',(isEN?'INPUTS:':'DANE WEJŚCIOWE:'),inputsBlock,'',
+    HARD_RULES_PL,'',OUTPUT_RULES,'',PLAN_REQUEST
+  ].join('\n');
 }
 
-/* ---------- Fallback (stały szablon JSON, FBW PUSH/PULL/LEGS) ---------- */
-function localJsonFallback(){
-  const D = d=>({day:d, focus:'', exercises:[
-    {name:'Flat bench press',sets:4,reps:'8-12',rest:'3min',rir:'1-2',rpe:'9',tempo:'X',comment:'',series:''},
-    {name:'Incline bench press',sets:3,reps:'8-12',rest:'3min',rir:'2',rpe:'8',tempo:'X',comment:'',series:''},
-    {name:'Overhead press',sets:3,reps:'8-12',rest:'3min',rir:'2',rpe:'8',tempo:'X',comment:'',series:''},
-    {name:'Triceps extension',sets:3,reps:'8-12',rest:'2min',rir:'2-3',rpe:'8',tempo:'X',comment:'',series:''},
-    {name:'Lateral raise',sets:3,reps:'8-12',rest:'2min',rir:'2-3',rpe:'8',tempo:'X',comment:'',series:''},
-    {name:'Hanging knee raises',sets:3,reps:'8-12',rest:'2min',rir:'2-3',rpe:'8',tempo:'X',comment:'',series:''},
-  ]});
+/* ---------- Wywołanie backendu (NOWE) ---------- */
+async function callBackendGenerateWithPrompt(payload){
+  const lang = (localStorage.getItem('hp_lang') || 'pl').toLowerCase();
+  const prompt = buildPrompt(payload, lang);
+
+  const res = await fetch(window.HP_ENDPOINTS.generate, {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json', 'Accept':'application/json' },
+    body: JSON.stringify({ mode: payload.mode, inputs: payload.inputs, lang, prompt })
+  });
+
+  const text = await res.text();
+  if (!res.ok) {
+    console.error('generate-plan error:', text);
+    throw new Error(`generate-plan HTTP ${res.status}`);
+  }
+
+  let data = {};
+  try { data = JSON.parse(text); } catch(e) {
+    throw new Error('Invalid JSON from generate-plan: ' + text.slice(0,200));
+  }
+  if (!data.planText) throw new Error('Missing planText in response.');
+
   return {
-    week: [D('Poniedziałek'), D('Wtorek'), D('Środa'), D('Czwartek'), D('Piątek'), D('Sobota'), D('Niedziela')]
+    planText: data.planText,
+    planName: data.planName || (payload.mode === 'A' ? 'Plan Treningowy' : 'Plan')
   };
 }
 
-/* ---------- XLSX: budowa arkusza w stylu z Twoich screenów ---------- */
-async function makeWorkbook(planJson, planName='Plan Treningowy'){
-  const days = ['Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota','Niedziela'];
-  const headers = ['ĆWICZENIE','SERIE','POWTÓRZENIA','PRZERWA','RIR','RPE','TEMPO','KOMENTARZ / WYKONANIE','NUMER SERII'];
-  const colWidths = [34,6,14,10,6,6,8,28,12];
-
-  const wb = await XlsxPopulate.fromBlankAsync();
-  // usuń domyślny Sheet1
-  wb.deleteSheet(0);
-
-  for(const d of days){
-    const sh = wb.addSheet(d);
-    // tytuł
-    sh.range('A1:I1').merged(true).value(planName)
-      .style({ bold:true, fontColor:'000', horizontalAlignment:'center', verticalAlignment:'center', fontSize:22 });
-    // pasek nagłówków tabeli
-    sh.row(3).style({ bold:true, fill:'D9E2F3', border:true });
-    headers.forEach((h,i)=> sh.cell(3, i+1).value(h));
-    // szerokości kolumn
-    colWidths.forEach((w,i)=> sh.column(i+1).width(w));
-    // zamrożenie
-    sh.freezePanes(4,1);
-    // obramowanie lekkie dla tabeli
-    const dayObj = (planJson?.week||[]).find(x=>String(x.day||'').toLowerCase()===d.toLowerCase()) || {exercises:[]};
-    const rows = dayObj.exercises||[];
-    const startRow = 4;
-    rows.forEach((ex,idx)=>{
-      const r = startRow+idx;
-      const vals = [
-        ex.name||'', ex.sets||'', ex.reps||'', ex.rest||'',
-        ex.rir||'', ex.rpe||'', ex.tempo||'',
-        ex.comment||'', ex.series||''
-      ];
-      vals.forEach((v,i)=> sh.cell(r,i+1).value(v));
-    });
-    const lastRow = Math.max(startRow + (rows.length||1) - 1, startRow);
-    sh.range(3,1,lastRow,9).style({border:true});
+/* ---------- Fallback lokalny ---------- */
+function localGenerateText(payload){
+  const prompt = buildPrompt(payload, localStorage.getItem('hp_lang')||'pl');
+  const lines = [];
+  lines.push('=== PROMPT WYSYŁANY DO OPENAI (skrót) ===');
+  lines.push(prompt.substring(0, 800) + (prompt.length>800?' ...':''));
+  lines.push('');
+  lines.push('=== Szkic demonstracyjny (fallback bez AI) ===');
+  if(payload.mode==='A'){
+    for(let w=1; w<=2; w++){
+      lines.push(`Tydzień ${w}`);
+      lines.push(`Dzień 1 — Poniedziałek (PUSH)`);
+      lines.push(`• Flat bench press — 4×8–12`);
+      lines.push(`• Incline bench press — 3×8–12`);
+      lines.push(`• Overhead press — 3×8–12`);
+      lines.push(`• Triceps extension — 3×8–12`);
+      lines.push(`• Lateral raise — 3×8–12`);
+      lines.push(`• Hanging knee raises — 3×8–12`);
+      lines.push('');
+    }
+  } else {
+    lines.push(`Tydzień 1`);
+    lines.push(`Poniedziałek — Siłownia (Upper)`);
+    lines.push(`Wtorek — Odpoczynek`);
+    lines.push(`Środa — Bieganie easy`);
+    lines.push(`Czwartek — Odpoczynek`);
+    lines.push(`Piątek — Siłownia (Lower)`);
+    lines.push(`Weekend — Regeneracja aktywna`);
   }
-
-  // ustaw pierwszy jako aktywny
-  wb.sheet(0).active(true);
-  const blob = await wb.outputAsync();
-  return new Blob([blob], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  lines.push('');
+  lines.push('To nie jest porada medyczna.');
+  return { planText: lines.join('\n'), planName: payload.title };
 }
 
-/* ---------- E-mail (Resend przez funkcję) ---------- */
+/* ---------- PDF ---------- */
+async function makePdf(planText, planName){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'pt', format:'a4' });
+  const margin = 48, width = 595.28 - margin*2;
+  const lineH = 16;
+  const lines = doc.splitTextToSize(planText, width);
+  let y = margin;
+  doc.setFont('helvetica','bold'); doc.setFontSize(16);
+  doc.text(planName, margin, y); y += 18;
+  doc.setFont('helvetica','normal'); doc.setFontSize(11);
+  lines.forEach(t=>{
+    if(y > 842 - margin){ doc.addPage(); y = margin; }
+    doc.text(t, margin, y);
+    y += lineH;
+  });
+  const blob = doc.output('blob');
+  const url = URL.createObjectURL(blob);
+  return { blob, url };
+}
+
+/* ---------- Send e-mail (Netlify Function Resend) ---------- */
 function blobToBase64(blob){
   return new Promise((resolve, reject)=>{
     const r = new FileReader();
@@ -366,57 +461,70 @@ function blobToBase64(blob){
     r.readAsDataURL(blob);
   });
 }
-async function sendPlanByEmail(xlsxBlob, planName){
-  try{
+async function sendPlanByEmail(pdfBlob, planName){
+  try {
     const to = localStorage.getItem('hp_email');
-    if(!to) return;
-    const b64 = await blobToBase64(xlsxBlob);
+    if(!to){ console.warn('Brak e-maila w localStorage (hp_email).'); return; }
+    const b64 = pdfBlob ? await blobToBase64(pdfBlob) : null;
+
     const resp = await fetch(window.HP_ENDPOINTS.sendEmail, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
         to,
         subject: planName || 'Twój plan treningowy',
-        html: '<p>W załączniku Twój plan (XLSX). Dziękujemy za skorzystanie z HybridPlanner.</p>',
+        html: '<p>W załączniku Twój plan (PDF). Dziękujemy za skorzystanie z HybridPlanner.</p>',
         attachmentBase64: b64,
-        filename: 'Plan Treningowy.xlsx'
+        filename: 'plan.pdf'
       })
     });
-    if(!resp.ok){ console.error('Resend error', await resp.text()); alert('Nie udało się wysłać e-maila.'); }
-  }catch(e){ console.error(e); }
-}
 
-/* ---------- Generowanie ---------- */
+    if(!resp.ok){
+      const t = await resp.text();
+      console.error('Resend error:', t);
+      alert('Nie udało się wysłać e-maila. Spróbuj ponownie.');
+    }
+  } catch(e){ console.error(e); }
+}
+window.hpOnPlanReady = async function(pdfBlob, planName){
+  try { await sendPlanByEmail(pdfBlob, planName); }
+  catch(e){ console.error(e); }
+};
+
+/* ---------- Generowanie (najpierw backend, potem fallback) ---------- */
 const genBtn = document.getElementById('genBtn');
 const dlBtn  = document.getElementById('dlBtn');
 
 genBtn.addEventListener('click', async ()=>{
-  let planJson, planName='Plan Treningowy';
+  let planText, planName;
 
   try{
-    genBtn.disabled = true;
+    genBtn.disabled = true; 
     genBtn.textContent = 'Generowanie…';
-    dlBtn.style.display='none'; dlBtn.removeAttribute('href');
+    dlBtn.style.display='none'; 
+    dlBtn.removeAttribute('href');
 
     const payload = buildPayload();
 
-    // 1) Backend (Groq)
-    try{
-      const data = await callBackendGenerate(payload);
-      planName = data.planName || planName;
-      planJson = data.planJson || null;
-    }catch(err){
-      console.warn('Backend nie zwrócił JSON, używam fallbacku:', err);
-      planJson = localJsonFallback();
+    // 1) PRÓBA BACKENDU
+    try {
+      const res = await callBackendGenerateWithPrompt(payload);
+      planText = res.planText;
+      planName = res.planName;
+    } catch (e) {
+      console.warn('generate-plan nie zadziałał, używam fallbacku:', e);
+      const res = localGenerateText(payload);
+      planText = res.planText;
+      planName = res.planName;
     }
 
-    // 2) XLSX
-    const xlsxBlob = await makeWorkbook(planJson, planName);
-    const url = URL.createObjectURL(xlsxBlob);
-    dlBtn.href = url; dlBtn.style.display='inline-flex';
+    // 2) PDF
+    const { blob, url } = await makePdf(planText, planName);
+    dlBtn.href = url; 
+    dlBtn.style.display='inline-flex';
 
     // 3) E-mail
-    await sendPlanByEmail(xlsxBlob, planName);
+    await window.hpOnPlanReady(blob, planName);
 
     genBtn.textContent = 'Gotowe ✓';
   }catch(e){
