@@ -1,0 +1,4 @@
+[functions]
+  directory = "netlify/FUNCTIONS"
+  node_bundler = "esbuild"
+  external_node_modules = ["exceljs"]
