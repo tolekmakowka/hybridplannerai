@@ -1,0 +1,10 @@
+{
+  "name": "hybridplanner-site",
+  "private": true,
+  "version": "1.0.0",
+  "license": "MIT",
+  "engines": { "node": ">=18.17" },
+  "dependencies": {
+    "exceljs": "^4.4.0"
+  }
+}
