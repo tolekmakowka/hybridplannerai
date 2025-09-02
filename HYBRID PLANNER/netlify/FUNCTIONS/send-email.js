@@ -61,7 +61,9 @@ exports.handler = async (event) => {
       html: html || '<p>W załączniku Twój plan.</p>',
       attachments: (attachmentBase64 && filename) ? [{
         content: attachmentBase64,
-        filename
+        filename,
+        // ▼ DODANE: poprawny MIME dla XLSX, aby klient poczty/Resend rozpoznał plik
+        contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       }] : []
     };
 
