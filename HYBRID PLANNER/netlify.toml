@@ -1,4 +1,11 @@
+[build]
+  command = "npm install"
+  publish = "."
+
 [functions]
   directory = "netlify/FUNCTIONS"
   node_bundler = "esbuild"
   external_node_modules = ["exceljs"]
+
+[[plugins]]
+  package = "@netlify/plugin-functions-install-core"
