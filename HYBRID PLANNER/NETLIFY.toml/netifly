@@ -3,9 +3,8 @@
   publish = "."
 
 [functions]
-  directory = "netlify/functions"
+  directory = "netlify/FUNCTIONS"
   node_bundler = "esbuild"
-  # exceljs jest spory – lepiej zostawić go jako zewnętrzny moduł
   external_node_modules = ["exceljs"]
 
 [build.environment]
