@@ -1,7 +1,11 @@
+// netlify/functions/generate-plan.js
+'use strict';
+
 const ExcelJS = require('exceljs');
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
+// Dozwolone originy (CORS)
 const ALLOWED_ORIGINS = new Set([
   'https://tgmproject.net',
   'https://www.tgmproject.net',
@@ -24,11 +28,16 @@ function corsHeaders(origin) {
 exports.handler = async (event) => {
   const origin = event.headers?.origin || '';
 
+  // Preflight
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: corsHeaders(origin) };
   }
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers: corsHeaders(origin), body: JSON.stringify({ ok:false, error: 'Method not allowed' }) };
+    return {
+      statusCode: 405,
+      headers: corsHeaders(origin),
+      body: JSON.stringify({ ok:false, error: 'Method not allowed' })
+    };
   }
 
   try {
@@ -43,19 +52,19 @@ exports.handler = async (event) => {
     } = inputs;
 
     // 1) Spróbuj Groq
-    let plan;
+    let plan = null;
     try {
       plan = await getPlanFromGroq({ sessionsPerWeek, goal, level, equipment, gender });
     } catch (_) {
       plan = null;
     }
 
-    // 2) Walidacja i różnorodność
+    // 2) Walidacja + różnorodność; jeśli coś nie gra → fallback
     if (!isValidPlan(plan) || !hasDiversity(plan)) {
       plan = buildVariedPlan({ sessionsPerWeek, level, equipment, goal, gender });
     }
 
-    // 3) Excel – jeden arkusz "Plan"
+    // 3) Excel – jeden arkusz
     const { buffer, filename } = await makeSingleSheetWorkbook(plan);
 
     return {
@@ -66,7 +75,7 @@ exports.handler = async (event) => {
   } catch (err) {
     return {
       statusCode: 500,
-      headers: corsHeaders(origin),
+      headers: corsHeaders(event.headers?.origin || ''),
       body: JSON.stringify({ ok:false, error: 'generate-plan failed', details: String(err) })
     };
   }
@@ -131,35 +140,33 @@ function extractJson(txt){
   return JSON.parse(raw);
 }
 
-/* ===================== Walidacja i różnorodność ===================== */
+/* ===================== Walidacja + różnorodność ===================== */
 function isValidPlan(p){
   return p && Array.isArray(p.days) && p.days.length >= 3 && p.days.every(d => Array.isArray(d.exercises));
 }
 
 function hasDiversity(p){
-  // liczymy unikalne „podpisy” zestawów ćwiczeń w dniach
   const sigs = (p.days || []).map(d => {
     const names = (d.exercises || []).map(e => (e.cwiczenie||'').toLowerCase().trim()).filter(Boolean);
     return JSON.stringify(names);
   });
   const uniq = new Set(sigs);
-  // jeżeli >60% dni to identyczne zestawy -> brak różnorodności
-  return uniq.size >= Math.ceil(sigs.length * 0.6);
+  return uniq.size >= Math.ceil(sigs.length * 0.6); // >≈40% powtórek → za mała różnorodność
 }
 
-/* ===================== Regułowy plan zróżnicowany ===================== */
+/* ===================== Fallback: zróżnicowany plan ===================== */
 function buildVariedPlan({ sessionsPerWeek = 4, level='', equipment='', goal='', gender='' }) {
   const dni = ['Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota','Niedziela'];
 
-  // Dobór splitu
+  // Dobór splitu – UŻYWAMY realnych kluczy z LIB + normalizacja
   let split;
   if (sessionsPerWeek <= 3) split = ['FBW A','FBW B','FBW C'];
-  else if (sessionsPerWeek === 4) split = ['Upper A','Lower A','Upper B','Lower B'];
+  else if (sessionsPerWeek === 4) split = ['Upper','Lower','Upper','Lower'];           // <— ważne
   else if (sessionsPerWeek === 5) split = ['Upper','Lower','Push','Pull','Full'];
   else if (sessionsPerWeek === 6) split = ['Push','Pull','Legs','Push','Pull','Legs'];
   else split = ['Upper','Lower','Push','Pull','Full','Legs','Akcesoria/Core'];
 
-  // biblioteka ćwiczeń (bazowe, bez sprzętu – można rozbudować pod equipment)
+  // biblioteka ćwiczeń
   const LIB = {
     Push: [
       'Flat bench press','Incline bench press','Overhead press',
@@ -203,15 +210,34 @@ function buildVariedPlan({ sessionsPerWeek = 4, level='', equipment='', goal='',
     ]
   };
 
+  // Normalizacja nazw (gdyby pojawiły się A/B)
+  function baseKey(n){
+    const s = String(n).toLowerCase();
+    if (s.startsWith('upper')) return 'Upper';
+    if (s.startsWith('lower')) return 'Lower';
+    if (s.startsWith('push'))  return 'Push';
+    if (s.startsWith('pull'))  return 'Pull';
+    if (s.startsWith('legs'))  return 'Legs';
+    if (s.startsWith('full'))  return 'Full';
+    if (s.includes('akcesoria')) return 'Akcesoria/Core';
+    if (s.startsWith('fbw a')) return 'FBW A';
+    if (s.startsWith('fbw b')) return 'FBW B';
+    if (s.startsWith('fbw c')) return 'FBW C';
+    return n;
+  }
+
   function pack(name){
-    const base = LIB[name] || [];
+    const key  = baseKey(name);
+    const base = LIB[key] || [];
     return base.slice(0, 6).map(x => row(x));
   }
+
   function row(name){
+    const zaaw = level.toLowerCase().includes('zaaw');
     return {
       cwiczenie: name,
-      serie: level.toLowerCase().includes('zaaw') ? '4×6–10' : '3×8–12',
-      powtorzenia: level.toLowerCase().includes('zaaw') ? '6–10' : '8–12',
+      serie: zaaw ? '4×6–10' : '3×8–12',
+      powtorzenia: zaaw ? '6–10' : '8–12',
       przerwa: '2–3 min',
       rir: '1–3',
       rpe: '7–9',
@@ -220,20 +246,19 @@ function buildVariedPlan({ sessionsPerWeek = 4, level='', equipment='', goal='',
     };
   }
 
-  // rozkład po tygodniu – pierwsze N dni to trening, reszta puste (albo „regeneracja”)
   const days = dni.map((day, i) => {
     const tp = split[i % split.length];
     if (i < Math.min(sessionsPerWeek, 7)) {
       return { day, exercises: pack(tp) };
     } else {
-      return { day, exercises: [] }; // dzień bez treningu
+      return { day, exercises: [] }; // regeneracja
     }
   });
 
   return { days };
 }
 
-/* ===================== Excel (jeden arkusz) ===================== */
+/* ===================== Excel – jeden arkusz ===================== */
 async function makeSingleSheetWorkbook(plan){
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('Plan', { properties: { defaultRowHeight: 18 } });
@@ -275,13 +300,16 @@ async function makeSingleSheetWorkbook(plan){
     ws.mergeCells(`A${startRow}:H${startRow}`);
     const cell = ws.getCell(`A${startRow}`);
     cell.value = dayName;
-    Object.assign(cell, { style: dayStyle });
+    cell.font = dayStyle.font;
+    cell.fill = dayStyle.fill;
 
     // nagłówek tabeli
     const headRow = ws.addRow(ws.columns.map(c => c.header));
     headRow.height = 20;
     headRow.eachCell((c) => {
-      c.style = headerStyle;
+      c.font = headerStyle.font;
+      c.fill = headerStyle.fill;
+      c.alignment = headerStyle.alignment;
       c.border = {
         top:{style:'thin', color:{argb:'FF666666'}},
         left:{style:'thin', color:{argb:'FF666666'}},
@@ -312,7 +340,7 @@ async function makeSingleSheetWorkbook(plan){
       });
     }
 
-    ws.addRow([]);
+    ws.addRow([]); // odstęp między dniami
   }
 
   const buffer = await wb.xlsx.writeBuffer();
