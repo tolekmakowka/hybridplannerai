@@ -64,8 +64,8 @@ exports.handler = async (event) => {
       plan = buildVariedPlan({ sessionsPerWeek, level, equipment, goal, gender });
     }
 
-    // 3) Excel – jeden arkusz; tylko dni z treningami
-    const { buffer, filename } = await makeSingleSheetWorkbook(plan);
+    // 3) Excel – jeden arkusz; tylko dni z treningami, 3 kolumny
+    const { buffer, filename } = await makeSingleSheetWorkbook(plan, { level, seed: Date.now() });
 
     return {
       statusCode: 200,
@@ -302,8 +302,24 @@ function buildVariedPlan({ sessionsPerWeek = 4, level='', equipment='', goal='',
   return { days };
 }
 
-/* ===================== Excel – jeden arkusz (wyśrodkowany widok) ===================== */
-async function makeSingleSheetWorkbook(plan){
+/* ===================== Pomocnicze: parsowanie serii / dokładna liczba powt. ===================== */
+function parseSeriesCount(serieStr, level) {
+  if (typeof serieStr === 'string') {
+    // szukamy liczby przed znakiem x/× (np. "4×8–12", "3x10")
+    const m = serieStr.match(/(\d+)\s*[x×]/i);
+    if (m) return parseInt(m[1], 10);
+    // czasem ktoś poda samo "4"
+    const m2 = serieStr.match(/^\s*(\d+)\s*$/);
+    if (m2) return parseInt(m2[1], 10);
+  }
+  // domyślnie wg poziomu
+  return (String(level).toLowerCase().includes('zaaw')) ? 4 : 3;
+}
+
+/* ===================== Excel – jeden arkusz (wyśrodkowany widok, 3 kolumny) ===================== */
+async function makeSingleSheetWorkbook(plan, { level = '', seed = Date.now() } = {}) {
+  const rnd = mulberry32(cyrb53(String(seed)));
+
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('Plan', {
     properties: { defaultRowHeight: 18 },
@@ -312,19 +328,14 @@ async function makeSingleSheetWorkbook(plan){
 
   // lewy margines (pusta kolumna), potem właściwa tabela
   ws.columns = [
-    { header: '', width: 4 }, // margines z lewej
-    { header:'ĆWICZENIE', width: 32 },
-    { header:'SERIE', width: 10 },
-    { header:'POWTÓRZENIA', width: 14 },
-    { header:'PRZERWA', width: 11 },
-    { header:'RIR', width: 6 },
-    { header:'RPE', width: 6 },
-    { header:'TEMPO', width: 8 },
-    { header:'KOMENTARZ / WYKONANIE', width: 36 }
+    { header: '', width: 4 }, // margines z lewej (A)
+    { header:'ĆWICZENIE', width: 36 },   // B
+    { header:'SERIE', width: 10 },       // C
+    { header:'POWTÓRZENIA', width: 16 }  // D
   ];
 
   // tytuł na środku „bloku”
-  ws.mergeCells('B1:I1');
+  ws.mergeCells('B1:D1');
   const title = ws.getCell('B1');
   title.value = 'Plan Treningowy';
   title.font = { name: 'Arial', size: 16, bold: true };
@@ -336,27 +347,27 @@ async function makeSingleSheetWorkbook(plan){
     fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF444444' } },
     alignment: { vertical: 'middle', horizontal: 'center' }
   };
-  const dayStyle = {
-    font: { bold: true, size: 13, color: { argb: 'FFFFFFFF' } },
-    fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF3E2723' } }
-  };
+  const dayFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF3E2723' } };
+  const dayFont = { bold: true, size: 13, color: { argb: 'FFFFFFFF' } };
 
-  // weź wyłącznie dni z treningami
+  // wyłącznie dni z treningami
   const trainingDays = (plan.days || []).filter(d => (d.exercises || []).length > 0);
 
   for (const d of trainingDays) {
     const startRow = ws.rowCount + 1;
-    ws.mergeCells(`B${startRow}:I${startRow}`);
+    ws.mergeCells(`B${startRow}:D${startRow}`);
     const cell = ws.getCell(`B${startRow}`);
     cell.value = d.day || '';
-    cell.font = dayStyle.font;
-    cell.fill = dayStyle.fill;
+    cell.font = dayFont;
+    cell.fill = dayFill;
+    cell.alignment = { vertical: 'middle', horizontal: 'left' };
 
     // nagłówek tabeli
-    const headRow = ws.addRow(ws.columns.map(c => c.header));
+    const headRow = ws.addRow(['', 'ĆWICZENIE', 'SERIE', 'POWTÓRZENIA']);
     headRow.height = 20;
-    headRow.eachCell((c, colNumber) => {
-      if (colNumber === 1) return; // kolumna marginesu bez stylu
+    // stylujemy tylko kolumny B–D (2–4)
+    [2,3,4].forEach(col => {
+      const c = headRow.getCell(col);
       c.font = headerStyle.font;
       c.fill = headerStyle.fill;
       c.alignment = headerStyle.alignment;
@@ -368,26 +379,23 @@ async function makeSingleSheetWorkbook(plan){
       };
     });
 
+    // wiersze ćwiczeń
     for (const ex of (d.exercises || [])) {
-      const r = ws.addRow([
-        '', // margines
-        ex.cwiczenie || '',
-        ex.serie || '',
-        ex.powtorzenia || '',
-        ex.przerwa || '',
-        ex.rir || '',
-        ex.rpe || '',
-        ex.tempo || '',
-        ex.komentarz || ''
-      ]);
-      r.eachCell((c, colNumber) => {
-        if (colNumber === 1) return; // margines
+      // SERIE: tylko liczba
+      const seriesCount = parseSeriesCount(ex.serie || ex.series || '', level);
+      // POWTÓRZENIA: dokładna liczba 8–12 (lekka losowość)
+      const reps = 8 + Math.floor(rnd() * 5); // 8..12
+
+      const r = ws.addRow(['', ex.cwiczenie || '', seriesCount, reps]);
+      [2,3,4].forEach(col => {
+        const c = r.getCell(col);
         c.border = {
           top:{style:'thin', color:{argb:'FFDDDDDD'}},
           left:{style:'thin', color:{argb:'FFDDDDDD'}},
           bottom:{style:'thin', color:{argb:'FFDDDDDD'}},
           right:{style:'thin', color:{argb:'FFDDDDDD'}}
         };
+        if (col !== 2) c.alignment = { horizontal: 'center' };
       });
     }
 
