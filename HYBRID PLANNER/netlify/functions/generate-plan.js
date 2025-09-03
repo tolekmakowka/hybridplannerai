@@ -64,7 +64,7 @@ exports.handler = async (event) => {
       plan = buildVariedPlan({ sessionsPerWeek, level, equipment, goal, gender });
     }
 
-    // 3) Excel – jeden arkusz
+    // 3) Excel – jeden arkusz; tylko dni z treningami
     const { buffer, filename } = await makeSingleSheetWorkbook(plan);
 
     return {
@@ -87,6 +87,8 @@ async function getPlanFromGroq({ sessionsPerWeek, goal, level, equipment, gender
 
   const sys = `Jesteś doświadczonym trenerem S&C.
 ZWRACAJ WYŁĄCZNIE POPRAWNY JSON (bez komentarzy/markdown).
+Masz traktować bazę ćwiczeń jako bazę WIEDZY (zestaw typowych ruchów i wariantów), a nie gotowe plany.
+Za każdym razem dobieraj zestawy i kolejność na nowo (rzeczywista różnorodność).
 Struktura:
 {
   "days": [
@@ -99,7 +101,8 @@ Struktura:
   ]
 }
 Wygeneruj ZRÓŻNICOWANY układ w skali tygodnia (np. PPL/UL/FBW – bez powtarzania identycznych zestawów).
-Każdy dzień 5–8 ćwiczeń. Nazwy pól jak w przykładzie (po polsku).`;
+Każdy dzień 5–8 ćwiczeń. Nazwy pól jak w przykładzie (po polsku).
+Jeżeli liczba sesji jest mniejsza niż 7, podaj tylko tyle dni ile jest sesji.`;
 
   const user = `Dane:
 - sesje/tydzień: ${sessionsPerWeek}
@@ -107,7 +110,8 @@ Każdy dzień 5–8 ćwiczeń. Nazwy pól jak w przykładzie (po polsku).`;
 - poziom: ${level}
 - sprzęt: ${equipment}
 - płeć: ${gender}
-Dni w kolejności: Poniedziałek, Wtorek, Środa, Czwartek, Piątek, Sobota, Niedziela.`;
+Dni w kolejności: Poniedziałek, Wtorek, Środa, Czwartek, Piątek, Sobota, Niedziela.
+Nie kopiuj sztywnego schematu – dobieraj ćwiczenia na podstawie wytycznych.`;
 
   const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -117,7 +121,7 @@ Dni w kolejności: Poniedziałek, Wtorek, Środa, Czwartek, Piątek, Sobota, Nie
     },
     body: JSON.stringify({
       model: 'llama-3.1-70b-versatile',
-      temperature: 0.25,
+      temperature: 0.35, // trochę większa losowość
       messages: [
         { role:'system', content: sys },
         { role:'user',   content: user }
@@ -142,7 +146,7 @@ function extractJson(txt){
 
 /* ===================== Walidacja + różnorodność ===================== */
 function isValidPlan(p){
-  return p && Array.isArray(p.days) && p.days.length >= 3 && p.days.every(d => Array.isArray(d.exercises));
+  return p && Array.isArray(p.days) && p.days.length >= 1 && p.days.every(d => Array.isArray(d.exercises));
 }
 
 function hasDiversity(p){
@@ -154,31 +158,71 @@ function hasDiversity(p){
   return uniq.size >= Math.ceil(sigs.length * 0.6); // >≈40% powtórek → za mała różnorodność
 }
 
+/* ===================== PRNG do kontrolowanej losowości ===================== */
+function cyrb53(str, seed=0){
+  let h1=0xdeadbeef ^ seed, h2=0x41c6ce57 ^ seed;
+  for (let i=0; i<str.length; i++){
+    const ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1>>>16), 2246822507) ^ Math.imul(h2 ^ (h2>>>13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2>>>16), 2246822507) ^ Math.imul(h1 ^ (h1>>>13), 3266489909);
+  return (h2>>>0) * 4294967296 + (h1>>>0);
+}
+function mulberry32(a){
+  return function(){
+    let t = a += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function shuffle(arr, rnd){
+  const a = arr.slice();
+  for (let i=a.length-1; i>0; i--){
+    const j = Math.floor(rnd() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function rotate(arr, k){
+  const a = arr.slice();
+  const n = a.length; if (!n) return a;
+  k = ((k % n) + n) % n;
+  return a.slice(k).concat(a.slice(0, k));
+}
+
 /* ===================== Fallback: zróżnicowany plan ===================== */
 function buildVariedPlan({ sessionsPerWeek = 4, level='', equipment='', goal='', gender='' }) {
   const dni = ['Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota','Niedziela'];
 
-  // Dobór splitu – UŻYWAMY realnych kluczy z LIB + normalizacja
+  // PRNG: różny plan przy tych samych odpowiedziach
+  const seedStr = JSON.stringify({ sessionsPerWeek, level, equipment, goal, gender }) + '|' + Date.now();
+  const rnd = mulberry32(cyrb53(seedStr));
+
+  // Dobór splitu – realne klucze + losowa rotacja
   let split;
   if (sessionsPerWeek <= 3) split = ['FBW A','FBW B','FBW C'];
-  else if (sessionsPerWeek === 4) split = ['Upper','Lower','Upper','Lower'];           // <— ważne
+  else if (sessionsPerWeek === 4) split = ['Upper','Lower','Upper','Lower'];
   else if (sessionsPerWeek === 5) split = ['Upper','Lower','Push','Pull','Full'];
   else if (sessionsPerWeek === 6) split = ['Push','Pull','Legs','Push','Pull','Legs'];
   else split = ['Upper','Lower','Push','Pull','Full','Legs','Akcesoria/Core'];
+  split = rotate(split, Math.floor(rnd() * split.length));
 
   // biblioteka ćwiczeń
   const LIB = {
     Push: [
       'Flat bench press','Incline bench press','Overhead press',
-      'Dips (asysta w razie potrzeby)','Lateral raise','Triceps extension'
+      'Dips (asysta w razie potrzeby)','Lateral raise','Triceps extension','Cable fly','Push-up (obciążony)'
     ],
     Pull: [
       'Lat pulldown','Barbell row','Seated cable row',
-      'Face pull','Biceps curl','Hammer curl'
+      'Face pull','Biceps curl','Hammer curl','Pull-up (asysta)'
     ],
     Legs: [
       'Back squat','Romanian deadlift','Leg press',
-      'Lunge (chodzony)','Leg curl','Calf raises'
+      'Lunge (chodzony)','Leg curl','Calf raises','Hip thrust'
     ],
     Upper: [
       'Flat bench press','Overhead press','Lat pulldown',
@@ -186,7 +230,7 @@ function buildVariedPlan({ sessionsPerWeek = 4, level='', equipment='', goal='',
     ],
     Lower: [
       'Back squat','Romanian deadlift','Leg press',
-      'Leg curl','Calf raises','Hanging knee raises'
+      'Leg curl','Calf raises','Hanging knee raises','Hip thrust'
     ],
     Full: [
       'Back squat','Flat bench press','Barbell row',
@@ -210,7 +254,6 @@ function buildVariedPlan({ sessionsPerWeek = 4, level='', equipment='', goal='',
     ]
   };
 
-  // Normalizacja nazw (gdyby pojawiły się A/B)
   function baseKey(n){
     const s = String(n).toLowerCase();
     if (s.startsWith('upper')) return 'Upper';
@@ -224,12 +267,6 @@ function buildVariedPlan({ sessionsPerWeek = 4, level='', equipment='', goal='',
     if (s.startsWith('fbw b')) return 'FBW B';
     if (s.startsWith('fbw c')) return 'FBW C';
     return n;
-  }
-
-  function pack(name){
-    const key  = baseKey(name);
-    const base = LIB[key] || [];
-    return base.slice(0, 6).map(x => row(x));
   }
 
   function row(name){
@@ -246,24 +283,36 @@ function buildVariedPlan({ sessionsPerWeek = 4, level='', equipment='', goal='',
     };
   }
 
-  const days = dni.map((day, i) => {
+  function pack(name){
+    const key  = baseKey(name);
+    const base = LIB[key] || [];
+    const cnt  = 5 + Math.floor(rnd() * 4); // 5–8 ćwiczeń
+    const picks = shuffle(base, rnd).slice(0, cnt);
+    return picks.map(x => row(x));
+  }
+
+  // pierwsze N dni to trening; reszta pomijana (nie będziemy ich dodawać do Excela)
+  const days = [];
+  for (let i = 0; i < Math.min(sessionsPerWeek, 7); i++){
+    const dayName = ['Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota','Niedziela'][i];
     const tp = split[i % split.length];
-    if (i < Math.min(sessionsPerWeek, 7)) {
-      return { day, exercises: pack(tp) };
-    } else {
-      return { day, exercises: [] }; // regeneracja
-    }
-  });
+    days.push({ day: dayName, exercises: pack(tp) });
+  }
 
   return { days };
 }
 
-/* ===================== Excel – jeden arkusz ===================== */
+/* ===================== Excel – jeden arkusz (wyśrodkowany widok) ===================== */
 async function makeSingleSheetWorkbook(plan){
   const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet('Plan', { properties: { defaultRowHeight: 18 } });
+  const ws = wb.addWorksheet('Plan', {
+    properties: { defaultRowHeight: 18 },
+    views: [{ state: 'normal', topLeftCell: 'B2', zoomScale: 120 }]
+  });
 
+  // lewy margines (pusta kolumna), potem właściwa tabela
   ws.columns = [
+    { header: '', width: 4 }, // margines z lewej
     { header:'ĆWICZENIE', width: 32 },
     { header:'SERIE', width: 10 },
     { header:'POWTÓRZENIA', width: 14 },
@@ -274,8 +323,9 @@ async function makeSingleSheetWorkbook(plan){
     { header:'KOMENTARZ / WYKONANIE', width: 36 }
   ];
 
-  ws.mergeCells('A1:H1');
-  const title = ws.getCell('A1');
+  // tytuł na środku „bloku”
+  ws.mergeCells('B1:I1');
+  const title = ws.getCell('B1');
   title.value = 'Plan Treningowy';
   title.font = { name: 'Arial', size: 16, bold: true };
   title.alignment = { vertical: 'middle', horizontal: 'center' };
@@ -291,22 +341,22 @@ async function makeSingleSheetWorkbook(plan){
     fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF3E2723' } }
   };
 
-  const order = ['Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota','Niedziela'];
+  // weź wyłącznie dni z treningami
+  const trainingDays = (plan.days || []).filter(d => (d.exercises || []).length > 0);
 
-  for (const dayName of order) {
-    const day = plan.days.find(d => (d.day || '').toLowerCase() === dayName.toLowerCase());
-
+  for (const d of trainingDays) {
     const startRow = ws.rowCount + 1;
-    ws.mergeCells(`A${startRow}:H${startRow}`);
-    const cell = ws.getCell(`A${startRow}`);
-    cell.value = dayName;
+    ws.mergeCells(`B${startRow}:I${startRow}`);
+    const cell = ws.getCell(`B${startRow}`);
+    cell.value = d.day || '';
     cell.font = dayStyle.font;
     cell.fill = dayStyle.fill;
 
     // nagłówek tabeli
     const headRow = ws.addRow(ws.columns.map(c => c.header));
     headRow.height = 20;
-    headRow.eachCell((c) => {
+    headRow.eachCell((c, colNumber) => {
+      if (colNumber === 1) return; // kolumna marginesu bez stylu
       c.font = headerStyle.font;
       c.fill = headerStyle.fill;
       c.alignment = headerStyle.alignment;
@@ -318,9 +368,9 @@ async function makeSingleSheetWorkbook(plan){
       };
     });
 
-    const list = day?.exercises || [];
-    for (const ex of list) {
+    for (const ex of (d.exercises || [])) {
       const r = ws.addRow([
+        '', // margines
         ex.cwiczenie || '',
         ex.serie || '',
         ex.powtorzenia || '',
@@ -330,7 +380,8 @@ async function makeSingleSheetWorkbook(plan){
         ex.tempo || '',
         ex.komentarz || ''
       ]);
-      r.eachCell((c) => {
+      r.eachCell((c, colNumber) => {
+        if (colNumber === 1) return; // margines
         c.border = {
           top:{style:'thin', color:{argb:'FFDDDDDD'}},
           left:{style:'thin', color:{argb:'FFDDDDDD'}},
@@ -342,6 +393,9 @@ async function makeSingleSheetWorkbook(plan){
 
     ws.addRow([]); // odstęp między dniami
   }
+
+  // wyśrodkowanie podczas druku (opcjonalnie)
+  ws.pageSetup = { horizontalCentered: true };
 
   const buffer = await wb.xlsx.writeBuffer();
   const filename = `Plan_Treningowy_${new Date().toISOString().slice(0,10)}.xlsx`;
