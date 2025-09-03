@@ -106,7 +106,7 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
 </div>
 
 <script>
-/* ---------- Bezpieczne originy (ta sama domena) ---------- */
+/* ---------- Endpoints funkcji Netlify ---------- */
 const HP = {
   generate: '/.netlify/functions/generate-plan',
   sendEmail: '/.netlify/functions/send-email'
@@ -120,10 +120,11 @@ const HP = {
   else { document.getElementById('who').textContent = mail; }
 })();
 
-/* ----------_payload + prompt buduje backend ---------- */
+/* ===================== payload (dodane: type/lang) ===================== */
 function buildPayload(){
   return {
-    // backend domyślnie użyje type:'A' i lang:'pl'
+    type: 'A',
+    lang: (document.documentElement.lang || 'pl'),
     inputs: {
       sessionsPerWeek: Number(document.getElementById('a1').value || 0),
       goal: document.getElementById('a2').value.trim(),
@@ -134,8 +135,28 @@ function buildPayload(){
   };
 }
 
-/* ---------- Wywołanie backendu (Groq→XLSX) ---------- */
-/* PODMIANA: dopasowanie do odpowiedzi { ok, filename, fileBase64 } */
+/* ===================== normalizacja odpowiedzi backendu ===================== */
+function normalizeXlsxResponse(data){
+  if (!data || typeof data !== 'object') return null;
+
+  // najpierw Twój aktualny wariant
+  if (data.fileBase64) {
+    return { xlsxBase64: data.fileBase64, xlsxFilename: data.filename || 'Plan Treningowy.xlsx' };
+  }
+  // alternatywne nazwy
+  if (data.xlsxBase64) {
+    return { xlsxBase64: data.xlsxBase64, xlsxFilename: data.xlsxFilename || 'Plan Treningowy.xlsx' };
+  }
+  if (data.data && (data.data.xlsxBase64 || data.data.fileBase64)) {
+    return {
+      xlsxBase64: data.data.xlsxBase64 || data.data.fileBase64,
+      xlsxFilename: data.data.xlsxFilename || data.data.filename || 'Plan Treningowy.xlsx'
+    };
+  }
+  return null;
+}
+
+/* ===================== wywołanie backendu z diagnostyką ===================== */
 async function callBackendForXlsx(payload){
   const res = await fetch(HP.generate, {
     method:'POST',
@@ -143,20 +164,38 @@ async function callBackendForXlsx(payload){
     body: JSON.stringify(payload)
   });
 
-  const text = await res.text();
-  let data;
-  try { data = JSON.parse(text); } catch { throw new Error('Bad JSON from generate-plan'); }
+  const ct = res.headers.get('content-type') || '';
+  const bodyText = await res.text();
 
-  if (!res.ok || !data || data.ok === false) {
-    const msg = (data && (data.error || data.details)) ? (data.error || data.details) : text;
-    throw new Error(`generate-plan failed: ${msg}`);
+  let parsed = null;
+  if (ct.includes('application/json')) {
+    try { parsed = JSON.parse(bodyText); } catch {/* ignore */}
   }
 
-  // mapowanie na nazwy używane dalej w UI
-  return {
-    xlsxBase64: data.fileBase64,
-    xlsxFilename: data.filename || 'Plan Treningowy.xlsx'
-  };
+  if (!res.ok) {
+    const snippet = (bodyText || '').slice(0, 400);
+    throw new Error(`generate-plan HTTP ${res.status}. Odpowiedź: ${snippet}`);
+  }
+
+  if (!parsed) {
+    // fallback: czysty base64 w body
+    const maybeBase64 = bodyText.includes('base64,') ? bodyText.split('base64,').pop() : bodyText.trim();
+    if (maybeBase64 && /^[A-Za-z0-9+/=]+$/.test(maybeBase64)) {
+      return { xlsxBase64: maybeBase64, xlsxFilename: 'Plan Treningowy.xlsx' };
+    }
+    throw new Error(`generate-plan: nieprawidłowy JSON i brak danych XLSX. Otrzymano: ${bodyText.slice(0, 200)}`);
+  }
+
+  if (parsed.ok === false) {
+    const msg = parsed.error || parsed.details || 'Nieznany błąd backendu';
+    throw new Error(`generate-plan: ${msg}`);
+  }
+
+  const norm = normalizeXlsxResponse(parsed);
+  if (!norm || !norm.xlsxBase64) {
+    throw new Error(`generate-plan: brak pliku XLSX w odpowiedzi (${JSON.stringify(parsed).slice(0,200)}…)`);
+  }
+  return norm;
 }
 
 /* ---------- Wysyłka maila (Resend przez Twoją funkcję) ---------- */
@@ -191,18 +230,17 @@ genBtn.addEventListener('click', async ()=>{
     const payload = buildPayload();
     const { xlsxBase64, xlsxFilename } = await callBackendForXlsx(payload);
 
-    // link do pobrania
     const url = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + xlsxBase64;
     dlBtn.href = url; dlBtn.download = xlsxFilename || 'Plan Treningowy.xlsx';
     dlBtn.style.display='inline-flex';
 
-    // mail
     await sendPlanByEmail(xlsxBase64, xlsxFilename);
 
     genBtn.textContent = 'Gotowe ✓';
   }catch(e){
-    console.error(e);
-    alert('Nie udało się wygenerować planu.');
+    console.error('GENERATOR ERROR:', e);
+    const msg = String(e && e.message ? e.message : e).slice(0, 400);
+    alert('Nie udało się wygenerować planu.\n\nSzczegóły: ' + msg);
     genBtn.textContent = 'Wygeneruj plan';
   }finally{
     genBtn.disabled = false;
