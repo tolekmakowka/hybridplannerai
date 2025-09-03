@@ -1,0 +1,12 @@
+[build]
+  base    = "HYBRID PLANNER"
+  publish = "."
+  command = ""
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+  external_node_modules = ["exceljs"]
+
+[[plugins]]
+  package = "@netlify/plugin-functions-install-core"
