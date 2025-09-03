@@ -1,4 +1,3 @@
-const ExcelJS = require('exceljs'); // <- dodaj to
 // netlify/functions/send-email.js
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
