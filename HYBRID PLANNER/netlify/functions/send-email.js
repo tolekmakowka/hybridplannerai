@@ -1,8 +1,6 @@
-
-// netlify/functions/send-email.js
+// HYBRID PLANNER/netlify/functions/send-email.js
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
-// ORIGINS dopuszczone do CORS
 const ALLOWED_ORIGINS = new Set([
   'https://tgmproject.net',
   'https://www.tgmproject.net',
@@ -54,17 +52,15 @@ exports.handler = async (event) => {
       };
     }
 
-    const from = 'no-reply@tgmproject.net'; // domena zweryfikowana w Resend
+    const from = 'no-reply@tgmproject.net';
     const payload = {
       from,
       to,
       subject: subject || 'Twój plan treningowy',
       html: html || '<p>W załączniku Twój plan.</p>',
       attachments: (attachmentBase64 && filename) ? [{
-  content: attachmentBase64,
-  filename,
-  contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        // ▼ DODANE: poprawny MIME dla XLSX, aby klient poczty/Resend rozpoznał plik
+        filename,
+        content: attachmentBase64, // CZYSTE base64 (bez data:…)
         contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       }] : []
     };
@@ -87,11 +83,7 @@ exports.handler = async (event) => {
       };
     }
 
-    return {
-      statusCode: 200,
-      headers: corsHeaders(origin),
-      body: text,
-    };
+    return { statusCode: 200, headers: corsHeaders(origin), body: text };
   } catch (e) {
     return {
       statusCode: 500,
