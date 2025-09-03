@@ -1,9 +1,0 @@
-{
-  "name": "hp-functions",
-  "private": true,
-  "type": "commonjs",
-  "engines": { "node": ">=18.17" },
-  "dependencies": {
-    "exceljs": "^4.4.0"
-  }
-}
