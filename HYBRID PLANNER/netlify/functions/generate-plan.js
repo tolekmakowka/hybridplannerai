@@ -5,7 +5,7 @@ const ExcelJS = require('exceljs');
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
-// Dozwolone originy (CORS)
+// CORS — dozwolone originy
 const ALLOWED_ORIGINS = new Set([
   'https://tgmproject.net',
   'https://www.tgmproject.net',
@@ -28,16 +28,11 @@ function corsHeaders(origin) {
 exports.handler = async (event) => {
   const origin = event.headers?.origin || '';
 
-  // Preflight
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: corsHeaders(origin) };
   }
   if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers: corsHeaders(origin),
-      body: JSON.stringify({ ok:false, error: 'Method not allowed' })
-    };
+    return { statusCode: 405, headers: corsHeaders(origin), body: JSON.stringify({ ok:false, error:'Method not allowed' }) };
   }
 
   try {
@@ -51,7 +46,7 @@ exports.handler = async (event) => {
       gender = ''
     } = inputs;
 
-    // 1) Spróbuj Groq
+    // 1) Groq — plan AI zoptymalizowany pod cel
     let plan = null;
     try {
       plan = await getPlanFromGroq({ sessionsPerWeek, goal, level, equipment, gender });
@@ -59,12 +54,12 @@ exports.handler = async (event) => {
       plan = null;
     }
 
-    // 2) Walidacja + różnorodność; jeśli coś nie gra → fallback
-    if (!isValidPlan(plan) || !hasDiversity(plan)) {
-      plan = buildVariedPlan({ sessionsPerWeek, level, equipment, goal, gender });
+    // 2) Walidacja jakości + różnorodność; jeśli słabe/niepełne → heurystyczny plan “coach-grade”
+    if (!isGoodPlan(plan, sessionsPerWeek)) {
+      plan = buildHeuristicPlan({ sessionsPerWeek, goal, level, equipment, gender });
     }
 
-    // 3) Excel – jeden arkusz; tylko dni z treningami, 3 kolumny
+    // 3) XLSX: jeden arkusz; tylko dni z treningami; 3 kolumny
     const { buffer, filename } = await makeSingleSheetWorkbook(plan, { level, seed: Date.now() });
 
     return {
@@ -75,43 +70,56 @@ exports.handler = async (event) => {
   } catch (err) {
     return {
       statusCode: 500,
-      headers: corsHeaders(event.headers?.origin || ''),
-      body: JSON.stringify({ ok:false, error: 'generate-plan failed', details: String(err) })
+      headers: corsHeaders(origin),
+      body: JSON.stringify({ ok:false, error:'generate-plan failed', details: String(err) })
     };
   }
 };
 
-/* ===================== Groq ===================== */
+/* ===================== 1) GROQ (AI) ===================== */
 async function getPlanFromGroq({ sessionsPerWeek, goal, level, equipment, gender }) {
   if (!GROQ_API_KEY) throw new Error('GROQ_API_KEY missing');
 
-  const sys = `Jesteś doświadczonym trenerem S&C.
-ZWRACAJ WYŁĄCZNIE POPRAWNY JSON (bez komentarzy/markdown).
-Masz traktować bazę ćwiczeń jako bazę WIEDZY (zestaw typowych ruchów i wariantów), a nie gotowe plany.
-Za każdym razem dobieraj zestawy i kolejność na nowo (rzeczywista różnorodność).
-Struktura:
+  // —— SYSTEM PROMPT: wyraźne zasady jakości i format
+  const sys = `Jesteś doświadczonym trenerem S&C. Twoim zadaniem jest ułożyć
+optymalny, skuteczny plan siłowy dopasowany do celu, poziomu i dostępnego sprzętu.
+Zasady jakości:
+- Każdy dzień ma układ "najpierw złożone ruchy (compound), potem akcesoria".
+- Zachowana równowaga wzorców: przysiad, hinge, pchanie, ciągnięcie, unilateral, core.
+- Dobieraj wolumen inteligentnie względem celu (siła/hipertrofia/redukcja).
+- Unikaj identycznych dni; progresja bodźców w skali tygodnia.
+- Uwzględniaj ograniczenia sprzętowe (np. tylko hantle/drążek → dobieraj warianty).
+- Język polski, nazwy ćwiczeń po polsku lub powszechne angielskie (np. "Flat bench press").
+
+ZWRACAJ WYŁĄCZNIE POPRAWNY JSON bez komentarzy/markdown.
+FORMAT:
 {
   "days": [
     {
       "day": "Poniedziałek",
       "exercises": [
-        { "cwiczenie": "...", "serie": "4×8–12", "powtorzenia": "8–12", "przerwa": "2–3 min", "rir": "1–3", "rpe": "7–9", "tempo": "30X1", "komentarz": "" }
+        { "cwiczenie": "Flat bench press", "serie": 4, "powtorzenia": 8 }
       ]
     }
   ]
 }
-Wygeneruj ZRÓŻNICOWANY układ w skali tygodnia (np. PPL/UL/FBW – bez powtarzania identycznych zestawów).
-Każdy dzień 5–8 ćwiczeń. Nazwy pól jak w przykładzie (po polsku).
-Jeżeli liczba sesji jest mniejsza niż 7, podaj tylko tyle dni ile jest sesji.`;
 
-  const user = `Dane:
+Wymagania dodatkowe:
+- Ćwiczenia mają mieć TYLKO trzy pola: "cwiczenie" (string), "serie" (int), "powtorzenia" (int 8–12 dla hipertrofii; 3–6 dla siły; 10–15 przy redukcji – możesz adaptować).
+- 5–8 ćwiczeń na dzień (zależnie od celu/poziomu).
+- Zwracaj dokładnie tyle dni, ile wynosi "sesje/tydzień".`;
+
+  // —— USER PROMPT: kontekst użytkownika
+  const user = `Dane wejściowe:
 - sesje/tydzień: ${sessionsPerWeek}
 - cel: ${goal}
 - poziom: ${level}
 - sprzęt: ${equipment}
 - płeć: ${gender}
-Dni w kolejności: Poniedziałek, Wtorek, Środa, Czwartek, Piątek, Sobota, Niedziela.
-Nie kopiuj sztywnego schematu – dobieraj ćwiczenia na podstawie wytycznych.`;
+
+Ułóż najlepszy możliwy tygodniowy plan (liczba dni == sesje/tydzień).
+Pamiętaj: tylko pola "cwiczenie", "serie", "powtorzenia" – liczby całkowite.
+Dni nazwij po polsku: Poniedziałek, Wtorek, Środa, Czwartek, Piątek, Sobota, Niedziela.`;
 
   const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -121,17 +129,17 @@ Nie kopiuj sztywnego schematu – dobieraj ćwiczenia na podstawie wytycznych.`;
     },
     body: JSON.stringify({
       model: 'llama-3.1-70b-versatile',
-      temperature: 0.35, // trochę większa losowość
+      temperature: 0.55,             // trochę kreatywności dla różnorodności
+      presence_penalty: 0.3,
+      frequency_penalty: 0.2,
       messages: [
-        { role:'system', content: sys },
-        { role:'user',   content: user }
+        { role: 'system', content: sys },
+        { role: 'user',   content: user }
       ]
     })
   });
 
-  if (!r.ok) {
-    throw new Error(`Groq ${r.status}: ${await r.text()}`);
-  }
+  if (!r.ok) throw new Error(`Groq ${r.status}: ${await r.text()}`);
   const data = await r.json();
   const txt  = data?.choices?.[0]?.message?.content?.trim() || '';
   const json = extractJson(txt);
@@ -144,197 +152,171 @@ function extractJson(txt){
   return JSON.parse(raw);
 }
 
-/* ===================== Walidacja + różnorodność ===================== */
-function isValidPlan(p){
-  return p && Array.isArray(p.days) && p.days.length >= 1 && p.days.every(d => Array.isArray(d.exercises));
-}
+/* ===================== 2) Walidacja jakości ===================== */
+function isGoodPlan(p, sessionsPerWeek){
+  if (!p || !Array.isArray(p.days)) return false;
+  if (p.days.length !== Math.min(sessionsPerWeek, 7)) return false;
 
-function hasDiversity(p){
-  const sigs = (p.days || []).map(d => {
-    const names = (d.exercises || []).map(e => (e.cwiczenie||'').toLowerCase().trim()).filter(Boolean);
-    return JSON.stringify(names);
-  });
+  // każdy dzień 4–9 ćwiczeń i poprawne pola liczbowe
+  for (const d of p.days) {
+    if (!Array.isArray(d.exercises) || d.exercises.length < 4 || d.exercises.length > 9) return false;
+    for (const e of d.exercises) {
+      if (typeof e?.cwiczenie !== 'string') return false;
+      if (!Number.isFinite(Number(e?.serie))) return false;
+      if (!Number.isFinite(Number(e?.powtorzenia))) return false;
+    }
+  }
+
+  // zgrubna różnorodność – nie wszystkie dni identyczne
+  const sigs = p.days.map(d => JSON.stringify((d.exercises||[]).map(e => (e.cwiczenie||'').toLowerCase().trim())));
   const uniq = new Set(sigs);
-  return uniq.size >= Math.ceil(sigs.length * 0.6); // >≈40% powtórek → za mała różnorodność
+  return uniq.size >= Math.ceil(sigs.length * 0.6);
 }
 
-/* ===================== PRNG do kontrolowanej losowości ===================== */
-function cyrb53(str, seed=0){
-  let h1=0xdeadbeef ^ seed, h2=0x41c6ce57 ^ seed;
-  for (let i=0; i<str.length; i++){
-    const ch = str.charCodeAt(i);
-    h1 = Math.imul(h1 ^ ch, 2654435761);
-    h2 = Math.imul(h2 ^ ch, 1597334677);
-  }
-  h1 = Math.imul(h1 ^ (h1>>>16), 2246822507) ^ Math.imul(h2 ^ (h2>>>13), 3266489909);
-  h2 = Math.imul(h2 ^ (h2>>>16), 2246822507) ^ Math.imul(h1 ^ (h1>>>13), 3266489909);
-  return (h2>>>0) * 4294967296 + (h1>>>0);
-}
-function mulberry32(a){
-  return function(){
-    let t = a += 0x6D2B79F5;
-    t = Math.imul(t ^ t >>> 15, t | 1);
-    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
-  };
-}
-function shuffle(arr, rnd){
-  const a = arr.slice();
-  for (let i=a.length-1; i>0; i--){
-    const j = Math.floor(rnd() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-function rotate(arr, k){
-  const a = arr.slice();
-  const n = a.length; if (!n) return a;
-  k = ((k % n) + n) % n;
-  return a.slice(k).concat(a.slice(0, k));
+/* ===================== 3) Heurystyczny plan “coach-grade” ===================== */
+
+function goalType(goal=''){
+  const g = goal.toLowerCase();
+  if (g.includes('sił') || g.includes('moc') || g.includes('strength')) return 'strength';
+  if (g.includes('redukc') || g.includes('fat') || g.includes('spal')) return 'cut';
+  return 'hypertrophy';
 }
 
-/* ===================== Fallback: zróżnicowany plan ===================== */
-function buildVariedPlan({ sessionsPerWeek = 4, level='', equipment='', goal='', gender='' }) {
-  const dni = ['Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota','Niedziela'];
+function equipmentProfile(eq=''){
+  const s = eq.toLowerCase();
+  if (s.includes('hant') && s.includes('drąż')) return 'db_bar';
+  if (s.includes('hant')) return 'db';
+  if (s.includes('drąż')) return 'bar';
+  if (s.includes('dom')) return 'home';
+  if (s.includes('pełna') || s.includes('siłownia') || s.includes('gym')) return 'gym';
+  return 'gym';
+}
 
-  // PRNG: różny plan przy tych samych odpowiedziach
-  const seedStr = JSON.stringify({ sessionsPerWeek, level, equipment, goal, gender }) + '|' + Date.now();
-  const rnd = mulberry32(cyrb53(seedStr));
+function setRepFor(goal, isAccessory=false){
+  if (goal==='strength') return { sets: isAccessory?3:5, reps: isAccessory?6:4 };
+  if (goal==='cut')       return { sets: isAccessory?3:4, reps: isAccessory?12:10 };
+  return                   { sets: isAccessory?3:4, reps: isAccessory?12:9 }; // hypertrofia default
+}
 
-  // Dobór splitu – realne klucze + losowa rotacja
+const LIBRARY = {
+  squat:      { gym:['Back squat','Front squat'], db:['Goblet squat'], home:['Goblet squat'], db_bar:['Goblet squat'], bar:['Bulgarian split squat'] },
+  hinge:      { gym:['Romanian deadlift','Deadlift'], db:['DB Romanian deadlift'], home:['Hip hinge (band/DB)'], db_bar:['DB Romanian deadlift'], bar:['Hip hinge (bar)'] },
+  horizontalP:{ gym:['Flat bench press','Incline bench press'], db:['DB bench press','DB incline press'], home:['Push-up (obciążony)'], db_bar:['DB bench press'], bar:['Push-up'] },
+  verticalP:  { gym:['Overhead press'], db:['DB overhead press'], home:['Pike push-up'], db_bar:['DB overhead press'], bar:['Pike push-up'] },
+  horizontalR:{ gym:['Barbell row','Seated cable row'], db:['DB row'], home:['Body row (stół/poręcze)'], db_bar:['DB row'], bar:['Australian pull-up'] },
+  verticalR:  { gym:['Lat pulldown','Pull-up (asysta)'], db:['DB pullover'], home:['Pull-up (asysta)'], db_bar:['Pull-up (asysta)'], bar:['Pull-up (asysta)'] },
+  unilateral: { gym:['Lunge (chodzony)','Bulgarian split squat'], db:['DB lunge','Bulgarian split squat'], home:['Split squat'], db_bar:['DB lunge'], bar:['Split squat'] },
+  pushAcc:    { gym:['Dips (asysta)','Cable fly','Lateral raise','Triceps extension'], db:['DB lateral raise','DB triceps extension'], home:['Diamond push-up'], db_bar:['DB lateral raise'], bar:['Diamond push-up'] },
+  pullAcc:    { gym:['Face pull','Rear delt fly','Biceps curl','Hammer curl'], db:['DB curl','Hammer curl'], home:['Band face pull'], db_bar:['DB curl'], bar:['Band face pull'] },
+  core:       { gym:['Plank','Hanging knee raises'], db:['Hanging knee raises'], home:['Plank'], db_bar:['Hanging knee raises'], bar:['Hanging knee raises'] },
+  calves:     { gym:['Calf raises'], db:['DB calf raises'], home:['Calf raises'], db_bar:['DB calf raises'], bar:['Calf raises'] },
+  hipthrust:  { gym:['Hip thrust'], db:['DB hip thrust'], home:['Hip thrust (jednonóż)'], db_bar:['DB hip thrust'], bar:['Hip thrust (jednonóż)'] },
+  legcurl:    { gym:['Leg curl'], db:['DB leg curl (improv)'], home:['Nordic curl (asysta)'], db_bar:['DB leg curl (improv)'], bar:['Nordic curl (asysta)'] }
+};
+
+function pick(key, prof, n=1){
+  const list = LIBRARY[key]?.[prof] || LIBRARY[key]?.gym || [];
+  const arr = list.slice();
+  // prosta rotacja
+  for (let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; }
+  return arr.slice(0,n);
+}
+
+function dayUpper(goal, prof){
+  const main  = [...pick('horizontalP',prof,1), ...pick('verticalP',prof,1), ...pick('horizontalR',prof,1), ...pick('verticalR',prof,1)];
+  const acc   = [...pick('pushAcc',prof,2), ...pick('pullAcc',prof,1)];
+  return main.concat(acc).map((name,i) => {
+    const sr = setRepFor(goal, i>=3); // pierwsze 3–4 to kompoundy
+    return { cwiczenie:name, serie:sr.sets, powtorzenia:sr.reps };
+  });
+}
+function dayLower(goal, prof){
+  const main  = [...pick('squat',prof,1), ...pick('hinge',prof,1), ...pick('unilateral',prof,1)];
+  const acc   = [...pick('legcurl',prof,1), ...pick('hipthrust',prof,1), ...pick('calves',prof,1), ...pick('core',prof,1)];
+  return main.concat(acc).map((name,i) => {
+    const sr = setRepFor(goal, i>=2);
+    return { cwiczenie:name, serie:sr.sets, powtorzenia:sr.reps };
+  });
+}
+function dayPush(goal, prof){
+  const main = [...pick('horizontalP',prof,1), ...pick('verticalP',prof,1)];
+  const acc  = [...pick('pushAcc',prof,3)];
+  return main.concat(acc).map((name,i)=>({ ...setRepFor(goal, i>=2), cwiczenie:name, serie:setRepFor(goal,i>=2).sets, powtorzenia:setRepFor(goal,i>=2).reps }));
+}
+function dayPull(goal, prof){
+  const main = [...pick('horizontalR',prof,1), ...pick('verticalR',prof,1)];
+  const acc  = [...pick('pullAcc',prof,3)];
+  return main.concat(acc).map((name,i)=>({ cwiczenie:name, serie:setRepFor(goal,i>=2).sets, powtorzenia:setRepFor(goal,i>=2).reps }));
+}
+function dayFull(goal, prof){
+  const blocks = [
+    ...pick('squat',prof,1),
+    ...pick('hinge',prof,1),
+    ...pick('horizontalP',prof,1),
+    ...pick('horizontalR',prof,1),
+    ...pick('core',prof,1)
+  ];
+  return blocks.map((name,i)=>({ cwiczenie:name, serie:setRepFor(goal,i>=2).sets, powtorzenia:setRepFor(goal,i>=2).reps }));
+}
+
+function buildHeuristicPlan({ sessionsPerWeek=4, goal='', level='', equipment='', gender='' }){
+  const g    = goalType(goal);
+  const prof = equipmentProfile(equipment);
+  const daysNames = ['Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota','Niedziela'];
+
   let split;
-  if (sessionsPerWeek <= 3) split = ['FBW A','FBW B','FBW C'];
-  else if (sessionsPerWeek === 4) split = ['Upper','Lower','Upper','Lower'];
-  else if (sessionsPerWeek === 5) split = ['Upper','Lower','Push','Pull','Full'];
-  else if (sessionsPerWeek === 6) split = ['Push','Pull','Legs','Push','Pull','Legs'];
-  else split = ['Upper','Lower','Push','Pull','Full','Legs','Akcesoria/Core'];
-  split = rotate(split, Math.floor(rnd() * split.length));
+  if (sessionsPerWeek<=1) split = ['Full'];
+  else if (sessionsPerWeek===2) split = ['Full','Full'];
+  else if (sessionsPerWeek===3) split = ['FBW A','FBW B','FBW C'];
+  else if (sessionsPerWeek===4) split = ['Upper','Lower','Upper','Lower'];
+  else if (sessionsPerWeek===5) split = ['Upper','Lower','Push','Pull','Full'];
+  else if (sessionsPerWeek===6) split = ['Push','Pull','Legs','Push','Pull','Legs'];
+  else split = ['Upper','Lower','Push','Pull','Full','Legs','Akcesoria'];
 
-  // biblioteka ćwiczeń
-  const LIB = {
-    Push: [
-      'Flat bench press','Incline bench press','Overhead press',
-      'Dips (asysta w razie potrzeby)','Lateral raise','Triceps extension','Cable fly','Push-up (obciążony)'
-    ],
-    Pull: [
-      'Lat pulldown','Barbell row','Seated cable row',
-      'Face pull','Biceps curl','Hammer curl','Pull-up (asysta)'
-    ],
-    Legs: [
-      'Back squat','Romanian deadlift','Leg press',
-      'Lunge (chodzony)','Leg curl','Calf raises','Hip thrust'
-    ],
-    Upper: [
-      'Flat bench press','Overhead press','Lat pulldown',
-      'Barbell row','Lateral raise','Face pull','Biceps curl','Triceps extension'
-    ],
-    Lower: [
-      'Back squat','Romanian deadlift','Leg press',
-      'Leg curl','Calf raises','Hanging knee raises','Hip thrust'
-    ],
-    Full: [
-      'Back squat','Flat bench press','Barbell row',
-      'Hip thrust','Lat pulldown','Plank'
-    ],
-    'Akcesoria/Core': [
-      'Back extension','Hip thrust','Face pull',
-      'Lateral raise','Biceps curl','Triceps extension','Plank'
-    ],
-    'FBW A': [
-      'Back squat','Flat bench press','Lat pulldown',
-      'Romanian deadlift','Overhead press','Plank'
-    ],
-    'FBW B': [
-      'Deadlift (sub: RDL)','Incline bench press','Barbell row',
-      'Lunge (chodzony)','Dips (asysta)','Hanging knee raises'
-    ],
-    'FBW C': [
-      'Front squat','Overhead press','Seated cable row',
-      'Hip thrust','Pull-ups (asysta)','Side plank'
-    ]
-  };
-
-  function baseKey(n){
-    const s = String(n).toLowerCase();
-    if (s.startsWith('upper')) return 'Upper';
-    if (s.startsWith('lower')) return 'Lower';
-    if (s.startsWith('push'))  return 'Push';
-    if (s.startsWith('pull'))  return 'Pull';
-    if (s.startsWith('legs'))  return 'Legs';
-    if (s.startsWith('full'))  return 'Full';
-    if (s.includes('akcesoria')) return 'Akcesoria/Core';
-    if (s.startsWith('fbw a')) return 'FBW A';
-    if (s.startsWith('fbw b')) return 'FBW B';
-    if (s.startsWith('fbw c')) return 'FBW C';
-    return n;
-  }
-
-  function row(name){
-    const zaaw = level.toLowerCase().includes('zaaw');
-    return {
-      cwiczenie: name,
-      serie: zaaw ? '4×6–10' : '3×8–12',
-      powtorzenia: zaaw ? '6–10' : '8–12',
-      przerwa: '2–3 min',
-      rir: '1–3',
-      rpe: '7–9',
-      tempo: '30X1',
-      komentarz: ''
-    };
-  }
-
-  function pack(name){
-    const key  = baseKey(name);
-    const base = LIB[key] || [];
-    const cnt  = 5 + Math.floor(rnd() * 4); // 5–8 ćwiczeń
-    const picks = shuffle(base, rnd).slice(0, cnt);
-    return picks.map(x => row(x));
-  }
-
-  // pierwsze N dni to trening; reszta pomijana (nie będziemy ich dodawać do Excela)
   const days = [];
-  for (let i = 0; i < Math.min(sessionsPerWeek, 7); i++){
-    const dayName = ['Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota','Niedziela'][i];
+  for (let i=0;i<Math.min(sessionsPerWeek,7);i++){
     const tp = split[i % split.length];
-    days.push({ day: dayName, exercises: pack(tp) });
-  }
+    let exercises;
+    if (tp==='Upper') exercises = dayUpper(g,prof);
+    else if (tp==='Lower' || tp==='Legs') exercises = dayLower(g,prof);
+    else if (tp==='Push')  exercises = dayPush(g,prof);
+    else if (tp==='Pull')  exercises = dayPull(g,prof);
+    else                   exercises = dayFull(g,prof);
 
+    // urealnij długość dnia (5–8 zadań)
+    if (exercises.length<5) while(exercises.length<5) exercises.push(...pick('core',prof,1).map(n=>({ cwiczenie:n, ...setRepFor(g,true), serie:setRepFor(g,true).sets, powtorzenia:setRepFor(g,true).reps })));
+    if (exercises.length>8) exercises = exercises.slice(0,8);
+
+    days.push({ day: daysNames[i], exercises });
+  }
   return { days };
 }
 
-/* ===================== Pomocnicze: parsowanie serii / dokładna liczba powt. ===================== */
-function parseSeriesCount(serieStr, level) {
-  if (typeof serieStr === 'string') {
-    // szukamy liczby przed znakiem x/× (np. "4×8–12", "3x10")
-    const m = serieStr.match(/(\d+)\s*[x×]/i);
-    if (m) return parseInt(m[1], 10);
-    // czasem ktoś poda samo "4"
-    const m2 = serieStr.match(/^\s*(\d+)\s*$/);
-    if (m2) return parseInt(m2[1], 10);
-  }
-  // domyślnie wg poziomu
+/* ===================== 4) XLSX — jeden arkusz, 3 kolumny ===================== */
+
+function parseSeriesCount(serieOrSeries, level) {
+  if (typeof serieOrSeries === 'number' && Number.isFinite(serieOrSeries)) return Math.max(1, Math.floor(serieOrSeries));
+  const s = String(serieOrSeries || '').trim();
+  const m = s.match(/(\d+)\s*[x×]?/i);
+  if (m) return parseInt(m[1],10);
   return (String(level).toLowerCase().includes('zaaw')) ? 4 : 3;
 }
 
-/* ===================== Excel – jeden arkusz (wyśrodkowany widok, 3 kolumny) ===================== */
 async function makeSingleSheetWorkbook(plan, { level = '', seed = Date.now() } = {}) {
-  const rnd = mulberry32(cyrb53(String(seed)));
-
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('Plan', {
     properties: { defaultRowHeight: 18 },
     views: [{ state: 'normal', topLeftCell: 'B2', zoomScale: 120 }]
   });
 
-  // lewy margines (pusta kolumna), potem właściwa tabela
+  // kolumny: margines + 3
   ws.columns = [
-    { header: '', width: 4 }, // margines z lewej (A)
-    { header:'ĆWICZENIE', width: 36 },   // B
-    { header:'SERIE', width: 10 },       // C
-    { header:'POWTÓRZENIA', width: 16 }  // D
+    { header: '', width: 4 },     // A margines
+    { header: 'ĆWICZENIE', width: 38 },  // B
+    { header: 'SERIE', width: 10 },      // C (liczba)
+    { header: 'POWTÓRZENIA', width: 16 } // D (liczba)
   ];
 
-  // tytuł na środku „bloku”
   ws.mergeCells('B1:D1');
   const title = ws.getCell('B1');
   title.value = 'Plan Treningowy';
@@ -342,67 +324,43 @@ async function makeSingleSheetWorkbook(plan, { level = '', seed = Date.now() } =
   title.alignment = { vertical: 'middle', horizontal: 'center' };
   ws.addRow([]);
 
-  const headerStyle = {
-    font: { bold: true, color: { argb: 'FFFFFFFF' } },
-    fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF444444' } },
-    alignment: { vertical: 'middle', horizontal: 'center' }
+  const headStyle = {
+    font: { bold: true, color: { argb:'FFFFFFFF' } },
+    fill: { type:'pattern', pattern:'solid', fgColor:{ argb:'FF444444' } },
+    alignment: { vertical:'middle', horizontal:'center' }
   };
-  const dayFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF3E2723' } };
-  const dayFont = { bold: true, size: 13, color: { argb: 'FFFFFFFF' } };
+  const dayFill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FF3E2723' } };
+  const dayFont = { bold:true, size:13, color:{ argb:'FFFFFFFF' } };
 
-  // wyłącznie dni z treningami
-  const trainingDays = (plan.days || []).filter(d => (d.exercises || []).length > 0);
+  const trainingDays = (plan.days || []).filter(d => (d.exercises||[]).length>0);
 
   for (const d of trainingDays) {
-    const startRow = ws.rowCount + 1;
-    ws.mergeCells(`B${startRow}:D${startRow}`);
-    const cell = ws.getCell(`B${startRow}`);
-    cell.value = d.day || '';
-    cell.font = dayFont;
-    cell.fill = dayFill;
-    cell.alignment = { vertical: 'middle', horizontal: 'left' };
+    const r0 = ws.rowCount + 1;
+    ws.mergeCells(`B${r0}:D${r0}`);
+    Object.assign(ws.getCell(`B${r0}`), { value: d.day || '', font: dayFont, fill: dayFill });
 
-    // nagłówek tabeli
-    const headRow = ws.addRow(['', 'ĆWICZENIE', 'SERIE', 'POWTÓRZENIA']);
-    headRow.height = 20;
-    // stylujemy tylko kolumny B–D (2–4)
-    [2,3,4].forEach(col => {
-      const c = headRow.getCell(col);
-      c.font = headerStyle.font;
-      c.fill = headerStyle.fill;
-      c.alignment = headerStyle.alignment;
-      c.border = {
-        top:{style:'thin', color:{argb:'FF666666'}},
-        left:{style:'thin', color:{argb:'FF666666'}},
-        bottom:{style:'thin', color:{argb:'FF666666'}},
-        right:{style:'thin', color:{argb:'FF666666'}}
-      };
+    const head = ws.addRow(['','ĆWICZENIE','SERIE','POWTÓRZENIA']);
+    [2,3,4].forEach(i=>{
+      const c = head.getCell(i);
+      c.font = headStyle.font; c.fill = headStyle.fill; c.alignment = headStyle.alignment;
+      c.border = { top:{style:'thin',color:{argb:'FF666666'}}, left:{style:'thin',color:{argb:'FF666666'}},
+                   bottom:{style:'thin',color:{argb:'FF666666'}}, right:{style:'thin',color:{argb:'FF666666'}} };
     });
 
-    // wiersze ćwiczeń
-    for (const ex of (d.exercises || [])) {
-      // SERIE: tylko liczba
-      const seriesCount = parseSeriesCount(ex.serie || ex.series || '', level);
-      // POWTÓRZENIA: dokładna liczba 8–12 (lekka losowość)
-      const reps = 8 + Math.floor(rnd() * 5); // 8..12
-
-      const r = ws.addRow(['', ex.cwiczenie || '', seriesCount, reps]);
-      [2,3,4].forEach(col => {
-        const c = r.getCell(col);
-        c.border = {
-          top:{style:'thin', color:{argb:'FFDDDDDD'}},
-          left:{style:'thin', color:{argb:'FFDDDDDD'}},
-          bottom:{style:'thin', color:{argb:'FFDDDDDD'}},
-          right:{style:'thin', color:{argb:'FFDDDDDD'}}
-        };
-        if (col !== 2) c.alignment = { horizontal: 'center' };
+    for (const ex of d.exercises) {
+      const sets = parseSeriesCount(ex.serie ?? ex.series ?? ex.sets, level);
+      const reps = Math.max(1, Math.floor(Number(ex.powtorzenia ?? ex.reps ?? 10)));
+      const row = ws.addRow(['', ex.cwiczenie || '', sets, reps]);
+      [3,4].forEach(i => row.getCell(i).alignment = { horizontal:'center' });
+      [2,3,4].forEach(i => row.getCell(i).border = {
+        top:{style:'thin',color:{argb:'FFDDDDDD'}}, left:{style:'thin',color:{argb:'FFDDDDDD'}},
+        bottom:{style:'thin',color:{argb:'FFDDDDDD'}}, right:{style:'thin',color:{argb:'FFDDDDDD'}}
       });
     }
 
-    ws.addRow([]); // odstęp między dniami
+    ws.addRow([]);
   }
 
-  // wyśrodkowanie podczas druku (opcjonalnie)
   ws.pageSetup = { horizontalCentered: true };
 
   const buffer = await wb.xlsx.writeBuffer();
