@@ -123,6 +123,7 @@ const HP = {
 /* ----------_payload + prompt buduje backend ---------- */
 function buildPayload(){
   return {
+    // backend domyślnie użyje type:'A' i lang:'pl'
     inputs: {
       sessionsPerWeek: Number(document.getElementById('a1').value || 0),
       goal: document.getElementById('a2').value.trim(),
@@ -134,17 +135,28 @@ function buildPayload(){
 }
 
 /* ---------- Wywołanie backendu (Groq→XLSX) ---------- */
+/* PODMIANA: dopasowanie do odpowiedzi { ok, filename, fileBase64 } */
 async function callBackendForXlsx(payload){
   const res = await fetch(HP.generate, {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify(payload)
   });
+
   const text = await res.text();
-  if(!res.ok) throw new Error(`generate-plan ${res.status}: ${text}`);
-  let data; try{ data = JSON.parse(text); }catch(e){ throw new Error('Bad JSON'); }
-  if(!data.xlsxBase64) throw new Error('Brak xlsxBase64');
-  return data;
+  let data;
+  try { data = JSON.parse(text); } catch { throw new Error('Bad JSON from generate-plan'); }
+
+  if (!res.ok || !data || data.ok === false) {
+    const msg = (data && (data.error || data.details)) ? (data.error || data.details) : text;
+    throw new Error(`generate-plan failed: ${msg}`);
+  }
+
+  // mapowanie na nazwy używane dalej w UI
+  return {
+    xlsxBase64: data.fileBase64,
+    xlsxFilename: data.filename || 'Plan Treningowy.xlsx'
+  };
 }
 
 /* ---------- Wysyłka maila (Resend przez Twoją funkcję) ---------- */
