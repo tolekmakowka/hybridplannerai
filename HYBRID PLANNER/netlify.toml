@@ -1,11 +1,19 @@
+# netlify.toml (w katalogu głównym repo)
 [build]
-  base    = "HYBRID PLANNER"   # bo Twój projekt siedzi w tym podfolderze
+  # Mówimy: pracuj w podfolderze z Twoją stroną
+  base    = "HYBRID PLANNER"
+  # a publikuj statyki z tego samego folderu
   publish = "."
+  # nie potrzebujemy żadnego komendy buildu dla czystego HTML
   command = ""
 
+[functions]
+  # <<< NAJWAŻNIEJSZE: gdzie są funkcje
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+  # exceljs jest używany przez funkcję – dołącz jako zewnętrzny moduł
+  external_node_modules = ["exceljs"]
+
+# Netlify sam doinstaluje zależności funkcji przed buildem
 [[plugins]]
   package = "@netlify/plugin-functions-install-core"
-
-[functions]
-  directory    = "netlify/functions"  # małe litery!
-  node_bundler = "esbuild"
