@@ -59,6 +59,9 @@ exports.handler = async (event) => {
       plan = buildHeuristicPlan({ sessionsPerWeek, goal, level, equipment, gender });
     }
 
+    // ★ NORMALIZACJA: rep-rule (10/12) + dociążenie dolnej części dla Kobiety
+    plan = finalizePlan(plan, { gender });
+
     // 3) XLSX: jeden arkusz; tylko dni z treningami; 3 kolumny
     const { buffer, filename } = await makeSingleSheetWorkbook(plan, { level, seed: Date.now() });
 
@@ -80,36 +83,36 @@ exports.handler = async (event) => {
 async function getPlanFromGroq({ sessionsPerWeek, goal, level, equipment, gender }) {
   if (!GROQ_API_KEY) throw new Error('GROQ_API_KEY missing');
 
-  // —— SYSTEM PROMPT: wyraźne zasady jakości i format
+  // —— SYSTEM PROMPT (doprecyzowany o płeć + regułę 10/12)
   const sys = `Jesteś doświadczonym trenerem S&C. Twoim zadaniem jest ułożyć
 optymalny, skuteczny plan siłowy dopasowany do celu, poziomu i dostępnego sprzętu.
 Zasady jakości:
-- Każdy dzień ma układ "najpierw złożone ruchy (compound), potem akcesoria".
-- Zachowana równowaga wzorców: przysiad, hinge, pchanie, ciągnięcie, unilateral, core.
-- Dobieraj wolumen inteligentnie względem celu (siła/hipertrofia/redukcja).
+- Każdy dzień: najpierw złożone ruchy (compound), potem akcesoria (isolation).
+- Równowaga wzorców: przysiad, hinge, pchanie, ciągnięcie, unilateral, core.
 - Unikaj identycznych dni; progresja bodźców w skali tygodnia.
-- Uwzględniaj ograniczenia sprzętowe (np. tylko hantle/drążek → dobieraj warianty).
-- Język polski, nazwy ćwiczeń po polsku lub powszechne angielskie (np. "Flat bench press").
+- Uwzględniaj ograniczenia sprzętowe.
+- Jeśli płeć to kobieta: PRIORYTETEM są nogi i pośladki — zadbaj o większą obecność wzorców squat/hinge/hip-thrust i unilateral; przynajmniej 2 mocne bodźce dolnej części w każdej jednostce oraz hip thrust lub jego wariant ≥2x/tydz.
+- Język polski; nazwy ćwiczeń po polsku lub powszechne angielskie.
 
-ZWRACAJ WYŁĄCZNIE POPRAWNY JSON bez komentarzy/markdown.
+ZWRACAJ WYŁĄCZNIE POPRAWNY JSON (bez komentarzy/markdown).
 FORMAT:
 {
   "days": [
     {
       "day": "Poniedziałek",
       "exercises": [
-        { "cwiczenie": "Flat bench press", "serie": 4, "powtorzenia": 8 }
+        { "cwiczenie": "Flat bench press", "serie": 4, "powtorzenia": 10 }
       ]
     }
   ]
 }
 
-Wymagania dodatkowe:
-- Ćwiczenia mają mieć TYLKO trzy pola: "cwiczenie" (string), "serie" (int), "powtorzenia" (int 8–12 dla hipertrofii; 3–6 dla siły; 10–15 przy redukcji – możesz adaptować).
+Dodatkowe wymogi danych wyjściowych:
+- Każde ćwiczenie ma TYLKO trzy pola: "cwiczenie" (string), "serie" (int), "powtorzenia" (int).
+- Reguła powtórzeń: 10 w ćwiczeniach wielostawowych (compound), 12 w izolowanych (isolation).
 - 5–8 ćwiczeń na dzień (zależnie od celu/poziomu).
 - Zwracaj dokładnie tyle dni, ile wynosi "sesje/tydzień".`;
 
-  // —— USER PROMPT: kontekst użytkownika
   const user = `Dane wejściowe:
 - sesje/tydzień: ${sessionsPerWeek}
 - cel: ${goal}
@@ -118,8 +121,8 @@ Wymagania dodatkowe:
 - płeć: ${gender}
 
 Ułóż najlepszy możliwy tygodniowy plan (liczba dni == sesje/tydzień).
-Pamiętaj: tylko pola "cwiczenie", "serie", "powtorzenia" – liczby całkowite.
-Dni nazwij po polsku: Poniedziałek, Wtorek, Środa, Czwartek, Piątek, Sobota, Niedziela.`;
+Pamiętaj o regule powtórzeń: 10 (compound) / 12 (isolation) oraz priorytecie nóg/pośladków, gdy płeć to kobieta.
+Dni: Poniedziałek, Wtorek, Środa, Czwartek, Piątek, Sobota, Niedziela.`;
 
   const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -129,7 +132,7 @@ Dni nazwij po polsku: Poniedziałek, Wtorek, Środa, Czwartek, Piątek, Sobota, 
     },
     body: JSON.stringify({
       model: 'llama-3.1-70b-versatile',
-      temperature: 0.55,             // trochę kreatywności dla różnorodności
+      temperature: 0.55,
       presence_penalty: 0.3,
       frequency_penalty: 0.2,
       messages: [
@@ -157,7 +160,6 @@ function isGoodPlan(p, sessionsPerWeek){
   if (!p || !Array.isArray(p.days)) return false;
   if (p.days.length !== Math.min(sessionsPerWeek, 7)) return false;
 
-  // każdy dzień 4–9 ćwiczeń i poprawne pola liczbowe
   for (const d of p.days) {
     if (!Array.isArray(d.exercises) || d.exercises.length < 4 || d.exercises.length > 9) return false;
     for (const e of d.exercises) {
@@ -166,8 +168,6 @@ function isGoodPlan(p, sessionsPerWeek){
       if (!Number.isFinite(Number(e?.powtorzenia))) return false;
     }
   }
-
-  // zgrubna różnorodność – nie wszystkie dni identyczne
   const sigs = p.days.map(d => JSON.stringify((d.exercises||[]).map(e => (e.cwiczenie||'').toLowerCase().trim())));
   const uniq = new Set(sigs);
   return uniq.size >= Math.ceil(sigs.length * 0.6);
@@ -192,10 +192,39 @@ function equipmentProfile(eq=''){
   return 'gym';
 }
 
-function setRepFor(goal, isAccessory=false){
-  if (goal==='strength') return { sets: isAccessory?3:5, reps: isAccessory?6:4 };
-  if (goal==='cut')       return { sets: isAccessory?3:4, reps: isAccessory?12:10 };
-  return                   { sets: isAccessory?3:4, reps: isAccessory?12:9 }; // hypertrofia default
+// ——— klasyfikacja compound/iso
+const COMPOUND_KW = [
+  'squat','deadlift','romanian','hinge','press','row','pulldown','pull-up','lunge','split squat','leg press','hip thrust','good morning','clean','snatch'
+];
+const ISOLATION_KW = [
+  'curl','extension','raise','fly','calf','face pull','rear delt','adduction','abduction'
+];
+function isCompound(name=''){
+  const n = name.toLowerCase();
+  if (COMPOUND_KW.some(k=>n.includes(k))) return true;
+  if (ISOLATION_KW.some(k=>n.includes(k))) return false;
+  return true; // domyślnie traktuj jako compound
+}
+function isLowerBody(name=''){
+  const n = name.toLowerCase();
+  return ['squat','deadlift','romanian','hinge','lunge','split squat','leg press','hip thrust','glute','calf'].some(k=>n.includes(k));
+}
+function isFemale(gender=''){ return String(gender).toLowerCase().includes('kob'); }
+
+function setSets(goal, isAccessory=false){
+  if (goal==='strength') return isAccessory ? 3 : 5;
+  if (goal==='cut')       return isAccessory ? 3 : 4;
+  return                   isAccessory ? 3 : 4; // hypertrofia
+}
+function repsByRule(name){
+  return isCompound(name) ? 10 : 12;
+}
+
+function pick(listKey, prof, n=1){
+  const list = LIBRARY[listKey]?.[prof] || LIBRARY[listKey]?.gym || [];
+  const arr = list.slice();
+  for (let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; }
+  return arr.slice(0,n);
 }
 
 const LIBRARY = {
@@ -214,41 +243,37 @@ const LIBRARY = {
   legcurl:    { gym:['Leg curl'], db:['DB leg curl (improv)'], home:['Nordic curl (asysta)'], db_bar:['DB leg curl (improv)'], bar:['Nordic curl (asysta)'] }
 };
 
-function pick(key, prof, n=1){
-  const list = LIBRARY[key]?.[prof] || LIBRARY[key]?.gym || [];
-  const arr = list.slice();
-  // prosta rotacja
-  for (let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; }
-  return arr.slice(0,n);
+function makeExercise(name, goal, isAccessory, gender){
+  const setsBase = setSets(goal, isAccessory);
+  // ★ reps z reguły 10/12
+  const reps = repsByRule(name);
+  // ★ jeśli Kobieta i dolna część — +1 seria (cap 6)
+  const sets = (isFemale(gender) && isLowerBody(name)) ? Math.min(6, setsBase + 1) : setsBase;
+  return { cwiczenie: name, serie: sets, powtorzenia: reps };
 }
 
-function dayUpper(goal, prof){
+function dayUpper(goal, prof, gender){
   const main  = [...pick('horizontalP',prof,1), ...pick('verticalP',prof,1), ...pick('horizontalR',prof,1), ...pick('verticalR',prof,1)];
   const acc   = [...pick('pushAcc',prof,2), ...pick('pullAcc',prof,1)];
-  return main.concat(acc).map((name,i) => {
-    const sr = setRepFor(goal, i>=3); // pierwsze 3–4 to kompoundy
-    return { cwiczenie:name, serie:sr.sets, powtorzenia:sr.reps };
-  });
+  return main.concat(acc).map((name,i) => makeExercise(name, goal, i>=3, gender));
 }
-function dayLower(goal, prof){
-  const main  = [...pick('squat',prof,1), ...pick('hinge',prof,1), ...pick('unilateral',prof,1)];
-  const acc   = [...pick('legcurl',prof,1), ...pick('hipthrust',prof,1), ...pick('calves',prof,1), ...pick('core',prof,1)];
-  return main.concat(acc).map((name,i) => {
-    const sr = setRepFor(goal, i>=2);
-    return { cwiczenie:name, serie:sr.sets, powtorzenia:sr.reps };
-  });
+function dayLower(goal, prof, gender){
+  // ★ wymuszamy hip thrust w dniu nóg
+  const main  = [...pick('squat',prof,1), ...pick('hinge',prof,1), ...pick('unilateral',prof,1), ...pick('hipthrust',prof,1)];
+  const acc   = [...pick('legcurl',prof,1), ...pick('calves',prof,1), ...pick('core',prof,1)];
+  return main.concat(acc).map((name,i) => makeExercise(name, goal, i>=3, gender));
 }
-function dayPush(goal, prof){
+function dayPush(goal, prof, gender){
   const main = [...pick('horizontalP',prof,1), ...pick('verticalP',prof,1)];
   const acc  = [...pick('pushAcc',prof,3)];
-  return main.concat(acc).map((name,i)=>({ ...setRepFor(goal, i>=2), cwiczenie:name, serie:setRepFor(goal,i>=2).sets, powtorzenia:setRepFor(goal,i>=2).reps }));
+  return main.concat(acc).map((name,i)=> makeExercise(name, goal, i>=2, gender));
 }
-function dayPull(goal, prof){
+function dayPull(goal, prof, gender){
   const main = [...pick('horizontalR',prof,1), ...pick('verticalR',prof,1)];
   const acc  = [...pick('pullAcc',prof,3)];
-  return main.concat(acc).map((name,i)=>({ cwiczenie:name, serie:setRepFor(goal,i>=2).sets, powtorzenia:setRepFor(goal,i>=2).reps }));
+  return main.concat(acc).map((name,i)=> makeExercise(name, goal, i>=2, gender));
 }
-function dayFull(goal, prof){
+function dayFull(goal, prof, gender){
   const blocks = [
     ...pick('squat',prof,1),
     ...pick('hinge',prof,1),
@@ -256,7 +281,7 @@ function dayFull(goal, prof){
     ...pick('horizontalR',prof,1),
     ...pick('core',prof,1)
   ];
-  return blocks.map((name,i)=>({ cwiczenie:name, serie:setRepFor(goal,i>=2).sets, powtorzenia:setRepFor(goal,i>=2).reps }));
+  return blocks.map((name,i)=> makeExercise(name, goal, i>=2, gender));
 }
 
 function buildHeuristicPlan({ sessionsPerWeek=4, goal='', level='', equipment='', gender='' }){
@@ -264,32 +289,68 @@ function buildHeuristicPlan({ sessionsPerWeek=4, goal='', level='', equipment=''
   const prof = equipmentProfile(equipment);
   const daysNames = ['Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota','Niedziela'];
 
+  // ★ Split z priorytetem dolnej części dla Kobiety
   let split;
-  if (sessionsPerWeek<=1) split = ['Full'];
-  else if (sessionsPerWeek===2) split = ['Full','Full'];
-  else if (sessionsPerWeek===3) split = ['FBW A','FBW B','FBW C'];
-  else if (sessionsPerWeek===4) split = ['Upper','Lower','Upper','Lower'];
-  else if (sessionsPerWeek===5) split = ['Upper','Lower','Push','Pull','Full'];
-  else if (sessionsPerWeek===6) split = ['Push','Pull','Legs','Push','Pull','Legs'];
-  else split = ['Upper','Lower','Push','Pull','Full','Legs','Akcesoria'];
+  if (isFemale(gender)) {
+    if (sessionsPerWeek<=1) split = ['Lower'];
+    else if (sessionsPerWeek===2) split = ['Lower','Upper'];
+    else if (sessionsPerWeek===3) split = ['Lower','Upper','Lower'];
+    else if (sessionsPerWeek===4) split = ['Lower','Upper','Lower','Full'];
+    else if (sessionsPerWeek===5) split = ['Lower','Upper','Lower','Push','Pull'];
+    else if (sessionsPerWeek===6) split = ['Lower','Upper','Lower','Push','Pull','Full'];
+    else split = ['Lower','Upper','Lower','Push','Pull','Full','Lower'];
+  } else {
+    if (sessionsPerWeek<=1) split = ['Full'];
+    else if (sessionsPerWeek===2) split = ['Full','Full'];
+    else if (sessionsPerWeek===3) split = ['FBW A','FBW B','FBW C'];
+    else if (sessionsPerWeek===4) split = ['Upper','Lower','Upper','Lower'];
+    else if (sessionsPerWeek===5) split = ['Upper','Lower','Push','Pull','Full'];
+    else if (sessionsPerWeek===6) split = ['Push','Pull','Legs','Push','Pull','Legs'];
+    else split = ['Upper','Lower','Push','Pull','Full','Legs','Akcesoria'];
+  }
 
   const days = [];
   for (let i=0;i<Math.min(sessionsPerWeek,7);i++){
     const tp = split[i % split.length];
     let exercises;
-    if (tp==='Upper') exercises = dayUpper(g,prof);
-    else if (tp==='Lower' || tp==='Legs') exercises = dayLower(g,prof);
-    else if (tp==='Push')  exercises = dayPush(g,prof);
-    else if (tp==='Pull')  exercises = dayPull(g,prof);
-    else                   exercises = dayFull(g,prof);
+    if (tp==='Upper') exercises = dayUpper(g,prof,gender);
+    else if (tp==='Lower' || tp==='Legs') exercises = dayLower(g,prof,gender);
+    else if (tp==='Push')  exercises = dayPush(g,prof,gender);
+    else if (tp==='Pull')  exercises = dayPull(g,prof,gender);
+    else                   exercises = dayFull(g,prof,gender);
 
-    // urealnij długość dnia (5–8 zadań)
-    if (exercises.length<5) while(exercises.length<5) exercises.push(...pick('core',prof,1).map(n=>({ cwiczenie:n, ...setRepFor(g,true), serie:setRepFor(g,true).sets, powtorzenia:setRepFor(g,true).reps })));
+    if (exercises.length<5) {
+      while(exercises.length<5){
+        const extra = pick('core',prof,1).map(n=> makeExercise(n,g,true,gender));
+        exercises.push(...extra);
+      }
+    }
     if (exercises.length>8) exercises = exercises.slice(0,8);
 
     days.push({ day: daysNames[i], exercises });
   }
   return { days };
+}
+
+/* ★★★ NORMALIZACJA: egzekwuj 10/12 reps + dopal nogi/pośladki u kobiet ★★★ */
+function finalizePlan(plan, { gender='' } = {}){
+  const female = isFemale(gender);
+  const out = { days: [] };
+
+  for (const d of (plan?.days || [])) {
+    const fixed = (d.exercises || []).map((e, idx) => {
+      const name = e?.cwiczenie || '';
+      const reps = repsByRule(name); // 10 compound / 12 isolation
+      let sets = Number(e?.serie);
+      if (!Number.isFinite(sets) || sets < 1) sets = 3;
+      // +1 seria dla dolnej części ciała u kobiet (limit 6)
+      if (female && isLowerBody(name)) sets = Math.min(6, sets + 1);
+      // traktuj 1–2 pierwsze jako compound (jeśli AI nie rozpoznało), ale reps mamy z nazwy
+      return { cwiczenie: name, serie: sets, powtorzenia: reps };
+    });
+    out.days.push({ day: d.day, exercises: fixed });
+  }
+  return out;
 }
 
 /* ===================== 4) XLSX — jeden arkusz, 3 kolumny ===================== */
