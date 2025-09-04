@@ -157,20 +157,27 @@ section.snap{padding:64px 0}
 
 <a id="langToggle" class="lang-toggle" href="?lang=en" aria-label="English version">EN</a>
 
-<!-- Modal e-mail (bramka) -->
+<!-- Modal e-mail (bramka) z polem na voucher -->
 <div id="emailModal" aria-modal="true" role="dialog" style="position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center">
   <div class="box" style="background:#fff;color:#111;border-radius:16px;padding:22px;max-width:420px;width:92%;box-shadow:0 10px 40px rgba(0,0,0,.35)">
     <h3 style="margin-top:0">Dostęp do generatora</h3>
     <label for="gateEmail" style="display:block;font:600 14px/1.3 Inter;margin-bottom:6px">Twój e-mail</label>
     <input id="gateEmail" type="email" placeholder="np. imie@domena.com" autocomplete="email" required
            style="width:100%;padding:12px 12px;border-radius:10px;border:1px solid #DDD;font:400 15px/1.3 Inter">
+
     <div class="row" style="display:flex;align-items:flex-start;gap:10px;margin:12px 0">
       <input id="gateConsent" type="checkbox" required>
       <label for="gateConsent" style="margin:0">Wyrażam zgodę na przetwarzanie moich danych osobowych.</label>
     </div>
-    <div style="margin-top:10px">
+
+    <!-- NOWE: Voucher (opcjonalnie) -->
+    <label for="gateVoucher" style="display:block;font:600 13px/1.3 Inter;margin:8px 0 6px">Voucher (opcjonalnie)</label>
+    <input id="gateVoucher" type="text" placeholder="np. TGMPRJCT"
+           style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid #DDD;font:400 14px/1.3 Inter">
+
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
       <button id="gateConfirm" style="background:#3E2723;color:#fff;border:none;border-radius:12px;padding:10px 14px;font:600 14px;cursor:pointer">Kontynuuj</button>
-      <button class="close" id="gateClose" type="button" style="background:#111;border:1px solid #333;color:#fff;border-radius:12px;padding:10px 14px;font:600 14px;cursor:pointer;margin-left:8px">Anuluj</button>
+      <button class="close" id="gateClose" type="button" style="background:#111;border:1px solid #333;color:#fff;border-radius:12px;padding:10px 14px;font:600 14px;cursor:pointer">Anuluj</button>
     </div>
     <p id="gateError" style="color:#b00020;margin-top:10px;display:none">Podaj poprawny e-mail i zaznacz zgodę.</p>
   </div>
@@ -259,24 +266,24 @@ section.snap{padding:64px 0}
   <section id="pricing" class="snap section-light">
     <div class="container">
       <h2 id="offerTitle" class="reveal">Oferta</h2>
-      <div class="grid-3" style="grid-template-columns:minmax(260px,520px);justify-content:center;margin-top:20px">
-        <article class="card-light reveal" style="display:flex;flex-direction:column;min-height:220px">
-          <div>
-            <h3>Plan Treningowy</h3>
-            <p>Pełny plan z progresją i rozmieszczeniem regeneracji.</p>
+    <div class="grid-3" style="grid-template-columns:minmax(260px,520px);justify-content:center;margin-top:20px">
+      <article class="card-light reveal" style="display:flex;flex-direction:column;min-height:220px">
+        <div>
+          <h3>Plan Treningowy</h3>
+          <p>Pełny plan z progresją i rozmieszczeniem regeneracji.</p>
 
-            <!-- Cena -->
-            <div class="price-tag" aria-label="Cena planu">
-              <span class="price">9,99&nbsp;zł</span>
-              <span class="price-note">jednorazowo</span>
-            </div>
+          <!-- Cena -->
+          <div class="price-tag" aria-label="Cena planu">
+            <span class="price">9,99&nbsp;zł</span>
+            <span class="price-note">jednorazowo</span>
           </div>
-          <div style="margin-top:auto">
-            <!-- pełna szerokość tylko ≥641px -->
-            <a class="btn btn-brown btn-cta requires-email" href="generator.html">Wygeneruj teraz</a>
-          </div>
-        </article>
-      </div>
+        </div>
+        <div style="margin-top:auto">
+          <!-- pełna szerokość tylko ≥641px -->
+          <a class="btn btn-brown btn-cta requires-email" href="generator.html">Wygeneruj teraz</a>
+        </div>
+      </article>
+    </div>
 
       <div class="legal-row" style="display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between;margin-top:24px">
         <nav style="display:flex;gap:16px">
@@ -318,7 +325,7 @@ const observed = new IntersectionObserver((entries)=>{
 },{root:null, rootMargin:'0px 0px -10% 0px', threshold:0.15});
 document.querySelectorAll('.reveal, .reveal-stagger').forEach(el=>observed.observe(el));
 
-/* Pomocniczo */
+/* Stripe helper */
 async function createCheckout(email){
   const r = await fetch('/.netlify/functions/create-checkout-session', {
     method:'POST',
@@ -330,27 +337,53 @@ async function createCheckout(email){
   window.location.href = data.url;
 }
 
-/* Bramka e-mail → Stripe Checkout */
+/* Bramka e-mail (+ voucher) */
 const modal = document.getElementById('emailModal');
 const closeBtn = document.getElementById('gateClose');
 const confirmBtn = document.getElementById('gateConfirm');
 const emailInput = document.getElementById('gateEmail');
 const consent = document.getElementById('gateConsent');
 const gateError = document.getElementById('gateError');
+const gateVoucher = document.getElementById('gateVoucher');
+
 function showModal(){ modal.style.display='flex'; emailInput.focus(); }
 function hideModal(){ modal.style.display='none'; }
 if(closeBtn){ closeBtn.addEventListener('click', hideModal); }
 function validEmail(v){ return /^[^\s@]+@[^\s@]+$/.test(v) && /\.[^\s@]{2,}$/.test(v); }
+function isVoucherOK(v){ return (v||'').trim().toUpperCase() === 'TGMPRJCT'; }
 
 if(confirmBtn){
   confirmBtn.addEventListener('click', async ()=>{
     gateError.style.display='none';
     const v = emailInput.value.trim();
-    if(!validEmail(v) || !consent.checked){ gateError.style.display='block'; return; }
+    const voucherVal = gateVoucher.value.trim();
+
+    if(!validEmail(v) || !consent.checked){
+      gateError.textContent = 'Podaj poprawny e-mail i zaznacz zgodę.';
+      gateError.style.display='block';
+      return;
+    }
+
+    // zapis e-maila i zgody
     localStorage.setItem('hp_email', v);
-    localStorage.setItem('hp_consent','1');
+    localStorage.setItem('hp_consent', '1');
+
+    // VOUCHER: jeśli poprawny → darmowy dostęp bez Stripe
+    if (isVoucherOK(voucherVal)) {
+      localStorage.setItem('hp_voucher_ok', '1');
+      localStorage.setItem('hp_voucher_code', 'TGMPRJCT');
+      hideModal();
+      window.location.href = 'generator.html'; // bez opłaty
+      return;
+    } else {
+      // upewnij się, że flaga nie została po kimś
+      localStorage.removeItem('hp_voucher_ok');
+      localStorage.removeItem('hp_voucher_code');
+    }
+
+    // bez voucheru → Stripe
     try{
-      await createCheckout(v); // → redirect do Stripe
+      await createCheckout(v);
     }catch(e){
       gateError.textContent = 'Nie udało się połączyć ze Stripe. Spróbuj ponownie.';
       gateError.style.display = 'block';
@@ -358,26 +391,30 @@ if(confirmBtn){
   });
 }
 
-/* Kliknięcia „Wygeneruj / Wygeneruj teraz” */
+/* Kliknięcia CTA „Wygeneruj / Wygeneruj teraz” */
 document.querySelectorAll('.requires-email').forEach(a=>{
   a.addEventListener('click', async (e)=>{
     const mail = localStorage.getItem('hp_email');
     const ok = localStorage.getItem('hp_consent');
+    const voucherOK = localStorage.getItem('hp_voucher_ok') === '1';
     if(!mail || !ok){
       e.preventDefault(); showModal(); return;
     }
-    // mamy mail + zgodę → od razu Stripe
-    e.preventDefault();
-    try{
-      await createCheckout(mail);
-    }catch(err){
-      alert('Nie udało się przejść do płatności. Spróbuj ponownie.');
+    // jeśli voucher aktywny → przejdź od razu do generatora
+    if (voucherOK) {
+      e.preventDefault();
+      window.location.href = 'generator.html';
+      return;
     }
+    // w innym wypadku → Stripe
+    e.preventDefault();
+    try{ await createCheckout(mail); }
+    catch(err){ alert('Nie udało się przejść do płatności. Spróbuj ponownie.'); }
   });
 });
 </script>
 
-<!-- i18n -->
+<!-- i18n (bez zmian poza kontekstem) -->
 <script>
 (function () {
   const params = new URLSearchParams(location.search);
