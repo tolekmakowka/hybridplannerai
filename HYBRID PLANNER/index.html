@@ -88,17 +88,6 @@ section.snap{padding:64px 0}
 .btn-brown{background:var(--brown);border-color:var(--brown);color:#fff}
 .btn-light{background:#fff;color:#111;border-color:#fff}
 
-/* Animacje scroll */
-.reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease, transform .6s ease}
-.reveal.show{opacity:1;transform:none}
-.reveal-stagger > *{opacity:0;transform:translateY(16px)}
-.reveal-stagger.show > *{animation:st .8s ease forwards}
-.reveal-stagger.show > *:nth-child(1){animation-delay:.05s}
-.reveal-stagger.show > *:nth-child(2){animation-delay:.12s}
-.reveal-stagger.show > *:nth-child(3){animation-delay:.19s}
-.reveal-stagger.show > *:nth-child(4){animation-delay:.26s}
-@keyframes st{to{opacity:1;transform:none}}
-
 /* EN toggle */
 .lang-toggle{
   position:fixed; top:14px; right:14px; z-index:9999;
@@ -107,7 +96,7 @@ section.snap{padding:64px 0}
 }
 .lang-toggle:hover{opacity:1}
 
-/* >>> ZAMIANA: CTA pełna szerokość tylko na desktopie/tablecie */
+/* >>> CTA pełna szerokość tylko na desktopie/tablecie */
 @media (min-width: 641px){
   #pricing .card-light .btn-cta{
     display:block;
@@ -148,7 +137,6 @@ section.snap{padding:64px 0}
 
   .grid-2{ grid-template-columns: 1fr; gap:20px; }
   .right-stack{ grid-template-columns: 1fr; gap: 12px; }
-  /* chowamy pierwsze zdjęcie (Bytol1) na mobile */
   .right-stack .climb-photo{ display:none; }
 
   .joinhere-card{ height: 180px; }
@@ -160,7 +148,6 @@ section.snap{padding:64px 0}
   .btn{ padding: 10px 14px; font-size: 15px; border-radius: 10px; }
   .card-light{ padding: 16px; border-radius: 14px; }
 
-  /* >>> więcej odstępu między ofertą a linkami (Polityka/Regulamin/...) */
   #pricing .legal-row{ margin-top: 56px !important; padding-bottom: 24px; }
   #pricing .legal-row nav{ width:100%; justify-content:center; gap:20px; }
 }
@@ -218,9 +205,7 @@ section.snap{padding:64px 0}
           </div>
 
           <div class="right-stack reveal-stagger">
-            <!-- To zdjęcie chowamy na mobile -->
             <img class="round climb-photo" src="assets/Bytol1.jpg" alt="Bytol 1" style="height:220px;object-fit:cover">
-            <!-- „Ścianka” pozostaje widoczna -->
             <img class="round" src="assets/Bytol2.jpg" alt="Bytol 2" style="height:220px;object-fit:cover">
             <a href="#pricing" class="joinhere-card" aria-label="Przejdź do oferty — Join here">
               <span class="joinhere-text">JOIN HERE</span>
@@ -293,7 +278,6 @@ section.snap{padding:64px 0}
         </article>
       </div>
 
-      <!-- TU: dodana klasa legal-row (reszta bez zmian) -->
       <div class="legal-row" style="display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between;margin-top:24px">
         <nav style="display:flex;gap:16px">
           <a id="legalPolicy" href="#" style="color:#6a6966">Polityka</a>
@@ -334,7 +318,19 @@ const observed = new IntersectionObserver((entries)=>{
 },{root:null, rootMargin:'0px 0px -10% 0px', threshold:0.15});
 document.querySelectorAll('.reveal, .reveal-stagger').forEach(el=>observed.observe(el));
 
-/* Bramka e-mail */
+/* Pomocniczo */
+async function createCheckout(email){
+  const r = await fetch('/.netlify/functions/create-checkout-session', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ email })
+  });
+  const data = await r.json();
+  if(!r.ok || !data?.url){ throw new Error(data?.error || 'Stripe unavailable'); }
+  window.location.href = data.url;
+}
+
+/* Bramka e-mail → Stripe Checkout */
 const modal = document.getElementById('emailModal');
 const closeBtn = document.getElementById('gateClose');
 const confirmBtn = document.getElementById('gateConfirm');
@@ -345,21 +341,37 @@ function showModal(){ modal.style.display='flex'; emailInput.focus(); }
 function hideModal(){ modal.style.display='none'; }
 if(closeBtn){ closeBtn.addEventListener('click', hideModal); }
 function validEmail(v){ return /^[^\s@]+@[^\s@]+$/.test(v) && /\.[^\s@]{2,}$/.test(v); }
+
 if(confirmBtn){
-  confirmBtn.addEventListener('click', ()=>{
+  confirmBtn.addEventListener('click', async ()=>{
     gateError.style.display='none';
     const v = emailInput.value.trim();
     if(!validEmail(v) || !consent.checked){ gateError.style.display='block'; return; }
     localStorage.setItem('hp_email', v);
     localStorage.setItem('hp_consent','1');
-    hideModal();
-    window.location.href = 'generator.html';
+    try{
+      await createCheckout(v); // → redirect do Stripe
+    }catch(e){
+      gateError.textContent = 'Nie udało się połączyć ze Stripe. Spróbuj ponownie.';
+      gateError.style.display = 'block';
+    }
   });
 }
+
+/* Kliknięcia „Wygeneruj / Wygeneruj teraz” */
 document.querySelectorAll('.requires-email').forEach(a=>{
-  a.addEventListener('click', (e)=>{
-    if(!localStorage.getItem('hp_email') || !localStorage.getItem('hp_consent')){
-      e.preventDefault(); showModal();
+  a.addEventListener('click', async (e)=>{
+    const mail = localStorage.getItem('hp_email');
+    const ok = localStorage.getItem('hp_consent');
+    if(!mail || !ok){
+      e.preventDefault(); showModal(); return;
+    }
+    // mamy mail + zgodę → od razu Stripe
+    e.preventDefault();
+    try{
+      await createCheckout(mail);
+    }catch(err){
+      alert('Nie udało się przejść do płatności. Spróbuj ponownie.');
     }
   });
 });
