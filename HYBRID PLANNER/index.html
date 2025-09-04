@@ -107,8 +107,32 @@ section.snap{padding:64px 0}
 }
 .lang-toggle:hover{opacity:1}
 
-/* CTA pełna szerokość w ofercie */
-#pricing .card-light .btn{display:block;width:100%;text-align:center;padding:16px 20px;font-size:17px}
+/* >>> ZAMIANA: CTA pełna szerokość tylko na desktopie/tablecie */
+@media (min-width: 641px){
+  #pricing .card-light .btn-cta{
+    display:block;
+    width:100%;
+    text-align:center;
+    padding:16px 20px;
+    font-size:17px;
+  }
+}
+
+/* Cena w ofercie */
+#pricing .price-tag{
+  margin-top:10px;
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+}
+#pricing .price{
+  font:800 clamp(22px,4vw,34px)/1 Poppins;
+  color:#111;
+}
+#pricing .price-note{
+  color:#6a6966;
+  font:600 14px/1.2 Inter;
+}
 
 /* Auto-fit siatka features */
 #features .grid-3{grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); align-items: stretch}
@@ -135,9 +159,8 @@ section.snap{padding:64px 0}
   p{  font-size: 15px; }
   .btn{ padding: 10px 14px; font-size: 15px; border-radius: 10px; }
   .card-light{ padding: 16px; border-radius: 14px; }
-  #pricing .card-light .btn{ padding:16px 18px; font-size:18px; }
 
-  /* >>> NOWOŚĆ: więcej odstępu między ofertą a linkami (Polityka/Regulamin/...) */
+  /* >>> więcej odstępu między ofertą a linkami (Polityka/Regulamin/...) */
   #pricing .legal-row{ margin-top: 56px !important; padding-bottom: 24px; }
   #pricing .legal-row nav{ width:100%; justify-content:center; gap:20px; }
 }
@@ -256,9 +279,16 @@ section.snap{padding:64px 0}
           <div>
             <h3>Plan Treningowy</h3>
             <p>Pełny plan z progresją i rozmieszczeniem regeneracji.</p>
+
+            <!-- Cena -->
+            <div class="price-tag" aria-label="Cena planu">
+              <span class="price">9,99&nbsp;zł</span>
+              <span class="price-note">jednorazowo</span>
+            </div>
           </div>
           <div style="margin-top:auto">
-            <a class="btn btn-brown requires-email" href="generator.html">Wygeneruj teraz</a>
+            <!-- pełna szerokość tylko ≥641px -->
+            <a class="btn btn-brown btn-cta requires-email" href="generator.html">Wygeneruj teraz</a>
           </div>
         </article>
       </div>
