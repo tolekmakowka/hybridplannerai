@@ -109,15 +109,50 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
 /* ---------- Endpoints funkcji Netlify ---------- */
 const HP = {
   generate: '/.netlify/functions/generate-plan',
-  sendEmail: '/.netlify/functions/send-email'
+  sendEmail: '/.netlify/functions/send-email',
+  verify: '/.netlify/functions/verify-session'
 };
 
-/* ---------- Bramka e-mail ---------- */
-(function(){
-  const mail = localStorage.getItem('hp_email');
-  const consent = localStorage.getItem('hp_consent');
-  if(!mail || !consent){ window.location.href = 'index.html'; }
-  else { document.getElementById('who').textContent = mail; }
+/* ---------- GATE: weryfikacja płatności Stripe ---------- */
+(async function(){
+  const params = new URLSearchParams(location.search);
+  const sid = params.get('session_id');
+
+  if (!sid) {
+    alert('Najpierw dokonaj płatności.');
+    location.href = '/#pricing';
+    return;
+  }
+
+  try{
+    const r = await fetch(`${HP.verify}?session_id=${encodeURIComponent(sid)}`);
+    const data = await r.json();
+
+    if (!r.ok || !data?.paid) {
+      alert('Płatność nie została potwierdzona.');
+      location.href = '/#pricing';
+      return;
+    }
+
+    // nadpisz e-mail potwierdzonym ze Stripe i pokaż w UI
+    if (data.email) {
+      localStorage.setItem('hp_email', data.email);
+      localStorage.setItem('hp_consent','1');
+      const who = document.getElementById('who');
+      if (who) who.textContent = data.email;
+    } else {
+      // fallback – jeśli z jakiegoś powodu brak e-maila w odpowiedzi
+      const mail = localStorage.getItem('hp_email');
+      if (mail) {
+        const who = document.getElementById('who');
+        if (who) who.textContent = mail;
+      }
+    }
+  }catch(e){
+    console.error(e);
+    alert('Błąd weryfikacji płatności.');
+    location.href = '/#pricing';
+  }
 })();
 
 /* ===================== payload (dodane: type/lang) ===================== */
@@ -139,11 +174,9 @@ function buildPayload(){
 function normalizeXlsxResponse(data){
   if (!data || typeof data !== 'object') return null;
 
-  // najpierw Twój aktualny wariant
   if (data.fileBase64) {
     return { xlsxBase64: data.fileBase64, xlsxFilename: data.filename || 'Plan Treningowy.xlsx' };
   }
-  // alternatywne nazwy
   if (data.xlsxBase64) {
     return { xlsxBase64: data.xlsxBase64, xlsxFilename: data.xlsxFilename || 'Plan Treningowy.xlsx' };
   }
@@ -178,7 +211,6 @@ async function callBackendForXlsx(payload){
   }
 
   if (!parsed) {
-    // fallback: czysty base64 w body
     const maybeBase64 = bodyText.includes('base64,') ? bodyText.split('base64,').pop() : bodyText.trim();
     if (maybeBase64 && /^[A-Za-z0-9+/=]+$/.test(maybeBase64)) {
       return { xlsxBase64: maybeBase64, xlsxFilename: 'Plan Treningowy.xlsx' };
@@ -202,7 +234,7 @@ async function callBackendForXlsx(payload){
 async function sendPlanByEmail(base64, filename){
   const to = localStorage.getItem('hp_email') || '';
   if(!to) return;
-  const resp = await fetch(HP.sendEmail, {
+  const resp = await fetch('/.netlify/functions/send-email', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({
