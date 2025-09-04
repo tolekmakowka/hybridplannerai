@@ -113,11 +113,26 @@ const HP = {
   verify: '/.netlify/functions/verify-session'
 };
 
-/* ---------- GATE: weryfikacja płatności Stripe ---------- */
+/* ---------- Wejście: Stripe lub Voucher ---------- */
 (async function(){
   const params = new URLSearchParams(location.search);
   const sid = params.get('session_id');
 
+  const voucherOk = localStorage.getItem('hp_voucher_ok') === '1';
+  const mailLS = localStorage.getItem('hp_email');
+
+  if (voucherOk) {
+    // darmowy dostęp z voucherem — wymagamy e-maila
+    if (!mailLS) {
+      alert('Podaj e-mail na stronie głównej i użyj voucheru.');
+      location.href = '/#pricing';
+      return;
+    }
+    const who = document.getElementById('who'); if (who) who.textContent = mailLS;
+    return; // przepuszczamy bez Stripe
+  }
+
+  // standard: oczekujemy powrotu ze Stripe z ?session_id=
   if (!sid) {
     alert('Najpierw dokonaj płatności.');
     location.href = '/#pricing';
@@ -134,19 +149,13 @@ const HP = {
       return;
     }
 
-    // nadpisz e-mail potwierdzonym ze Stripe i pokaż w UI
     if (data.email) {
       localStorage.setItem('hp_email', data.email);
       localStorage.setItem('hp_consent','1');
       const who = document.getElementById('who');
       if (who) who.textContent = data.email;
-    } else {
-      // fallback – jeśli z jakiegoś powodu brak e-maila w odpowiedzi
-      const mail = localStorage.getItem('hp_email');
-      if (mail) {
-        const who = document.getElementById('who');
-        if (who) who.textContent = mail;
-      }
+    } else if (mailLS) {
+      const who = document.getElementById('who'); if (who) who.textContent = mailLS;
     }
   }catch(e){
     console.error(e);
@@ -155,7 +164,7 @@ const HP = {
   }
 })();
 
-/* ===================== payload (dodane: type/lang) ===================== */
+/* ===================== payload ===================== */
 function buildPayload(){
   return {
     type: 'A',
@@ -173,13 +182,8 @@ function buildPayload(){
 /* ===================== normalizacja odpowiedzi backendu ===================== */
 function normalizeXlsxResponse(data){
   if (!data || typeof data !== 'object') return null;
-
-  if (data.fileBase64) {
-    return { xlsxBase64: data.fileBase64, xlsxFilename: data.filename || 'Plan Treningowy.xlsx' };
-  }
-  if (data.xlsxBase64) {
-    return { xlsxBase64: data.xlsxBase64, xlsxFilename: data.xlsxFilename || 'Plan Treningowy.xlsx' };
-  }
+  if (data.fileBase64) return { xlsxBase64: data.fileBase64, xlsxFilename: data.filename || 'Plan Treningowy.xlsx' };
+  if (data.xlsxBase64) return { xlsxBase64: data.xlsxBase64, xlsxFilename: data.xlsxFilename || 'Plan Treningowy.xlsx' };
   if (data.data && (data.data.xlsxBase64 || data.data.fileBase64)) {
     return {
       xlsxBase64: data.data.xlsxBase64 || data.data.fileBase64,
@@ -189,7 +193,7 @@ function normalizeXlsxResponse(data){
   return null;
 }
 
-/* ===================== wywołanie backendu z diagnostyką ===================== */
+/* ===================== wywołanie backendu ===================== */
 async function callBackendForXlsx(payload){
   const res = await fetch(HP.generate, {
     method:'POST',
@@ -202,7 +206,7 @@ async function callBackendForXlsx(payload){
 
   let parsed = null;
   if (ct.includes('application/json')) {
-    try { parsed = JSON.parse(bodyText); } catch {/* ignore */}
+    try { parsed = JSON.parse(bodyText); } catch {}
   }
 
   if (!res.ok) {
@@ -215,7 +219,7 @@ async function callBackendForXlsx(payload){
     if (maybeBase64 && /^[A-Za-z0-9+/=]+$/.test(maybeBase64)) {
       return { xlsxBase64: maybeBase64, xlsxFilename: 'Plan Treningowy.xlsx' };
     }
-    throw new Error(`generate-plan: nieprawidłowy JSON i brak danych XLSX. Otrzymano: ${bodyText.slice(0, 200)}`);
+    throw new Error(`generate-plan: nieprawidłowy JSON i brak danych XLSX.`);
   }
 
   if (parsed.ok === false) {
@@ -225,12 +229,12 @@ async function callBackendForXlsx(payload){
 
   const norm = normalizeXlsxResponse(parsed);
   if (!norm || !norm.xlsxBase64) {
-    throw new Error(`generate-plan: brak pliku XLSX w odpowiedzi (${JSON.stringify(parsed).slice(0,200)}…)`);
+    throw new Error(`generate-plan: brak pliku XLSX w odpowiedzi`);
   }
   return norm;
 }
 
-/* ---------- Wysyłka maila (Resend przez Twoją funkcję) ---------- */
+/* ---------- Wysyłka maila ---------- */
 async function sendPlanByEmail(base64, filename){
   const to = localStorage.getItem('hp_email') || '';
   if(!to) return;
@@ -271,8 +275,7 @@ genBtn.addEventListener('click', async ()=>{
     genBtn.textContent = 'Gotowe ✓';
   }catch(e){
     console.error('GENERATOR ERROR:', e);
-    const msg = String(e && e.message ? e.message : e).slice(0, 400);
-    alert('Nie udało się wygenerować planu.\n\nSzczegóły: ' + msg);
+    alert('Nie udało się wygenerować planu.\n\nSzczegóły: ' + String(e.message||e));
     genBtn.textContent = 'Wygeneruj plan';
   }finally{
     genBtn.disabled = false;
