@@ -1,69 +1,69 @@
-// netlify/functions/create-checkout-session.js
 'use strict';
 
 const Stripe = require('stripe');
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-const ALLOWED_ORIGINS = new Set([
-  'https://tgmproject.net',
-  'https://www.tgmproject.net',
-  'http://localhost:8888',
-  'http://localhost:5173',
-  'http://localhost:3000'
-]);
-
-function corsHeaders(origin) {
-  const allow = (origin && ALLOWED_ORIGINS.has(origin)) ? origin : '*';
+function cors(origin) {
   return {
-    'Access-Control-Allow-Origin': allow,
+    'Access-Control-Allow-Origin': origin || '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Max-Age': '86400',
-    'Content-Type': 'application/json; charset=utf-8'
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
   };
 }
 
 exports.handler = async (event) => {
-  const origin = event.headers?.origin || '';
+  const origin = event.headers?.origin || '*';
 
   if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers: corsHeaders(origin) };
+    return { statusCode: 204, headers: cors(origin) };
   }
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers: corsHeaders(origin), body: JSON.stringify({ error: 'Method not allowed' }) };
+    return { statusCode: 405, headers: cors(origin), body: 'Method not allowed' };
   }
 
   try {
-    const { email } = JSON.parse(event.body || '{}');
-    if (!email) {
-      return { statusCode: 400, headers: corsHeaders(origin), body: JSON.stringify({ error: 'Missing email' }) };
+    const body = JSON.parse(event.body || '{}');
+    const email   = (body.email || '').trim();
+    const voucher = (body.voucher || '').trim().toUpperCase();
+
+    // Voucher – bez płatności
+    const VOUCHER_CODE = process.env.VOUCHER_CODE || 'TGMPRJCT';
+    if (voucher && voucher === VOUCHER_CODE) {
+      return {
+        statusCode: 200,
+        headers: cors(origin),
+        body: JSON.stringify({ ok: true, voucher: true })
+      };
     }
 
-    const successUrl = `${process.env.SITE_URL}/generator.html?session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl  = `${process.env.SITE_URL}/#pricing`;
+    // Normalna płatność Stripe
+    const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
+    const STRIPE_PRICE_ID   = process.env.STRIPE_PRICE_ID;
+    const PUBLIC_URL        = process.env.PUBLIC_URL || 'https://tgmproject.net';
+
+    if (!STRIPE_SECRET_KEY) throw new Error('Missing STRIPE_SECRET_KEY');
+    if (!STRIPE_PRICE_ID)   throw new Error('Missing STRIPE_PRICE_ID');
+
+    const stripe = Stripe(STRIPE_SECRET_KEY);
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
-      payment_method_types: ['card'],
-      line_items: [{ price: process.env.STRIPE_PRICE_ID, quantity: 1 }],
-      currency: 'pln',
-      customer_email: email,
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-      locale: 'pl',
-      metadata: { product: 'HybridPlanner Plan' }
+      line_items: [{ price: STRIPE_PRICE_ID, quantity: 1 }],
+      customer_email: email || undefined,
+      allow_promotion_codes: true,
+      success_url: `${PUBLIC_URL}/generator.html?paid=1`,
+      cancel_url: `${PUBLIC_URL}/generator.html?canceled=1`
     });
 
     return {
       statusCode: 200,
-      headers: corsHeaders(origin),
-      body: JSON.stringify({ url: session.url })
+      headers: cors(origin),
+      body: JSON.stringify({ ok: true, url: session.url })
     };
-  } catch (e) {
+  } catch (err) {
     return {
       statusCode: 500,
-      headers: corsHeaders(origin),
-      body: JSON.stringify({ error: 'Stripe error', details: String(e) })
+      headers: cors(origin),
+      body: JSON.stringify({ ok: false, error: String(err) })
     };
   }
 };
