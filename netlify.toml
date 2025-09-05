@@ -1,12 +1,16 @@
 [build]
-  base    = "HYBRID PLANNER"
-  publish = "."
-  command = ""
+  # pliki HTML/CSS/JS są w podkatalogu:
+  publish   = "HYBRID PLANNER"
+  # funkcje Netlify są w:
+  functions = "HYBRID PLANNER/netlify/functions"
+  # nie budujemy SPA – tylko echo, ale Netlify wymaga komendy
+  command   = "npm run build"
 
 [functions]
-  directory = "netlify/functions"
   node_bundler = "esbuild"
-  external_node_modules = ["exceljs"]
+  # ważne: te paczki są rozwiązywane z rootowego package.json, ale bundler musi je wykluczyć z bundla
+  external_node_modules = ["exceljs", "stripe"]
 
+# (opcjonalnie) plugin, który pomaga z instalacją zależności funkcji
 [[plugins]]
   package = "@netlify/plugin-functions-install-core"
