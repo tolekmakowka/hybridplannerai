@@ -1,0 +1,13 @@
+{
+  "name": "hybridplanner",
+  "private": true,
+  "version": "1.0.0",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "build": "echo \"static\""
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "stripe": "^14.21.0"
+  }
+}
