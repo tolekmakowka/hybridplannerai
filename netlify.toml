@@ -10,15 +10,3 @@
 
 [[plugins]]
   package = "@netlify/plugin-functions-install-core"
-[functions]
-  directory    = "netlify/functions"
-  node_bundler = "esbuild"
-  external_node_modules = [
-    "mongoose",
-    "mongodb",
-    "snappy",
-    "kerberos",
-    "aws-crt",
-    "saslprep",
-    "bson-ext"
-  ]
