@@ -1,19 +1,14 @@
-
 {
-  "name": "hybridplanner-site",
+  "name": "hybridplanner",
   "private": true,
   "version": "1.0.0",
-  "license": "MIT",
-  "engines": { "node": ">=18.17" },
-  "dependencies": {
-    "exceljs": "^4.4.0"
-  "name": "hybridplanner-site",
-  "private": true,
-  "version": "1.0.0",
-  "license": "MIT",
-  "engines": { "node": ">=18.17" },
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "build": "echo \"static\""
+  },
   "dependencies": {
     "exceljs": "^4.4.0",
-    "stripe": "^14.0.0"
+    "stripe": "^14.21.0",
+    "mongoose": "^8.6.0"
   }
 }
