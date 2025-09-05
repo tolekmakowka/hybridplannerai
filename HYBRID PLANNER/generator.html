@@ -54,15 +54,14 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
   <div class="card">
     <h1 id="title">Generator planów</h1>
     <p id="subtitle" style="margin:6px 0 14px;color:#C9C7C2">
-      Wybierz odpowiedzi i wygeneruj plan. <strong>Plik Excel</strong> zostanie wysłany na Twój e-mail.
+      Wybierz odpowiedzi i <strong>opłać zamówienie</strong>. Po płatności plan (Excel) zostanie wysłany na Twój e-mail.
     </p>
 
-    <!-- tylko Plan A -->
     <h2 id="hA">Plan — pytania (5)</h2>
     <div class="grid-2">
       <div class="row">
         <label id="a1lbl">Ile razy w tygodniu chciałbyś/chciałabyś ćwiczyć?</label>
-        <input id="a1" type="number" min="1" max="14" value="4">
+        <input id="a1" type="number" min="1" max="14" value="3">
       </div>
       <div class="row">
         <label id="a2lbl">Jaki jest twój główny cel?</label>
@@ -106,65 +105,22 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
 </div>
 
 <script>
-/* ---------- Endpoints funkcji Netlify ---------- */
+/* ---------- Endpoints ---------- */
 const HP = {
   generate: '/.netlify/functions/generate-plan',
   sendEmail: '/.netlify/functions/send-email',
-  verify: '/.netlify/functions/verify-session'
+  checkout:  '/.netlify/functions/create-checkout'
 };
 
-/* ---------- Wejście: Stripe lub Voucher ---------- */
-(async function(){
-  const params = new URLSearchParams(location.search);
-  const sid = params.get('session_id');
-
-  const voucherOk = localStorage.getItem('hp_voucher_ok') === '1';
-  const mailLS = localStorage.getItem('hp_email');
-
-  if (voucherOk) {
-    // darmowy dostęp z voucherem — wymagamy e-maila
-    if (!mailLS) {
-      alert('Podaj e-mail na stronie głównej i użyj voucheru.');
-      location.href = '/#pricing';
-      return;
-    }
-    const who = document.getElementById('who'); if (who) who.textContent = mailLS;
-    return; // przepuszczamy bez Stripe
-  }
-
-  // standard: oczekujemy powrotu ze Stripe z ?session_id=
-  if (!sid) {
-    alert('Najpierw dokonaj płatności.');
-    location.href = '/#pricing';
-    return;
-  }
-
-  try{
-    const r = await fetch(`${HP.verify}?session_id=${encodeURIComponent(sid)}`);
-    const data = await r.json();
-
-    if (!r.ok || !data?.paid) {
-      alert('Płatność nie została potwierdzona.');
-      location.href = '/#pricing';
-      return;
-    }
-
-    if (data.email) {
-      localStorage.setItem('hp_email', data.email);
-      localStorage.setItem('hp_consent','1');
-      const who = document.getElementById('who');
-      if (who) who.textContent = data.email;
-    } else if (mailLS) {
-      const who = document.getElementById('who'); if (who) who.textContent = mailLS;
-    }
-  }catch(e){
-    console.error(e);
-    alert('Błąd weryfikacji płatności.');
-    location.href = '/#pricing';
-  }
+/* ---------- Bramka e-mail ---------- */
+(function(){
+  const mail = localStorage.getItem('hp_email');
+  const consent = localStorage.getItem('hp_consent');
+  if(!mail || !consent){ window.location.href = 'index.html'; }
+  else { document.getElementById('who').textContent = mail; }
 })();
 
-/* ===================== payload ===================== */
+/* ---------- payload ---------- */
 function buildPayload(){
   return {
     type: 'A',
@@ -179,66 +135,24 @@ function buildPayload(){
   };
 }
 
-/* ===================== normalizacja odpowiedzi backendu ===================== */
-function normalizeXlsxResponse(data){
-  if (!data || typeof data !== 'object') return null;
-  if (data.fileBase64) return { xlsxBase64: data.fileBase64, xlsxFilename: data.filename || 'Plan Treningowy.xlsx' };
-  if (data.xlsxBase64) return { xlsxBase64: data.xlsxBase64, xlsxFilename: data.xlsxFilename || 'Plan Treningowy.xlsx' };
-  if (data.data && (data.data.xlsxBase64 || data.data.fileBase64)) {
-    return {
-      xlsxBase64: data.data.xlsxBase64 || data.data.fileBase64,
-      xlsxFilename: data.data.xlsxFilename || data.data.filename || 'Plan Treningowy.xlsx'
-    };
-  }
-  return null;
-}
-
-/* ===================== wywołanie backendu ===================== */
+/* ---------- generate-plan ---------- */
 async function callBackendForXlsx(payload){
-  const res = await fetch(HP.generate, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(payload)
-  });
-
-  const ct = res.headers.get('content-type') || '';
-  const bodyText = await res.text();
-
-  let parsed = null;
-  if (ct.includes('application/json')) {
-    try { parsed = JSON.parse(bodyText); } catch {}
-  }
-
-  if (!res.ok) {
-    const snippet = (bodyText || '').slice(0, 400);
-    throw new Error(`generate-plan HTTP ${res.status}. Odpowiedź: ${snippet}`);
-  }
-
-  if (!parsed) {
-    const maybeBase64 = bodyText.includes('base64,') ? bodyText.split('base64,').pop() : bodyText.trim();
-    if (maybeBase64 && /^[A-Za-z0-9+/=]+$/.test(maybeBase64)) {
-      return { xlsxBase64: maybeBase64, xlsxFilename: 'Plan Treningowy.xlsx' };
-    }
-    throw new Error(`generate-plan: nieprawidłowy JSON i brak danych XLSX.`);
-  }
-
-  if (parsed.ok === false) {
-    const msg = parsed.error || parsed.details || 'Nieznany błąd backendu';
-    throw new Error(`generate-plan: ${msg}`);
-  }
-
-  const norm = normalizeXlsxResponse(parsed);
-  if (!norm || !norm.xlsxBase64) {
-    throw new Error(`generate-plan: brak pliku XLSX w odpowiedzi`);
-  }
-  return norm;
+  const res = await fetch(HP.generate, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+  const text = await res.text();
+  let data = null; try { data = JSON.parse(text) } catch {}
+  if (!res.ok || !data) throw new Error(`generate-plan ${res.status}: ${text.slice(0,300)}`);
+  if (data.ok === false) throw new Error(data.error || data.details || 'Błąd backendu');
+  const base64 = data.fileBase64 || data.xlsxBase64;
+  const filename = data.filename || data.xlsxFilename || 'Plan Treningowy.xlsx';
+  if (!base64) throw new Error('Brak pliku XLSX w odpowiedzi');
+  return { xlsxBase64: base64, xlsxFilename: filename };
 }
 
-/* ---------- Wysyłka maila ---------- */
+/* ---------- e-mail ---------- */
 async function sendPlanByEmail(base64, filename){
   const to = localStorage.getItem('hp_email') || '';
   if(!to) return;
-  const resp = await fetch('/.netlify/functions/send-email', {
+  const resp = await fetch(HP.sendEmail, {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({
@@ -249,38 +163,82 @@ async function sendPlanByEmail(base64, filename){
       filename: filename || 'Plan Treningowy.xlsx'
     })
   });
-  if(!resp.ok){
-    console.warn('send-email error:', await resp.text());
-  }
+  if(!resp.ok){ console.warn('send-email error:', await resp.text()); }
 }
 
-/* ---------- UI: generowanie ---------- */
+/* ---------- Stripe Checkout ---------- */
+async function createCheckout(){
+  const email = localStorage.getItem('hp_email') || '';
+  const url = new URL(window.location.href);
+  url.searchParams.set('checkout','success');
+  const successUrl = url.toString();
+
+  const cancelUrl = window.location.origin + window.location.pathname + '?checkout=cancel';
+
+  const r = await fetch(HP.checkout, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ email, successUrl, cancelUrl })
+  });
+  const data = await r.json().catch(()=>null);
+  if(!r.ok || !data?.url) throw new Error((data && (data.error||data.details)) || 'checkout failed');
+  return data.url;
+}
+
+/* ---------- UI ---------- */
 const genBtn = document.getElementById('genBtn');
 const dlBtn  = document.getElementById('dlBtn');
 
 genBtn.addEventListener('click', async ()=>{
   try{
-    genBtn.disabled = true; genBtn.textContent = 'Generowanie…';
+    genBtn.disabled = true; genBtn.textContent = 'Przekierowanie do płatności…';
     dlBtn.style.display='none'; dlBtn.removeAttribute('href');
 
     const payload = buildPayload();
-    const { xlsxBase64, xlsxFilename } = await callBackendForXlsx(payload);
+    sessionStorage.setItem('hp_pending_payload', JSON.stringify(payload));
 
-    const url = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + xlsxBase64;
-    dlBtn.href = url; dlBtn.download = xlsxFilename || 'Plan Treningowy.xlsx';
-    dlBtn.style.display='inline-flex';
-
-    await sendPlanByEmail(xlsxBase64, xlsxFilename);
-
-    genBtn.textContent = 'Gotowe ✓';
+    const checkoutUrl = await createCheckout();
+    window.location.href = checkoutUrl; // -> Stripe
   }catch(e){
-    console.error('GENERATOR ERROR:', e);
-    alert('Nie udało się wygenerować planu.\n\nSzczegóły: ' + String(e.message||e));
+    console.error(e);
+    alert('Nie udało się rozpocząć płatności: ' + String(e.message || e));
     genBtn.textContent = 'Wygeneruj plan';
   }finally{
     genBtn.disabled = false;
   }
 });
+
+/* ---------- Po powrocie ze Stripe ---------- */
+(async function afterStripe(){
+  const params = new URLSearchParams(location.search);
+  const status = params.get('checkout');
+  if (status === 'success') {
+    const raw = sessionStorage.getItem('hp_pending_payload');
+    if (!raw) return;
+    try{
+      genBtn.disabled = true; genBtn.textContent = 'Generowanie…';
+      const payload = JSON.parse(raw);
+      const { xlsxBase64, xlsxFilename } = await callBackendForXlsx(payload);
+
+      // link do pobrania
+      const url = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + xlsxBase64;
+      dlBtn.href = url; dlBtn.download = xlsxFilename || 'Plan Treningowy.xlsx';
+      dlBtn.style.display='inline-flex';
+
+      await sendPlanByEmail(xlsxBase64, xlsxFilename);
+      genBtn.textContent = 'Gotowe ✓';
+      sessionStorage.removeItem('hp_pending_payload');
+    }catch(e){
+      console.error(e);
+      alert('Nie udało się wygenerować planu po płatności: ' + String(e.message || e));
+      genBtn.textContent = 'Wygeneruj plan';
+    }finally{
+      genBtn.disabled = false;
+    }
+  } else if (status === 'cancel') {
+    sessionStorage.removeItem('hp_pending_payload');
+  }
+})();
 </script>
 </body>
 </html>
