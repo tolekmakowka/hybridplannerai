@@ -86,6 +86,12 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
           <option value="Kobieta">Kobieta</option>
         </select>
       </div>
+
+      <!-- VOUCHER -->
+      <div class="row">
+        <label for="voucher">Voucher (opcjonalnie)</label>
+        <input id="voucher" type="text" placeholder="np. TGMPRJCT">
+      </div>
     </div>
 
     <div class="hr"></div>
@@ -109,7 +115,8 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
 const HP = {
   generate: '/.netlify/functions/generate-plan',
   sendEmail: '/.netlify/functions/send-email',
-  checkout:  '/.netlify/functions/create-checkout'
+  checkout:  '/.netlify/functions/create-checkout-session',
+  verify:    '/.netlify/functions/verify-session'
 };
 
 /* ---------- Bramka e-mail ---------- */
@@ -166,23 +173,21 @@ async function sendPlanByEmail(base64, filename){
   if(!resp.ok){ console.warn('send-email error:', await resp.text()); }
 }
 
-/* ---------- Stripe Checkout ---------- */
-async function createCheckout(){
+/* ---------- Stripe Checkout (z voucherem) ---------- */
+async function startCheckoutOrFree(payload){
   const email = localStorage.getItem('hp_email') || '';
-  const url = new URL(window.location.href);
-  url.searchParams.set('checkout','success');
-  const successUrl = url.toString();
-
-  const cancelUrl = window.location.origin + window.location.pathname + '?checkout=cancel';
+  const voucher = (document.getElementById('voucher').value || '').trim();
 
   const r = await fetch(HP.checkout, {
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ email, successUrl, cancelUrl })
+    body: JSON.stringify({ email, voucher, inputs: payload.inputs })
   });
   const data = await r.json().catch(()=>null);
-  if(!r.ok || !data?.url) throw new Error((data && (data.error||data.details)) || 'checkout failed');
-  return data.url;
+  if (!r.ok || data.ok === false) {
+    throw new Error((data && (data.error || data.details)) || 'create-checkout failed');
+  }
+  return data; // { free:true } albo { url: 'https://checkout.stripe.com/...' }
 }
 
 /* ---------- UI ---------- */
@@ -197,8 +202,28 @@ genBtn.addEventListener('click', async ()=>{
     const payload = buildPayload();
     sessionStorage.setItem('hp_pending_payload', JSON.stringify(payload));
 
-    const checkoutUrl = await createCheckout();
-    window.location.href = checkoutUrl; // -> Stripe
+    const result = await startCheckoutOrFree(payload);
+
+    // Voucher TGMPRJCT => darmo, generujemy od razu
+    if (result.free) {
+      genBtn.textContent = 'Generowanie…';
+      const { xlsxBase64, xlsxFilename } = await callBackendForXlsx(payload);
+      const url = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + xlsxBase64;
+      dlBtn.href = url; dlBtn.download = xlsxFilename || 'Plan Treningowy.xlsx';
+      dlBtn.style.display='inline-flex';
+      await sendPlanByEmail(xlsxBase64, xlsxFilename);
+      genBtn.textContent = 'Gotowe ✓';
+      sessionStorage.removeItem('hp_pending_payload');
+      return;
+    }
+
+    // Normalny flow: przekierowanie do Stripe
+    if (result.url) {
+      window.location.href = result.url;
+      return;
+    }
+
+    throw new Error('Brak URL z Stripe');
   }catch(e){
     console.error(e);
     alert('Nie udało się rozpocząć płatności: ' + String(e.message || e));
@@ -208,35 +233,50 @@ genBtn.addEventListener('click', async ()=>{
   }
 });
 
-/* ---------- Po powrocie ze Stripe ---------- */
+/* ---------- Po powrocie ze Stripe (weryfikacja płatności) ---------- */
 (async function afterStripe(){
-  const params = new URLSearchParams(location.search);
-  const status = params.get('checkout');
-  if (status === 'success') {
-    const raw = sessionStorage.getItem('hp_pending_payload');
-    if (!raw) return;
-    try{
-      genBtn.disabled = true; genBtn.textContent = 'Generowanie…';
-      const payload = JSON.parse(raw);
-      const { xlsxBase64, xlsxFilename } = await callBackendForXlsx(payload);
+  const p = new URLSearchParams(location.search);
+  const sid = p.get('session_id');         // Stripe przekazuje session_id
+  const cancelled = p.get('cancelled');
 
-      // link do pobrania
-      const url = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + xlsxBase64;
-      dlBtn.href = url; dlBtn.download = xlsxFilename || 'Plan Treningowy.xlsx';
-      dlBtn.style.display='inline-flex';
-
-      await sendPlanByEmail(xlsxBase64, xlsxFilename);
-      genBtn.textContent = 'Gotowe ✓';
-      sessionStorage.removeItem('hp_pending_payload');
-    }catch(e){
-      console.error(e);
-      alert('Nie udało się wygenerować planu po płatności: ' + String(e.message || e));
-      genBtn.textContent = 'Wygeneruj plan';
-    }finally{
-      genBtn.disabled = false;
-    }
-  } else if (status === 'cancel') {
+  if (cancelled) {
     sessionStorage.removeItem('hp_pending_payload');
+    return;
+  }
+  if (!sid) return;
+
+  try{
+    genBtn.disabled = true; genBtn.textContent = 'Sprawdzam płatność…';
+
+    // backend sprawdza status sesji
+    const vr = await fetch(`${HP.verify}?id=${encodeURIComponent(sid)}`);
+    const v = await vr.json();
+    if (!vr.ok || v.ok === false || !v.paid) {
+      alert('Płatność nie została potwierdzona.');
+      genBtn.textContent = 'Wygeneruj plan';
+      return;
+    }
+
+    // zapłacone → generujemy plan
+    const raw = sessionStorage.getItem('hp_pending_payload');
+    const payload = raw ? JSON.parse(raw) : buildPayload();
+    genBtn.textContent = 'Generowanie…';
+    const { xlsxBase64, xlsxFilename } = await callBackendForXlsx(payload);
+    const url = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + xlsxBase64;
+    dlBtn.href = url; dlBtn.download = xlsxFilename || 'Plan Treningowy.xlsx';
+    dlBtn.style.display='inline-flex';
+    await sendPlanByEmail(xlsxBase64, xlsxFilename);
+    genBtn.textContent = 'Gotowe ✓';
+
+    // porządek
+    sessionStorage.removeItem('hp_pending_payload');
+    history.replaceState({}, '', location.pathname);
+  }catch(e){
+    console.error(e);
+    alert('Błąd podczas weryfikacji płatności: ' + String(e.message || e));
+    genBtn.textContent = 'Wygeneruj plan';
+  }finally{
+    genBtn.disabled = false;
   }
 })();
 </script>
