@@ -127,7 +127,7 @@ section.snap{padding:64px 0}
 .backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.45); opacity:0; pointer-events:none; transition:opacity .25s; z-index:9997; }
 .backdrop.show{ opacity:1; pointer-events:auto; }
 
-/* CTA pełna szerokość w ofercie (desktop/tablet) */
+/* CTA pełna szerokość (desktop/tablet) */
 @media (min-width: 641px){
   #pricing .card-light .btn-cta{ display:block;width:100%;text-align:center;padding:16px 20px;font-size:17px }
 }
@@ -162,7 +162,6 @@ section.snap{padding:64px 0}
   .btn{ padding: 10px 14px; font-size: 15px; border-radius: 10px; }
   .card-light{ padding: 16px; border-radius: 14px; }
 
-  /* więcej odstępu między ofertą a linkami */
   #pricing .legal-row{ margin-top: 56px !important; padding-bottom: 24px; }
   #pricing .legal-row nav{ width:100%; justify-content:center; gap:20px; }
 }
@@ -177,16 +176,14 @@ section.snap{padding:64px 0}
 <button id="menuBtn" class="menu-btn" aria-label="Menu"><span></span></button>
 <div id="drawer" class="drawer" aria-hidden="true">
   <div class="panel">
-    <div class="head">FILIP MAJKA</div>
+    <div class="head">MENU</div>
     <nav>
       <a class="requires-email" href="generator.html">Plan treningowy</a>
-      <a href="#about">O mnie</a>
       <a href="#details">Szczegóły tworzenia planu treningowego</a>
+      <a href="#about">O mnie</a>
       <a href="mailto:hello@hybridplanner.app">Kontakt</a>
     </nav>
-    <div class="social">
-      <!-- ewentualnie ikony socials -->
-    </div>
+    <div class="social"></div>
   </div>
 </div>
 <div id="backdrop" class="backdrop" aria-hidden="true"></div>
@@ -239,9 +236,7 @@ section.snap{padding:64px 0}
           </div>
 
           <div class="right-stack reveal-stagger">
-            <!-- To zdjęcie chowamy na mobile -->
             <img class="round climb-photo" src="assets/Bytol1.jpg" alt="Bytol 1" style="height:220px;object-fit:cover">
-            <!-- „Ścianka” pozostaje widoczna -->
             <img class="round" src="assets/Bytol2.jpg" alt="Bytol 2" style="height:220px;object-fit:cover">
             <a href="#pricing" class="joinhere-card" aria-label="Przejdź do oferty — Join here">
               <span class="joinhere-text">JOIN HERE</span>
@@ -252,7 +247,17 @@ section.snap{padding:64px 0}
     </div>
   </section>
 
-  <!-- 2) OFERTA -->
+  <!-- 2) O MNIE (przed Ofertą) -->
+  <section id="about" class="snap section-light">
+    <div class="container">
+      <h2 class="reveal">O mnie</h2>
+      <div class="card-light reveal">
+        <p>Tu wkrótce dodamy opis — sekcja celowo pusta, zgodnie z Twoją prośbą.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3) OFERTA -->
   <section id="pricing" class="snap section-light">
     <div class="container">
       <h2 id="offerTitle" class="reveal">Oferta</h2>
@@ -283,17 +288,7 @@ section.snap{padding:64px 0}
     </div>
   </section>
 
-  <!-- 3) O MNIE (pomiędzy Oferta a Szczegóły) -->
-  <section id="about" class="snap section-light">
-    <div class="container">
-      <h2 class="reveal">O mnie</h2>
-      <div class="card-light reveal">
-        <p>Tu wkrótce dodamy opis — sekcja celowo pusta, zgodnie z Twoją prośbą.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- 4) SZCZEGÓŁY TWORZENIA PLANU (dawne #features) -->
+  <!-- 4) SZCZEGÓŁY TWORZENIA PLANU -->
   <section id="details" class="snap section-light">
     <div class="container">
       <h2 id="featuresTitle" class="reveal">Szczegóły tworzenia planu treningowego</h2>
@@ -451,7 +446,6 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     setText('offerTitle','Offer');
     if (offerCards.length >= 1) {
       offerCards[0].querySelector('h3').textContent = 'Training Plan';
-      offerCards[0].querySelector('p').textContent = 'Full program with progression and recovery placement.';
     }
     pricingButtons.forEach(b => b.textContent = 'Generate now');
 
@@ -481,7 +475,6 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     setText('offerTitle','Oferta');
     if (offerCards.length >= 1) {
       offerCards[0].querySelector('h3').textContent = 'Plan Treningowy';
-      offerCards[0].querySelector('p').textContent = 'Pełny program z progresją i rozmieszczeniem regeneracji.';
     }
 
     setText('legalPolicy','Polityka'); setText('legalTerms','Regulamin');
