@@ -43,7 +43,7 @@ section.snap{padding:64px 0}
 .curves svg{width:100%;height:100%}
 .kicker{display:inline-block;padding:6px 10px;border:1px solid var(--border);border-radius:10px;font:600 13px/1 Inter;color:#C9C7C2;margin-bottom:14px}
 .hero-copy p{color:#C9C7C2}
-.hero-copy h1{ text-wrap: balance; } /* równoważenie łamania wierszy */
+.hero-copy h1{ text-wrap: balance; } /* ładne łamanie wierszy */
 
 /* Prawa kolumna */
 .right-stack{display:grid;grid-template-columns:1fr 1fr;gap:16px}
@@ -81,9 +81,16 @@ section.snap{padding:64px 0}
 .joinhere-card:hover::before{ opacity:.35; filter:saturate(1.05) }
 .joinhere-card:hover .joinhere-text{ color:rgba(255,255,255,.92); transform:translateY(-1px) }
 
-/* Sekcje jasne */
+/* Sekcje jasne/ciemne */
 .section-light{background:#fff;color:#111}
 .section-light p{color:#5f5e5b}
+.section-dark{background:var(--bg);color:var(--text)}
+.section-dark p{color:#C9C7C2}
+
+/* „O mnie” – układ tekst lewo, zdjęcie prawo */
+.about-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:28px;align-items:center}
+.about-media{border-radius:16px;border:1px solid var(--border);overflow:hidden;background:#0d0d0d}
+.about-media img{width:100%;height:100%;object-fit:cover}
 
 /* Buttons */
 .btn{display:inline-flex;align-items:center;gap:10px;padding:12px 18px;border-radius:12px;border:2px solid var(--text);color:var(--text);background:transparent;font:600 16px/1 Inter;transition:.25s;cursor:pointer}
@@ -167,6 +174,9 @@ section.snap{padding:64px 0}
 
   #pricing .legal-row{ margin-top: 56px !important; padding-bottom: 24px; }
   #pricing .legal-row nav{ width:100%; justify-content:center; gap:20px; }
+
+  /* O mnie – układ w kolumnie */
+  .about-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -289,12 +299,20 @@ section.snap{padding:64px 0}
     </div>
   </section>
 
-  <!-- 3) O MNIE -->
-  <section id="about" class="snap section-light">
+  <!-- 3) O MNIE (CZARNA) -->
+  <section id="about" class="snap section-dark">
     <div class="container">
-      <h2 class="reveal">O mnie</h2>
-      <div class="card-light reveal">
-        <p>Tu wkrótce dodamy opis — sekcja celowo pusta, zgodnie z Twoją prośbą.</p>
+      <div class="about-grid reveal">
+        <div class="about-text">
+          <h2>O mnie</h2>
+          <p><!-- Miejsce na Twój opis. Wstawimy treść później. --></p>
+        </div>
+        <div class="about-media">
+          <picture>
+            <source srcset="assets/bytol3.jpg" type="image/jpeg">
+            <img src="assets/Bytol3.jpg" alt="Autor projektu" />
+          </picture>
+        </div>
       </div>
     </div>
   </section>
@@ -303,7 +321,8 @@ section.snap{padding:64px 0}
   <section id="pricing" class="snap section-light">
     <div class="container">
       <h2 id="offerTitle" class="reveal">Oferta</h2>
-      <div class="grid-3" style="grid-template-columns:minmax(260px,520px);justify-content:center;margin-top:20px">
+      <!-- Karta oferty wyrównana do LEWEJ krawędzi kontenera -->
+      <div class="grid-3" style="grid-template-columns:minmax(260px,520px);justify-content:flex-start;margin-top:20px">
         <article class="card-light reveal" style="display:flex;flex-direction:column;min-height:220px">
           <div>
             <h3>Plan Treningowy</h3>
@@ -359,7 +378,7 @@ const observed = new IntersectionObserver((entries)=>{
 },{root:null, rootMargin:'0px 0px -10% 0px', threshold:0.15});
 document.querySelectorAll('.reveal, .reveal-stagger').forEach(el=>observed.observe(el));
 
-/* Drawer */
+/* Drawer (otwieranie/zamykanie także na drugi klik) */
 const menuBtn = document.getElementById('menuBtn');
 const drawer  = document.getElementById('drawer');
 const backdrop= document.getElementById('backdrop');
@@ -405,7 +424,7 @@ document.querySelectorAll('.requires-email').forEach(a=>{
   });
 });
 
-/* i18n */
+/* i18n – tylko to, co już było */
 (function () {
   const params = new URLSearchParams(location.search);
   const lang = (params.get('lang') || localStorage.getItem('hp_lang') || 'pl').toLowerCase();
@@ -468,7 +487,6 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     localStorage.setItem('hp_lang','pl');
     if (toggleBtn){ toggleBtn.href='?lang=en'; toggleBtn.textContent='EN'; toggleBtn.setAttribute('aria-label','English version'); }
 
-    /* NOWE HASŁO */
     setHTML('heroH1','Twoje cele dzięki nam stają sie rzeczywistością');
     setHTML('heroDesc','Plan Treningowy. Minimalna objętość, maksymalne efekty.');
     setText('btnGenerate','Wygeneruj'); setText('btnDetails','Zobacz szczegóły');
