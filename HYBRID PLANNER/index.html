@@ -63,7 +63,6 @@ section.snap{padding:64px 0}
   text-decoration:none;
   background:#141414;
 }
-/* ZMIANA: bez zdjęcia twarzy, neutralny gradient */
 .joinhere-card::before{
   content:"";
   position:absolute; inset:0;
@@ -88,7 +87,7 @@ section.snap{padding:64px 0}
 .section-dark{background:var(--bg);color:var(--text)}
 .section-dark p{color:#C9C7C2}
 
-/* „O mnie” – układ tekst lewo, zdjęcie prawo + T Y P O grafia */
+/* „O mnie” – układ tekst lewo, zdjęcie prawo + typografia */
 .about-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:28px;align-items:center}
 .about-media{border-radius:16px;border:1px solid var(--border);overflow:hidden;background:transparent}
 .about-media img{width:100%;height:100%;object-fit:cover}
@@ -98,7 +97,7 @@ section.snap{padding:64px 0}
   color:#E0DFDC;
   margin-top:8px;
 }
-/* Animacja „typewriter” dla akapitu w O mnie */
+/* Animacja „typewriter” */
 .typewriter{
   white-space:pre-wrap;
   border-right:2px solid rgba(237,237,234,.85);
@@ -145,7 +144,6 @@ section.snap{padding:64px 0}
   position:absolute; inset:0 0 0 auto; width:100%; height:100%; background:#fff; color:#111; box-shadow:-20px 0 60px rgba(0,0,0,.35);
   display:flex; flex-direction:column;
 }
-/* ZMIANA KOLORU NAGŁÓWKA MENU */
 .drawer .head{ padding:18px; border-bottom:1px solid #eee; font:700 18px/1 Poppins; color:var(--brown) }
 .drawer nav{ display:flex; flex-direction:column; }
 .drawer nav a{ padding:18px; border-bottom:1px solid #eee; font:600 16px/1.2 Inter; }
@@ -193,8 +191,10 @@ section.snap{padding:64px 0}
   #pricing .legal-row{ margin-top: 56px !important; padding-bottom: 24px; }
   #pricing .legal-row nav{ width:100%; justify-content:center; gap:20px; }
 
-  /* O mnie – układ w kolumnie */
+  /* O mnie – 1 kolumna: NAJPIERW ZDJĘCIE, POTEM TEKST */
   .about-grid{grid-template-columns:1fr}
+  .about-media{grid-row:1}
+  .about-text{grid-row:2}
 }
 </style>
 </head>
@@ -323,7 +323,7 @@ section.snap{padding:64px 0}
       <div class="about-grid reveal">
         <div class="about-text">
           <h2>O mnie</h2>
-          <p id="aboutText">Nazywam sie Tolek, jestem certyfikowanym trenerem personalnym oraz pasjonatem siłowni. Na codzień wspieram młode osoby w osiągnięciu sprawności fizycznej oraz estetycznej sylwetki. W treningu siłowym zarówno swoim jak i swoich podopiecznych skupiam się na możliwie najwyższej intensywności przy niskiej objętości ćwiczeń.</p>
+          <p id="aboutText">Nazywam sie Tolek, jestem certyfikowanym trenerem personalnym oraz pasjonatem siłowni. W treningu siłowym zarówno swoim jak i swoich podopiecznych skupiam się na możliwie najwyższej intensywności przy niskiej objętości ćwiczeń.</p>
         </div>
         <div class="about-media">
           <picture>
@@ -342,7 +342,7 @@ section.snap{padding:64px 0}
       <div class="grid-3" style="grid-template-columns:minmax(260px,520px);justify-content:flex-start;margin-top:20px">
         <article class="card-light reveal" style="display:flex;flex-direction:column;min-height:220px">
           <div>
-            <h3>Plan Treningowy</h3>
+            <h3>Plan treningowy wygenerowany przez AI</h3>
             <p>Pełny program z progresją i rozmieszczeniem regeneracji.</p>
             <div class="price-tag" aria-label="Cena planu">
               <span class="price">9,99&nbsp;zł</span>
@@ -395,7 +395,7 @@ const observed = new IntersectionObserver((entries)=>{
 },{root:null, rootMargin:'0px 0px -10% 0px', threshold:0.15});
 document.querySelectorAll('.reveal, .reveal-stagger').forEach(el=>observed.observe(el));
 
-/* Drawer (otwieranie/zamykanie także na drugi klik) */
+/* Drawer */
 const menuBtn = document.getElementById('menuBtn');
 const drawer  = document.getElementById('drawer');
 const backdrop= document.getElementById('backdrop');
@@ -441,7 +441,7 @@ document.querySelectorAll('.requires-email').forEach(a=>{
   });
 });
 
-/* Typewriter dla sekcji O mnie – start po wejściu w viewport */
+/* Typewriter – start po wejściu w viewport */
 (function(){
   const el = document.getElementById('aboutText');
   if(!el) return;
@@ -451,12 +451,12 @@ document.querySelectorAll('.requires-email').forEach(a=>{
 
   const startTyping = () => {
     let i = 0;
-    const speed = 16; // ms na znak
+    const speed = 16;
     const timer = setInterval(()=>{
       el.textContent += full.charAt(i++);
       if(i >= full.length){
         clearInterval(timer);
-        el.classList.remove('typewriter'); // schowaj kursor po zakończeniu
+        el.classList.remove('typewriter');
       }
     }, speed);
   };
@@ -492,6 +492,7 @@ document.querySelectorAll('.requires-email').forEach(a=>{
   const gateErrorEl = document.getElementById('gateError');
 
   if (lang === 'en') {
+    // EN bez zmian
     setHTML('heroH1','You set the goals — we make them real.');
     setHTML('heroDesc','Training Plan. Minimum volume, maximum results.');
     setText('btnGenerate','Generate'); setText('btnDetails','See details');
@@ -542,7 +543,7 @@ document.querySelectorAll('.requires-email').forEach(a=>{
 
     setText('offerTitle','Oferta');
     if (offerCards.length >= 1) {
-      offerCards[0].querySelector('h3').textContent = 'Plan Treningowy';
+      offerCards[0].querySelector('h3').textContent = 'Plan treningowy wygenerowany przez AI';
     }
 
     setText('legalPolicy','Polityka'); setText('legalTerms','Regulamin');
