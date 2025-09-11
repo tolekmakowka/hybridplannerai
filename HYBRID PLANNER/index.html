@@ -37,6 +37,10 @@ section.snap{padding:64px 0}
 .icon-dot{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .icon-dot img{width:22px;height:22px;object-fit:contain}
 
+/* Reveal na scroll (m.in. sekcja „Szczegóły…”) */
+.reveal{opacity:0;transform:translateY(14px);transition:opacity .45s ease, transform .45s ease}
+.reveal.show{opacity:1;transform:none}
+
 /* Hero */
 .hero-bg{width:100%;border-radius:24px;border:1px solid var(--border);padding:28px;background:linear-gradient(180deg,#191919,#121212);box-shadow:var(--shadow);overflow:hidden;position:relative}
 .curves{position:absolute;inset:0;pointer-events:none;opacity:.25}
@@ -87,7 +91,7 @@ section.snap{padding:64px 0}
 .section-dark{background:var(--bg);color:var(--text)}
 .section-dark p{color:#C9C7C2}
 
-/* „O mnie” – układ + typografia */
+/* „O mnie” – układ tekst lewo, zdjęcie prawo + typografia */
 .about-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:28px;align-items:center}
 .about-media{border-radius:16px;border:1px solid var(--border);overflow:hidden;background:transparent}
 .about-media img{width:100%;height:100%;object-fit:cover}
@@ -108,20 +112,35 @@ section.snap{padding:64px 0}
   50%,100%{border-color:transparent}
 }
 
-/* Minimalistyczny hamburger + mniejszy odstęp kresek */
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:10px;padding:12px 18px;border-radius:12px;border:2px solid var(--text);color:var(--text);background:transparent;font:600 16px/1 Inter;transition:.25s;cursor:pointer}
+.btn:hover{transform:translateY(-1px)}
+.btn-brown{background:var(--brown);border-color:var(--brown);color:#fff}
+.btn-light{background:#fff;color:#111;border-color:#fff}
+
+/* LANG TOGGLE (LEWY GÓRNY) */
+.lang-toggle{
+  position:fixed; top:14px; left:14px; z-index:9999;
+  background:#111; color:#fff; border:1px solid #333;
+  padding:6px 10px; border-radius:10px; font:600 12px/1 Inter; text-decoration:none; opacity:.9
+}
+.lang-toggle:hover{opacity:1}
+
+/* HAMBURGER + DRAWER (prawy górny) – WERSJA MINIMAL */
 .menu-btn{
   position:fixed; top:14px; right:14px; z-index:9999;
-  width:40px; height:34px; display:grid; place-items:center;
-  background:transparent;border:1px solid #333;border-radius:10px; cursor:pointer;
+  width:40px; height:32px; display:grid; place-items:center;
+  background:transparent; border:none; cursor:pointer;
 }
 .menu-btn span, .menu-btn::before, .menu-btn::after{
-  content:""; display:block; width:20px; height:2px; background:#fff; border-radius:2px; transition:.25s
+  content:""; display:block; width:20px; height:2px; background:#fff; border-radius:2px; transition:.25s; transform-origin:center;
 }
 .menu-btn::before{ transform:translateY(-4px) }
-.menu-btn::after{ transform:translateY(4px) }
+.menu-btn::after{  transform:translateY(4px)  }
 .menu-btn.active span{ opacity:0 }
 .menu-btn.active::before{ transform:rotate(45deg) }
-.menu-btn.active::after{ transform:rotate(-45deg) }
+.menu-btn.active::after{  transform:rotate(-45deg) }
+.menu-btn:focus-visible{ outline:2px solid #fff3; outline-offset:4px }
 
 /* Drawer */
 .drawer{ position:fixed; inset:0 0 0 auto; width:min(88vw,340px); translate: 100% 0; transition:translate .28s ease; z-index:9998; }
@@ -138,15 +157,6 @@ section.snap{padding:64px 0}
 /* Overlay */
 .backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.45); opacity:0; pointer-events:none; transition:opacity .25s; z-index:9997; }
 .backdrop.show{ opacity:1; pointer-events:auto; }
-
-/* Animacje „reveal” kart (zwłaszcza mobile) */
-.reveal{opacity:0; transform:translateY(10px)}
-.reveal.show{opacity:1; transform:none; transition:opacity .45s ease, transform .45s ease}
-#details .card-light.reveal:nth-child(1){transition-delay:.02s}
-#details .card-light.reveal:nth-child(2){transition-delay:.08s}
-#details .card-light.reveal:nth-child(3){transition-delay:.14s}
-#details .card-light.reveal:nth-child(4){transition-delay:.20s}
-#details .card-light.reveal:nth-child(5){transition-delay:.26s}
 
 /* CTA pełna szerokość (desktop/tablet) */
 @media (min-width: 641px){
@@ -173,6 +183,7 @@ section.snap{padding:64px 0}
   .grid-2{ grid-template-columns: 1fr; gap:20px; }
   .right-stack{ grid-template-columns: 1fr; gap: 12px; }
 
+  /* chowamy Bytol1 i przycisk JOIN HERE na mobile */
   .right-stack .climb-photo{ display:none; }
   .joinhere-card{ display:none; }
 
@@ -189,9 +200,6 @@ section.snap{padding:64px 0}
   .about-grid{grid-template-columns:1fr}
   .about-media{grid-row:1}
   .about-text{grid-row:2}
-}
-@media (prefers-reduced-motion: reduce){
-  .reveal, .reveal.show{ transition:none !important; transform:none !important; opacity:1 !important }
 }
 </style>
 </head>
@@ -336,8 +344,9 @@ section.snap{padding:64px 0}
   <section id="pricing" class="snap section-light">
     <div class="container">
       <h2 id="offerTitle" class="reveal">Oferta</h2>
-      <div class="grid-3" style="grid-template-columns:repeat(auto-fit,minmax(260px,520px));justify-content:flex-start;margin-top:20px">
-        <!-- AI PLAN -->
+
+      <div class="grid-3" style="grid-template-columns:minmax(260px,520px);justify-content:flex-start;margin-top:20px">
+        <!-- AI produkt -->
         <article class="card-light reveal" style="display:flex;flex-direction:column;min-height:220px">
           <div>
             <h3>Plan treningowy wygenerowany przez AI</h3>
@@ -352,13 +361,11 @@ section.snap{padding:64px 0}
           </div>
         </article>
 
-        <!-- INDYWIDUALNY PLAN OD TRENERA -->
-        <article class="card-light reveal" style="display:flex;flex-direction:column;min-height:220px">
+        <!-- NOWY: Indywidualny plan przez trenera -->
+        <article class="card-light reveal" style="display:flex;flex-direction:column;min-height:260px;margin-top:16px">
           <div>
             <h3>Indywidualny plan treningowy rozpisany przez trenera personalnego</h3>
-            <p>Plan szyty na miarę na podstawie Twoich odpowiedzi. Analiza celu i możliwości,
-              dobór ćwiczeń pod sprzęt, tygodniowy rozkład z progresją i wskazówkami technicznymi.
-              Kontakt i doprecyzowanie przez Instagram.</p>
+            <p>Szczegółowy program przygotowany ręcznie na podstawie krótkiej ankiety, Twoich preferencji i dostępnego sprzętu. Otrzymasz plan z progresją, wskazówkami technicznymi i rekomendacjami regeneracji.</p>
             <div class="price-tag" aria-label="Cena planu indywidualnego">
               <span class="price">129,99&nbsp;zł</span>
               <span class="price-note">jednorazowo</span>
@@ -399,7 +406,7 @@ section.snap{padding:64px 0}
 </main>
 
 <script>
-/* Animacje scroll (również dla mobile – mały threshold) */
+/* Animacje scroll (reveal) – działa także na mobilu */
 const observed = new IntersectionObserver((entries)=>{
   entries.forEach(entry=>{
     if(entry.isIntersecting){
@@ -407,12 +414,8 @@ const observed = new IntersectionObserver((entries)=>{
       observed.unobserve(entry.target);
     }
   });
-},{
-  root:null,
-  rootMargin: window.matchMedia('(max-width:640px)').matches ? '0px 0px -5% 0px' : '0px 0px -10% 0px',
-  threshold: window.matchMedia('(max-width:640px)').matches ? 0.05 : 0.15
-});
-document.querySelectorAll('.reveal, .reveal-stagger, #details .card-light').forEach(el=>observed.observe(el));
+},{root:null, rootMargin:'0px 0px -10% 0px', threshold:0.15});
+document.querySelectorAll('.reveal, .reveal-stagger').forEach(el=>observed.observe(el));
 
 /* Drawer */
 const menuBtn = document.getElementById('menuBtn');
@@ -476,3 +479,98 @@ document.querySelectorAll('.requires-email').forEach(a=>{
       if(i >= full.length){
         clearInterval(timer);
         el.classList.remove('typewriter');
+      }
+    }, speed);
+  };
+
+  const io = new IntersectionObserver((entries)=>{
+    if(entries[0].isIntersecting){
+      startTyping();
+      io.disconnect();
+    }
+  }, {threshold:0.2});
+  io.observe(el);
+})();
+
+/* i18n – bez zmian poza pierwszą kartą oferty (druga pozostaje PL) */
+(function () {
+  const params = new URLSearchParams(location.search);
+  const lang = (params.get('lang') || localStorage.getItem('hp_lang') || 'pl').toLowerCase();
+  const setHTML = (id, val) => { const el = document.getElementById(id); if (el && val) el.innerHTML = val; };
+  const setText  = (id, val) => { const el = document.getElementById(id); if (el && val) el.textContent = val; };
+  const toggleBtn = document.getElementById('langToggle');
+
+  const heroDisclaimer = document.querySelector('.hero-copy p:last-of-type');
+  const detailsCards = document.querySelectorAll('#details .card-light');
+  const offerCards = document.querySelectorAll('#pricing .card-light');
+  const pricingButtons = document.querySelectorAll('#pricing .card-light .requires-email');
+
+  const modalEl = document.getElementById('emailModal');
+  const modalH3 = modalEl ? modalEl.querySelector('h3') : null;
+  const labelEmail = modalEl ? modalEl.querySelector('label[for="gateEmail"]') : null;
+  const labelConsent = modalEl ? modalEl.querySelector('label[for="gateConsent"]') : null;
+  const gateConfirm = document.getElementById('gateConfirm');
+  const gateClose = document.getElementById('gateClose');
+  const gateErrorEl = document.getElementById('gateError');
+
+  if (lang === 'en') {
+    setHTML('heroH1','You set the goals — we make them real.');
+    setHTML('heroDesc','Training Plan. Minimum volume, maximum results.');
+    setText('btnGenerate','Generate'); setText('btnDetails','See details');
+    if (heroDisclaimer) heroDisclaimer.textContent = 'This is not medical advice.';
+
+    setText('featuresTitle','Training plan – how it’s built');
+    if (detailsCards.length === 5) {
+      detailsCards[0].querySelector('.icon-dot strong').textContent = 'AI Personalization';
+      detailsCards[0].querySelector('p').textContent = 'Tailored to your goal, level, available weekly time and constraints.';
+      detailsCards[1].querySelector('.icon-dot strong').textContent = 'Safe progression';
+      detailsCards[1].querySelector('p').textContent = '24–48 h spacing between hard stimuli, deloads and volume control.';
+      detailsCards[2].querySelector('.icon-dot strong').textContent = 'Preview + Excel file';
+      detailsCards[2].querySelector('p').textContent = 'Your plan is emailed as an Excel file right after generation.';
+      detailsCards[3].querySelector('.icon-dot strong').textContent = 'Universal exercise naming';
+      detailsCards[3].querySelector('p').textContent = 'Unified PL/EN names — easy to recognise and search.';
+      detailsCards[4].querySelector('.icon-dot strong').textContent = 'Detailed weekly layout';
+      detailsCards[4].querySelector('p').textContent = 'A week laid out day by day with recovery placement and progression.';
+    }
+
+    setText('offerTitle','Offer');
+    if (offerCards.length >= 1) {
+      offerCards[0].querySelector('h3').textContent = 'Training Plan';
+    }
+    pricingButtons.forEach(b => b.textContent = 'Generate now');
+
+    setText('legalPolicy','Policy'); setText('legalTerms','Terms');
+    setText('legalContact','Contact'); setText('legalFaq','FAQ');
+
+    if (modalH3) modalH3.textContent = 'Access to the generator';
+    if (labelEmail) labelEmail.textContent = 'Your e-mail';
+    if (labelConsent) labelConsent.textContent = 'I consent to the processing of my personal data.';
+    if (gateConfirm) gateConfirm.textContent = 'Continue';
+    if (gateClose) gateClose.textContent = 'Cancel';
+    if (gateErrorEl) gateErrorEl.textContent = 'Enter a valid e-mail and tick the consent box.';
+
+    localStorage.setItem('hp_lang','en');
+    if (toggleBtn){ toggleBtn.href='?lang=pl'; toggleBtn.textContent='PL'; toggleBtn.setAttribute('aria-label','Polish version'); }
+  } else {
+    localStorage.setItem('hp_lang','pl');
+    if (toggleBtn){ toggleBtn.href='?lang=en'; toggleBtn.textContent='EN'; toggleBtn.setAttribute('aria-label','English version'); }
+
+    setHTML('heroH1','Twoje cele dzięki nam stają sie rzeczywistością');
+    setHTML('heroDesc','Plan Treningowy. Minimalna objętość, maksymalne efekty.');
+    setText('btnGenerate','Wygeneruj'); setText('btnDetails','Zobacz szczegóły');
+    if (heroDisclaimer) heroDisclaimer.textContent = 'To nie jest porada medyczna.';
+
+    setText('featuresTitle','Szczegóły tworzenia planu treningowego');
+
+    setText('offerTitle','Oferta');
+    if (offerCards.length >= 1) {
+      offerCards[0].querySelector('h3').textContent = 'Plan treningowy wygenerowany przez AI';
+    }
+
+    setText('legalPolicy','Polityka'); setText('legalTerms','Regulamin');
+    setText('legalContact','Kontakt'); setText('legalFaq','FAQ');
+  }
+})();
+</script>
+</body>
+</html>
