@@ -101,15 +101,18 @@ section.snap{padding:64px 0}
   color:#E0DFDC;
   margin-top:8px;
 }
-/* Animacja „typewriter” */
-.typewriter{
-  white-space:pre-wrap;
-  border-right:2px solid rgba(237,237,234,.85);
-  animation: caretBlink .9s steps(1) infinite;
+
+/* --- NOWA animacja „O mnie”: linie pojawiają się wraz ze scrollem --- */
+.about-lines .line{
+  display:block;
+  opacity:0;
+  transform:translateY(12px);
+  transition:opacity .35s ease, transform .35s ease;
+  will-change:opacity, transform;
 }
-@keyframes caretBlink{
-  0%,49%{border-color:rgba(237,237,234,.85)}
-  50%,100%{border-color:transparent}
+.about-lines .line.visible{
+  opacity:1;
+  transform:none;
 }
 
 /* Buttons */
@@ -382,8 +385,8 @@ section.snap{padding:64px 0}
         <!-- NOWY: Indywidualny plan przez trenera -->
         <article class="card-light">
           <div>
-            <h3>Indywidualny plan treningowy rozpisany przez trenera personalnego</h3>
-            <p>Szczegółowy program przygotowany ręcznie na podstawie krótkiej ankiety, Twoich preferencji i dostępnego sprzętu. Otrzymasz plan z progresją, wskazówkami technicznymi i rekomendacjami regeneracji.</p>
+            <h3>Indywidualny plan treningowy</h3>
+            <p>Szczegółowy program przygotowany ręcznie przez certyfikowanego trenera personalnego. Otrzymasz plan z progresją, wskazówkami technicznymi i rekomendacjami regeneracji.</p>
             <div class="price-tag" aria-label="Cena planu indywidualnego">
               <span class="price">129,99&nbsp;zł</span>
               <span class="price-note">jednorazowo</span>
@@ -482,33 +485,57 @@ document.querySelectorAll('.requires-email').forEach(a=>{
   });
 });
 
-/* Typewriter – start po wejściu w viewport */
+/* --- O MNIE: animacja pojawiania się linijek proporcjonalnie do scrolla --- */
 (function(){
-  const el = document.getElementById('aboutText');
-  if(!el) return;
-  const full = el.textContent.trim();
-  el.textContent = '';
-  el.classList.add('typewriter');
+  const p = document.getElementById('aboutText');
+  const section = document.getElementById('about');
+  if(!p || !section) return;
 
-  const startTyping = () => {
-    let i = 0;
-    const speed = 16;
-    const timer = setInterval(()=>{
-      el.textContent += full.charAt(i++);
-      if(i >= full.length){
-        clearInterval(timer);
-        el.classList.remove('typewriter');
-      }
-    }, speed);
-  };
+  // Rozbij na „zdania” zachowując znaki końca
+  const text = p.textContent.trim();
+  const parts = text.match(/[^.!?]+[.!?]?/g) || [text];
 
-  const io = new IntersectionObserver((entries)=>{
-    if(entries[0].isIntersecting){
-      startTyping();
-      io.disconnect();
+  // Zastąp treść liniami
+  p.textContent = '';
+  p.classList.add('about-lines');
+  const spans = parts.map(part=>{
+    const s = document.createElement('span');
+    s.className = 'line';
+    s.textContent = part.trim();
+    p.appendChild(s);
+    return s;
+  });
+
+  let ticking = false;
+  function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+
+  function update(){
+    const rect = section.getBoundingClientRect();
+    const vh = window.innerHeight;
+
+    // start ujawniania, gdy górna krawędź sekcji zbliża się do 85% wysokości ekranu
+    const start = vh * 0.85;
+    // koniec trochę po wyjściu sekcji (aby rozkład był „rozciągnięty”)
+    const total = rect.height + vh * 0.35;
+
+    const passed = start - rect.top;          // ile „przeszło”
+    let t = clamp(passed / total, 0, 1);      // 0..1
+
+    const toShow = Math.round(t * spans.length);
+    for (let i = 0; i < spans.length; i++){
+      spans[i].classList.toggle('visible', i < toShow);
     }
-  }, {threshold:0.2});
-  io.observe(el);
+    ticking = false;
+  }
+
+  function onScroll(){
+    if(!ticking){ ticking = true; requestAnimationFrame(update); }
+  }
+
+  // Inicjalizacja i nasłuchy
+  update();
+  window.addEventListener('scroll', onScroll, {passive:true});
+  window.addEventListener('resize', onScroll);
 })();
 
 /* i18n – bez zmian poza pierwszą kartą oferty (druga pozostaje PL) */
