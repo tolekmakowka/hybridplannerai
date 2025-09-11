@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HybridPlanner — Ankieta: Indywidualny plan treningowy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brown:#3E2723; --white:#FFFFFF;
+  --text:#EDEDEA; --muted:#C9C7C2; --bg:#0F0F0F; --card:#1B1B1B;
+  --border:#2A2A2A; --radius:16px; --shadow:0 12px 40px rgba(0,0,0,.35);
+  --maxw:980px;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);color:var(--text)}
+a{color:inherit;text-decoration:none}
+h1{font:700 clamp(24px,5vw,34px)/1.2 Poppins;margin:0 0 8px}
+h2{font:700 18px/1.25 Poppins;margin:14px 0 8px}
+label{font:600 14px/1.4 Inter}
+small{color:#a9a7a3}
+.container{max-width:var(--maxw);margin:0 auto;padding:20px}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.back{display:inline-flex;gap:8px;align-items:center;border:1px solid var(--border);padding:8px 12px;border-radius:10px}
+.card{background:#141414;border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.row{display:grid;gap:8px;margin:10px 0}
+input[type="text"], input[type="number"], select, textarea{
+  width:100%;background:#0f0f0f;color:#fff;border:1px solid #3a3a3a;border-radius:10px;padding:10px;font:400 14px/1.4 Inter
+}
+textarea{min-height:90px;resize:vertical}
+.badge{display:inline-flex;align-items:center;gap:8px;border:1px dashed #3a3a3a;padding:6px 10px;border-radius:999px;font-size:12px;color:#cfcfcf}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:12px 18px;border-radius:12px;border:2px solid var(--text);color:var(--text);background:transparent;font:600 16px/1 Inter;cursor:pointer}
+.btn-brown{background:var(--brown);border-color:var(--brown);color:#fff}
+.btn-ghost{background:transparent;border-color:#3a3a3a;color:#ddd}
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+.hr{height:1px;background:#2A2A2A;margin:18px 0}
+.notice{display:flex;justify-content:space-between;gap:10px;align-items:center;border:1px dashed #3a3a3a;border-radius:12px;padding:10px 12px;margin-top:12px}
+footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
+.helper{font-size:12px;color:#a9a7a3}
+.success{
+  display:none; margin-top:14px; background:#102a12;
+  border:1px solid #1f5f22; color:#dff3e0; padding:12px; border-radius:12px
+}
+.error{
+  display:none; margin-top:14px; background:#2a1010;
+  border:1px solid #5f1f1f; color:#f3dfe0; padding:12px; border-radius:12px
+}
+.copybox{display:grid;gap:8px;background:#0f0f0f;border:1px solid #3a3a3a;border-radius:12px;padding:10px;margin-top:10px}
+pre{margin:0;white-space:pre-wrap;word-break:break-word;font:400 12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:#ddd}
+@media (max-width:700px){ .grid-2{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <a class="back" href="index.html">← Wróć</a>
+    <span class="badge">Indywidualny plan treningowy</span>
+  </div>
+
+  <div class="card">
+    <h1>Ankieta — Indywidualny plan treningowy</h1>
+    <p class="helper" style="margin:6px 0 14px">Uzupełnij krótki formularz. Odpowiedzi trafią bezpośrednio do mnie, abym przygotował Twój plan.</p>
+
+    <form id="survey" novalidate>
+      <div class="row">
+        <label for="ig">Jak nazywasz się na Instagramie? <span class="helper">(informacja potrzebna w celach kontaktowych)</span></label>
+        <input id="ig" name="instagram" type="text" inputmode="text" autocomplete="username"
+               placeholder="np. @twojnick" required>
+      </div>
+
+      <div class="grid-2">
+        <div class="row">
+          <label for="age">W jakim jesteś wieku?</label>
+          <input id="age" name="age" type="number" min="10" max="100" step="1" placeholder="np. 25" required>
+        </div>
+
+        <div class="row">
+          <label for="sessions">Ile razy w tygodniu chciałbyś trenować?</label>
+          <input id="sessions" name="sessions" type="number" min="1" max="14" step="1" placeholder="np. 3" required>
+        </div>
+      </div>
+
+      <div class="row">
+        <label for="level">Jaki jest Twój poziom aktywności fizycznej?</label>
+        <select id="level" name="level" required>
+          <option value="" selected disabled>Wybierz…</option>
+          <option>Początkujący</option>
+          <option>Średniozaawansowany</option>
+          <option>Zaawansowany</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label for="goal">Jaki jest Twój główny cel?</label>
+        <textarea id="goal" name="goal" placeholder="np. redukcja tkanki tłuszczowej / zwiększenie siły / rekompozycja…" required></textarea>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="actions">
+        <button id="sendBtn" class="btn btn-brown" type="submit">Wyślij ankietę</button>
+        <button id="clearBtn" class="btn btn-ghost" type="button">Wyczyść</button>
+      </div>
+
+      <div id="success" class="success">Dziękuję! Ankieta została wysłana. Odezwię się w wiadomości prywatnej lub na e-mailu.</div>
+      <div id="error" class="error">
+        Nie udało się wysłać ankiety automatycznie. Możesz skopiować odpowiedzi i wysłać ręcznie na
+        <a href="mailto:tolek.makowka@gmail.com" style="text-decoration:underline;color:#ffd8db">tolek.makowka@gmail.com</a>.
+        <div class="copybox">
+          <pre id="fallbackText"></pre>
+          <button id="copyBtn" type="button" class="btn btn-ghost" style="justify-self:start">Kopiuj odpowiedzi</button>
+        </div>
+      </div>
+    </form>
+
+    <div class="notice" style="margin-top:16px">
+      <small>
+        <strong>E-mail kontaktowy:</strong>
+        <span id="who">brak</span>
+      </small>
+      <small>To nie jest porada medyczna.</small>
+    </div>
+  </div>
+
+  <footer>© 2025 Anatol Makówka</footer>
+</div>
+
+<script>
+/* ====== USTAWIENIA ====== */
+const SEND_EMAIL_ENDPOINT = '/.netlify/functions/send-email';
+const ADMIN_EMAIL = 'tolek.makowka@gmail.com';
+
+/* ====== PREFILL E-MAIL Z BRAMKI (jeśli jest) ====== */
+(function(){
+  const whoEl = document.getElementById('who');
+  const mail = localStorage.getItem('hp_email') || '';
+  if (mail) {
+    whoEl.textContent = mail;
+    whoEl.style.color = '#fff';
+  } else {
+    whoEl.textContent = '—';
+    whoEl.style.color = '#a9a7a3';
+  }
+})();
+
+/* ====== POMOCNICZE ====== */
+const survey = document.getElementById('survey');
+const sendBtn = document.getElementById('sendBtn');
+const clearBtn = document.getElementById('clearBtn');
+const okBox = document.getElementById('success');
+const errBox = document.getElementById('error');
+const fallbackText = document.getElementById('fallbackText');
+const copyBtn = document.getElementById('copyBtn');
+
+function sanitize(s){ return String(s||'').trim(); }
+
+function collectValues(){
+  return {
+    instagram: sanitize(document.getElementById('ig').value),
+    age: Number(document.getElementById('age').value || 0),
+    sessions: Number(document.getElementById('sessions').value || 0),
+    level: sanitize(document.getElementById('level').value),
+    goal: sanitize(document.getElementById('goal').value),
+    emailFromGate: sanitize(localStorage.getItem('hp_email') || '')
+  };
+}
+
+function validate(v){
+  const issues = [];
+  if (!v.instagram || v.instagram.length < 2) issues.push('Podaj nazwę z Instagrama.');
+  if (!v.age || v.age < 10 || v.age > 100) issues.push('Wiek powinien być między 10 a 100.');
+  if (!v.sessions || v.sessions < 1 || v.sessions > 14) issues.push('Liczba treningów 1–14/tydz.');
+  if (!v.level) issues.push('Wybierz poziom aktywności.');
+  if (!v.goal || v.goal.length < 3) issues.push('Opisz swój główny cel.');
+  return issues;
+}
+
+function buildEmailHTML(v){
+  const when = new Date().toLocaleString();
+  const esc = (t)=>String(t).replace(/[&<>]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[s]));
+  return `
+    <h2>Nowa ankieta – Indywidualny plan treningowy</h2>
+    <p><strong>Data:</strong> ${esc(when)}</p>
+    <table cellpadding="6" cellspacing="0" border="1" style="border-collapse:collapse;border:1px solid #ddd">
+      <tr><td><strong>Instagram</strong></td><td>${esc(v.instagram)}</td></tr>
+      <tr><td><strong>Wiek</strong></td><td>${esc(v.age)}</td></tr>
+      <tr><td><strong>Treningi/tydz.</strong></td><td>${esc(v.sessions)}</td></tr>
+      <tr><td><strong>Poziom aktywności</strong></td><td>${esc(v.level)}</td></tr>
+      <tr><td><strong>Główny cel</strong></td><td>${esc(v.goal)}</td></tr>
+      <tr><td><strong>E-mail z bramki</strong></td><td>${esc(v.emailFromGate || '—')}</td></tr>
+    </table>
+    <p style="margin-top:10px">Źródło: ankieta.html</p>
+  `;
+}
+
+function buildPlainText(v){
+  const when = new Date().toLocaleString();
+  return [
+    'Nowa ankieta — Indywidualny plan treningowy',
+    'Data: ' + when,
+    'Instagram: ' + v.instagram,
+    'Wiek: ' + v.age,
+    'Treningi/tydz.: ' + v.sessions,
+    'Poziom aktywności: ' + v.level,
+    'Główny cel: ' + v.goal,
+    'E-mail z bramki: ' + (v.emailFromGate || '—')
+  ].join('\n');
+}
+
+async function sendEmail(v){
+  const payload = {
+    to: ADMIN_EMAIL,
+    subject: 'Ankieta (indywidualny plan) — ' + (v.instagram || 'nowa odpowiedź'),
+    html: buildEmailHTML(v)
+  };
+  const res = await fetch(SEND_EMAIL_ENDPOINT, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+  if(!res.ok){
+    const txt = await res.text().catch(()=> '');
+    throw new Error(txt || 'send-email failed');
+  }
+}
+
+/* ====== ZDARZENIA ====== */
+survey.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  okBox.style.display='none'; errBox.style.display='none';
+
+  const v = collectValues();
+  const issues = validate(v);
+  if (issues.length){
+    alert(issues.join('\n'));
+    return;
+  }
+
+  sendBtn.disabled = true;
+  sendBtn.textContent = 'Wysyłanie…';
+
+  try{
+    await sendEmail(v);
+    okBox.style.display='block';
+    survey.reset();
+  }catch(err){
+    console.error(err);
+    // fallback: pokaż tekst do skopiowania i ręcznego wysłania
+    fallbackText.textContent = buildPlainText(v);
+    errBox.style.display='block';
+  }finally{
+    sendBtn.disabled = false;
+    sendBtn.textContent = 'Wyślij ankietę';
+  }
+});
+
+clearBtn.addEventListener('click', ()=>{
+  survey.reset();
+  okBox.style.display='none'; errBox.style.display='none';
+});
+
+copyBtn.addEventListener('click', async ()=>{
+  try{
+    await navigator.clipboard.writeText(fallbackText.textContent || '');
+    copyBtn.textContent = 'Skopiowano ✓';
+    setTimeout(()=> copyBtn.textContent = 'Kopiuj odpowiedzi', 1200);
+  }catch{
+    copyBtn.textContent = 'Nie skopiowano';
+    setTimeout(()=> copyBtn.textContent = 'Kopiuj odpowiedzi', 1200);
+  }
+});
+</script>
+</body>
+</html>
