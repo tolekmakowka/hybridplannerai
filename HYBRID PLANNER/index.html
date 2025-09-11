@@ -171,6 +171,23 @@ section.snap{padding:64px 0}
 /* Auto-fit siatka szczegółów */
 #details .grid-3{grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); align-items: stretch}
 
+/* ---- Oferta: siatka dwóch kart obok siebie (desktop), jedna na mobile ---- */
+#pricing .products{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  gap:24px;
+  align-items: stretch;
+  margin-top:20px;
+}
+#pricing .products .card-light{
+  display:flex;
+  flex-direction:column;
+  min-height:260px;
+}
+@media (max-width: 900px){
+  #pricing .products{ grid-template-columns:1fr; }
+}
+
 /* ====== MOBILE ====== */
 @media (max-width: 900px){
   .grid-3{ grid-template-columns: repeat(2, 1fr); }
@@ -345,9 +362,10 @@ section.snap{padding:64px 0}
     <div class="container">
       <h2 id="offerTitle" class="reveal">Oferta</h2>
 
-      <div class="grid-3" style="grid-template-columns:minmax(260px,520px);justify-content:flex-start;margin-top:20px">
+      <!-- NOWA siatka produktów: 2 obok siebie na desktopie -->
+      <div class="products reveal">
         <!-- AI produkt -->
-        <article class="card-light reveal" style="display:flex;flex-direction:column;min-height:220px">
+        <article class="card-light">
           <div>
             <h3>Plan treningowy wygenerowany przez AI</h3>
             <p>Pełny program z progresją i rozmieszczeniem regeneracji.</p>
@@ -362,7 +380,7 @@ section.snap{padding:64px 0}
         </article>
 
         <!-- NOWY: Indywidualny plan przez trenera -->
-        <article class="card-light reveal" style="display:flex;flex-direction:column;min-height:260px;margin-top:16px">
+        <article class="card-light">
           <div>
             <h3>Indywidualny plan treningowy rozpisany przez trenera personalnego</h3>
             <p>Szczegółowy program przygotowany ręcznie na podstawie krótkiej ankiety, Twoich preferencji i dostępnego sprzętu. Otrzymasz plan z progresją, wskazówkami technicznymi i rekomendacjami regeneracji.</p>
@@ -372,6 +390,7 @@ section.snap{padding:64px 0}
             </div>
           </div>
           <div style="margin-top:auto">
+            <!-- Bez bramkowania e-mail – prosto do ankiety -->
             <a class="btn btn-brown btn-cta" href="ankieta.html">Kup teraz</a>
           </div>
         </article>
