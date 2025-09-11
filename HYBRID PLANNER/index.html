@@ -37,7 +37,7 @@ section.snap{padding:64px 0}
 .icon-dot{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .icon-dot img{width:22px;height:22px;object-fit:contain}
 
-/* Reveal na scroll (m.in. sekcja „Szczegóły…”) */
+/* Reveal na scroll */
 .reveal{opacity:0;transform:translateY(14px);transition:opacity .45s ease, transform .45s ease}
 .reveal.show{opacity:1;transform:none}
 
@@ -91,7 +91,7 @@ section.snap{padding:64px 0}
 .section-dark{background:var(--bg);color:var(--text)}
 .section-dark p{color:#C9C7C2}
 
-/* „O mnie” – układ tekst lewo, zdjęcie prawo + typografia */
+/* „O mnie” */
 .about-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:28px;align-items:center}
 .about-media{border-radius:16px;border:1px solid var(--border);overflow:hidden;background:transparent}
 .about-media img{width:100%;height:100%;object-fit:cover}
@@ -100,19 +100,6 @@ section.snap{padding:64px 0}
   font:400 clamp(18px, 2.2vw, 20px)/1.8 Inter;
   color:#E0DFDC;
   margin-top:8px;
-}
-
-/* --- NOWA animacja „O mnie”: linie pojawiają się wraz ze scrollem --- */
-.about-lines .line{
-  display:block;
-  opacity:0;
-  transform:translateY(12px);
-  transition:opacity .35s ease, transform .35s ease;
-  will-change:opacity, transform;
-}
-.about-lines .line.visible{
-  opacity:1;
-  transform:none;
 }
 
 /* Buttons */
@@ -129,29 +116,17 @@ section.snap{padding:64px 0}
 }
 .lang-toggle:hover{opacity:1}
 
-/* HAMBURGER + DRAWER (prawy górny) – WERSJA MINIMAL */
-.menu-btn{
-  position:fixed; top:14px; right:14px; z-index:9999;
-  width:40px; height:32px; display:grid; place-items:center;
-  background:transparent; border:none; cursor:pointer;
-}
-.menu-btn span, .menu-btn::before, .menu-btn::after{
-  content:""; display:block; width:20px; height:2px; background:#fff; border-radius:2px; transition:.25s; transform-origin:center;
-}
-.menu-btn::before{ transform:translateY(-4px) }
-.menu-btn::after{  transform:translateY(4px)  }
-.menu-btn.active span{ opacity:0 }
-.menu-btn.active::before{ transform:rotate(45deg) }
-.menu-btn.active::after{  transform:rotate(-45deg) }
+/* HAMBURGER + DRAWER */
+.menu-btn{ position:fixed; top:14px; right:14px; z-index:9999; width:40px; height:32px; display:grid; place-items:center; background:transparent; border:none; cursor:pointer; }
+.menu-btn span, .menu-btn::before, .menu-btn::after{ content:""; display:block; width:20px; height:2px; background:#fff; border-radius:2px; transition:.25s; transform-origin:center; }
+.menu-btn::before{ transform:translateY(-4px) } .menu-btn::after{ transform:translateY(4px) }
+.menu-btn.active span{ opacity:0 } .menu-btn.active::before{ transform:rotate(45deg) } .menu-btn.active::after{ transform:rotate(-45deg) }
 .menu-btn:focus-visible{ outline:2px solid #fff3; outline-offset:4px }
 
 /* Drawer */
 .drawer{ position:fixed; inset:0 0 0 auto; width:min(88vw,340px); translate: 100% 0; transition:translate .28s ease; z-index:9998; }
 .drawer.open{ translate: 0 0; }
-.drawer .panel{
-  position:absolute; inset:0 0 0 auto; width:100%; height:100%; background:#fff; color:#111; box-shadow:-20px 0 60px rgba(0,0,0,.35);
-  display:flex; flex-direction:column;
-}
+.drawer .panel{ position:absolute; inset:0 0 0 auto; width:100%; height:100%; background:#fff; color:#111; box-shadow:-20px 0 60px rgba(0,0,0,.35); display:flex; flex-direction:column; }
 .drawer .head{ padding:18px; border-bottom:1px solid #eee; font:700 18px/1 Poppins; color:var(--brown) }
 .drawer nav{ display:flex; flex-direction:column; }
 .drawer nav a{ padding:18px; border-bottom:1px solid #eee; font:600 16px/1.2 Inter; }
@@ -174,7 +149,7 @@ section.snap{padding:64px 0}
 /* Auto-fit siatka szczegółów */
 #details .grid-3{grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); align-items: stretch}
 
-/* ---- Oferta: siatka dwóch kart obok siebie (desktop), jedna na mobile ---- */
+/* ---- Oferta: 2 karty obok siebie ---- */
 #pricing .products{
   display:grid;
   grid-template-columns: repeat(2, minmax(280px, 1fr));
@@ -187,8 +162,17 @@ section.snap{padding:64px 0}
   flex-direction:column;
   min-height:260px;
 }
+#pricing .products .content{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  /* ujednolicenie wysokości bloku treści, by cena była w tym samym miejscu */
+  min-height:180px;
+}
+#pricing .products .content .price-tag{ margin-top:auto; }
 @media (max-width: 900px){
   #pricing .products{ grid-template-columns:1fr; }
+  #pricing .products .content{ min-height:unset; }
 }
 
 /* ====== MOBILE ====== */
@@ -203,7 +187,6 @@ section.snap{padding:64px 0}
   .grid-2{ grid-template-columns: 1fr; gap:20px; }
   .right-stack{ grid-template-columns: 1fr; gap: 12px; }
 
-  /* chowamy Bytol1 i przycisk JOIN HERE na mobile */
   .right-stack .climb-photo{ display:none; }
   .joinhere-card{ display:none; }
 
@@ -216,7 +199,6 @@ section.snap{padding:64px 0}
   #pricing .legal-row{ margin-top: 56px !important; padding-bottom: 24px; }
   #pricing .legal-row nav{ width:100%; justify-content:center; gap:20px; }
 
-  /* O mnie – 1 kolumna: NAJPIERW ZDJĘCIE, POTEM TEKST */
   .about-grid{grid-template-columns:1fr}
   .about-media{grid-row:1}
   .about-text{grid-row:2}
@@ -279,21 +261,22 @@ section.snap{padding:64px 0}
 
         <div class="grid-2">
           <div class="hero-copy">
-            <span class="kicker reveal">HybridPlanner • AI</span>
+            <span class="kicker reveal">Trainingplanner AI</span>
             <h1 id="heroH1" class="reveal">Twoje cele dzięki nam stają sie rzeczywistością</h1>
             <p id="heroDesc" class="reveal" style="max-width:560px;margin-top:12px">
               Plan Treningowy. Minimalna objętość, maksymalne efekty.
             </p>
             <div class="reveal" style="margin-top:18px;display:flex;gap:12px;flex-wrap:wrap">
-              <a id="btnGenerate" class="btn btn-brown requires-email" href="generator.html">Wygeneruj</a>
+              <!-- zmiana przycisku: tekst + link do oferty -->
+              <a id="btnGenerate" class="btn btn-brown" href="#pricing">kuo teraz</a>
               <a id="btnDetails" class="btn" href="#details">Zobacz szczegóły</a>
             </div>
             <p class="reveal" style="margin-top:10px;color:#a9a7a3;font-size:13px">To nie jest porada medyczna.</p>
           </div>
 
           <div class="right-stack reveal-stagger">
-            <img class="round climb-photo" src="assets/Bytol1.jpg" alt="Bytol 1" style="height:220px;object-fit:cover">
-            <img class="round" src="assets/Bytol2.jpg" alt="Bytol 2" style="height:220px;object-fit:cover">
+            <img class="round climb-photo reveal" src="assets/Bytol1.jpg" alt="Bytol 1" style="height:220px;object-fit:cover">
+            <img class="round reveal" src="assets/Bytol2.jpg" alt="Bytol 2" style="height:220px;object-fit:cover">
             <a href="#pricing" class="joinhere-card" aria-label="Przejdź do oferty — Join here">
               <span class="joinhere-text">JOIN HERE</span>
             </a>
@@ -345,12 +328,13 @@ section.snap{padding:64px 0}
   <!-- 3) O MNIE (CZARNA) -->
   <section id="about" class="snap section-dark">
     <div class="container">
-      <div class="about-grid reveal">
-        <div class="about-text">
+      <div class="about-grid">
+        <div class="about-text reveal">
           <h2>O mnie</h2>
-          <p id="aboutText">Nazywam sie Tolek, jestem certyfikowanym trenerem personalnym oraz pasjonatem siłowni. W treningu siłowym zarówno swoim jak i swoich podopiecznych skupiam się na możliwie najwyższej intensywności przy niskiej objętości ćwiczeń.</p>
+          <!-- tekst jako całość + reveal -->
+          <p id="aboutText" class="reveal">Nazywam sie Tolek, jestem certyfikowanym trenerem personalnym oraz pasjonatem siłowni. W treningu siłowym zarówno swoim jak i swoich podopiecznych skupiam się na możliwie najwyższej intensywności przy niskiej objętości ćwiczeń.</p>
         </div>
-        <div class="about-media">
+        <div class="about-media reveal">
           <picture>
             <source srcset="assets/Bytol3.jpg" type="image/jpeg">
             <img src="assets/Bytol3.jpg" alt="Autor projektu">
@@ -365,11 +349,10 @@ section.snap{padding:64px 0}
     <div class="container">
       <h2 id="offerTitle" class="reveal">Oferta</h2>
 
-      <!-- NOWA siatka produktów: 2 obok siebie na desktopie -->
       <div class="products reveal">
         <!-- AI produkt -->
         <article class="card-light">
-          <div>
+          <div class="content">
             <h3>Plan treningowy wygenerowany przez AI</h3>
             <p>Pełny program z progresją i rozmieszczeniem regeneracji.</p>
             <div class="price-tag" aria-label="Cena planu">
@@ -377,23 +360,23 @@ section.snap{padding:64px 0}
               <span class="price-note">jednorazowo</span>
             </div>
           </div>
-          <div style="margin-top:auto">
-            <a class="btn btn-brown btn-cta requires-email" href="generator.html">Wygeneruj teraz</a>
+          <div>
+            <!-- zmiana: tekst + link do #pricing, bez bramki e-mail -->
+            <a class="btn btn-brown btn-cta" href="#pricing">kuo teraz</a>
           </div>
         </article>
 
-        <!-- NOWY: Indywidualny plan przez trenera -->
+        <!-- Indywidualny plan -->
         <article class="card-light">
-          <div>
+          <div class="content">
             <h3>Indywidualny plan treningowy</h3>
-            <p>Szczegółowy program przygotowany ręcznie przez certyfikowanego trenera personalnego. Otrzymasz plan z progresją, wskazówkami technicznymi i rekomendacjami regeneracji.</p>
+            <p>Szczegółowy program przygotowany ręcznie przez certyfikowanego trenera personalnego.</p>
             <div class="price-tag" aria-label="Cena planu indywidualnego">
               <span class="price">129,99&nbsp;zł</span>
               <span class="price-note">jednorazowo</span>
             </div>
           </div>
-          <div style="margin-top:auto">
-            <!-- Bez bramkowania e-mail – prosto do ankiety -->
+          <div>
             <a class="btn btn-brown btn-cta" href="ankieta.html">Kup teraz</a>
           </div>
         </article>
@@ -453,9 +436,8 @@ function toggleDrawer(force){
 menuBtn.addEventListener('click', ()=>toggleDrawer());
 backdrop.addEventListener('click', ()=>toggleDrawer(false));
 window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') toggleDrawer(false); });
-drawer.querySelectorAll('a').forEach(a=>a.addEventListener('click', ()=>toggleDrawer(false)));
 
-/* Bramka e-mail */
+/* Bramka e-mail dla elementów oznaczonych klasą .requires-email */
 const modal = document.getElementById('emailModal');
 const closeBtn = document.getElementById('gateClose');
 const confirmBtn = document.getElementById('gateConfirm');
@@ -485,59 +467,6 @@ document.querySelectorAll('.requires-email').forEach(a=>{
   });
 });
 
-/* --- O MNIE: animacja pojawiania się linijek proporcjonalnie do scrolla --- */
-(function(){
-  const p = document.getElementById('aboutText');
-  const section = document.getElementById('about');
-  if(!p || !section) return;
-
-  // Rozbij na „zdania” zachowując znaki końca
-  const text = p.textContent.trim();
-  const parts = text.match(/[^.!?]+[.!?]?/g) || [text];
-
-  // Zastąp treść liniami
-  p.textContent = '';
-  p.classList.add('about-lines');
-  const spans = parts.map(part=>{
-    const s = document.createElement('span');
-    s.className = 'line';
-    s.textContent = part.trim();
-    p.appendChild(s);
-    return s;
-  });
-
-  let ticking = false;
-  function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
-
-  function update(){
-    const rect = section.getBoundingClientRect();
-    const vh = window.innerHeight;
-
-    // start ujawniania, gdy górna krawędź sekcji zbliża się do 85% wysokości ekranu
-    const start = vh * 0.85;
-    // koniec trochę po wyjściu sekcji (aby rozkład był „rozciągnięty”)
-    const total = rect.height + vh * 0.35;
-
-    const passed = start - rect.top;          // ile „przeszło”
-    let t = clamp(passed / total, 0, 1);      // 0..1
-
-    const toShow = Math.round(t * spans.length);
-    for (let i = 0; i < spans.length; i++){
-      spans[i].classList.toggle('visible', i < toShow);
-    }
-    ticking = false;
-  }
-
-  function onScroll(){
-    if(!ticking){ ticking = true; requestAnimationFrame(update); }
-  }
-
-  // Inicjalizacja i nasłuchy
-  update();
-  window.addEventListener('scroll', onScroll, {passive:true});
-  window.addEventListener('resize', onScroll);
-})();
-
 /* i18n – bez zmian poza pierwszą kartą oferty (druga pozostaje PL) */
 (function () {
   const params = new URLSearchParams(location.search);
@@ -562,7 +491,8 @@ document.querySelectorAll('.requires-email').forEach(a=>{
   if (lang === 'en') {
     setHTML('heroH1','You set the goals — we make them real.');
     setHTML('heroDesc','Training Plan. Minimum volume, maximum results.');
-    setText('btnGenerate','Generate'); setText('btnDetails','See details');
+    setText('btnGenerate','Buy now'); /* angielskie CTA z grubsza pasujące do "kuo teraz" */
+    setText('btnDetails','See details');
     if (heroDisclaimer) heroDisclaimer.textContent = 'This is not medical advice.';
 
     setText('featuresTitle','Training plan – how it’s built');
@@ -591,32 +521,4 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     if (modalH3) modalH3.textContent = 'Access to the generator';
     if (labelEmail) labelEmail.textContent = 'Your e-mail';
     if (labelConsent) labelConsent.textContent = 'I consent to the processing of my personal data.';
-    if (gateConfirm) gateConfirm.textContent = 'Continue';
-    if (gateClose) gateClose.textContent = 'Cancel';
-    if (gateErrorEl) gateErrorEl.textContent = 'Enter a valid e-mail and tick the consent box.';
-
-    localStorage.setItem('hp_lang','en');
-    if (toggleBtn){ toggleBtn.href='?lang=pl'; toggleBtn.textContent='PL'; toggleBtn.setAttribute('aria-label','Polish version'); }
-  } else {
-    localStorage.setItem('hp_lang','pl');
-    if (toggleBtn){ toggleBtn.href='?lang=en'; toggleBtn.textContent='EN'; toggleBtn.setAttribute('aria-label','English version'); }
-
-    setHTML('heroH1','Twoje cele dzięki nam stają sie rzeczywistością');
-    setHTML('heroDesc','Plan Treningowy. Minimalna objętość, maksymalne efekty.');
-    setText('btnGenerate','Wygeneruj'); setText('btnDetails','Zobacz szczegóły');
-    if (heroDisclaimer) heroDisclaimer.textContent = 'To nie jest porada medyczna.';
-
-    setText('featuresTitle','Szczegóły tworzenia planu treningowego');
-
-    setText('offerTitle','Oferta');
-    if (offerCards.length >= 1) {
-      offerCards[0].querySelector('h3').textContent = 'Plan treningowy wygenerowany przez AI';
-    }
-
-    setText('legalPolicy','Polityka'); setText('legalTerms','Regulamin');
-    setText('legalContact','Kontakt'); setText('legalFaq','FAQ');
-  }
-})();
-</script>
-</body>
-</html>
+    if (
