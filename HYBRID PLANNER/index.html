@@ -118,8 +118,12 @@ section.snap{padding:64px 0}
 #pricing .price{ font:800 clamp(22px,4vw,34px)/1 Poppins; color:#111 }
 #pricing .price-note{ color:#6a6966; font:600 14px/1.2 Inter }
 
-/* Szczegóły */
-#details .grid-3{grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); align-items: stretch}
+/* Szczegóły — równe rozłożenie kart */
+#details .grid-3{
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  align-items: stretch;
+}
+#details .card-light{ display:flex; flex-direction:column; height:100% }
 
 /* Oferta: 2 karty */
 #pricing .products{display:grid; grid-template-columns: repeat(2, minmax(280px, 1fr)); gap:24px; align-items: stretch; margin-top:20px}
@@ -209,12 +213,12 @@ section.snap{padding:64px 0}
         <div class="grid-2">
           <div class="hero-copy">
             <span class="kicker reveal">Trainingplanner • AI</span>
-            <h1 id="heroH1" class="reveal">Twoje cele dzięki nam stają sie rzeczywistością</h1>
+            <h1 id="heroH1" class="reveal">Twoje cele dzięki nam stają się rzeczywistością</h1>
             <p id="heroDesc" class="reveal" style="max-width:560px;margin-top:12px">
-              Plan Treningowy. Minimalna objętość, maksymalne efekty.
+              Plan treningowy. Minimalna objętość, maksymalne efekty.
             </p>
             <div class="reveal" style="margin-top:18px;display:flex;gap:12px;flex-wrap:wrap">
-              <!-- HERO: teraz prowadzi do oferty, bez bramkowania -->
+              <!-- HERO: prowadzi do oferty -->
               <a id="btnGenerate" class="btn btn-brown" href="#pricing">Kup teraz</a>
               <a id="btnDetails" class="btn" href="#details">Zobacz szczegóły</a>
             </div>
@@ -233,17 +237,11 @@ section.snap{padding:64px 0}
     </div>
   </section>
 
-  <!-- SZCZEGÓŁY -->
+  <!-- SZCZEGÓŁY (usunęta 1. chmurka, reszta równomiernie) -->
   <section id="details" class="snap section-light">
     <div class="container">
       <h2 id="featuresTitle" class="reveal">Szczegóły tworzenia planu treningowego</h2>
       <div class="grid-3" style="margin-top:20px">
-        <article class="card-light reveal">
-          <div class="icon-dot">
-            <img src="assets/trainer_10452493.svg" alt="Personalizacja AI"><strong>Personalizacja AI</strong>
-          </div>
-          <p>Dopasowanie do celu, poziomu, dostępnego czasu/tydzień i ograniczeń.</p>
-        </article>
         <article class="card-light reveal">
           <div class="icon-dot">
             <img src="assets/gym_1025929.svg" alt="Bezpieczna progresja"><strong>Bezpieczna progresja</strong>
@@ -252,9 +250,9 @@ section.snap{padding:64px 0}
         </article>
         <article class="card-light reveal">
           <div class="icon-dot">
-            <img src="assets/note_13552540.svg" alt="Podgląd i Plik Excel"><strong>Podgląd + Plik Excel</strong>
+            <img src="assets/note_13552540.svg" alt="Podgląd i plik Excel"><strong>Podgląd + Plik Excel</strong>
           </div>
-          <p id="featPdfDesc">Plan wysyłany po wygenerowaniu na email w formacie pliku Excel.</p>
+          <p id="featPdfDesc">Plan wysyłany po wygenerowaniu na e-mail w formacie Excel.</p>
         </article>
         <article class="card-light reveal">
           <div class="icon-dot">
@@ -264,7 +262,7 @@ section.snap{padding:64px 0}
         </article>
         <article class="card-light reveal">
           <div class="icon-dot">
-            <img src="assets/note_13552540.svg" alt="Dokładne rozplanowanie tygodnia"><strong>Dokładne rozplanowanie tygodnia treningowego</strong>
+            <img src="assets/note_13552540.svg" alt="Dokładne rozplanowanie tygodnia"><strong>Dokładne rozplanowanie tygodnia</strong>
           </div>
           <p id="featWeekDesc">Tydzień ułożony dzień po dniu z rozmieszczeniem regeneracji i progresją.</p>
         </article>
@@ -277,8 +275,8 @@ section.snap{padding:64px 0}
     <div class="container">
       <div class="about-grid">
         <div class="about-text reveal">
-          <h2>O mnie</h2>
-          <p id="aboutText">Nazywam sie Tolek, jestem certyfikowanym trenerem personalnym oraz pasjonatem siłowni. W treningu siłowym zarówno swoim jak i swoich podopiecznych skupiam się na możliwie najwyższej intensywności przy niskiej objętości ćwiczeń.</p>
+          <h2 id="aboutTitle">O mnie</h2>
+          <p id="aboutText">Nazywam się Tolek, jestem certyfikowanym trenerem personalnym oraz pasjonatem siłowni. W treningu siłowym – zarówno swoim, jak i swoich podopiecznych – skupiam się na możliwie najwyższej intensywności przy niskiej objętości ćwiczeń.</p>
         </div>
         <div class="about-media reveal">
           <picture>
@@ -307,7 +305,7 @@ section.snap{padding:64px 0}
               <span class="price">9,99&nbsp;zł</span>
               <span class="price-note">jednorazowo</span>
             </div>
-            <!-- PRZYCISK: po e-mailu idzie do generatora -->
+            <!-- po e-mailu do generatora -->
             <a class="btn btn-brown btn-cta requires-email" href="generator.html">Kup teraz</a>
           </div>
         </article>
@@ -344,12 +342,30 @@ section.snap{padding:64px 0}
     <div class="container">
       <h2 class="reveal">FAQ</h2>
       <div class="faq-list reveal-stagger" style="display:grid;gap:14px;margin-top:14px">
-        <details><summary>Jak powstaje mój plan?</summary><p>Plan generuje AI na podstawie Twoich odpowiedzi w krótkiej ankiecie. Uwzględniamy cel, poziom, sprzęt, czas oraz ewentualne ograniczenia.</p></details>
-        <details><summary>Ile to trwa?</summary><p>Zwykle kilkanaście sekund od wysłania odpowiedzi. Otrzymujesz podgląd i plik Excel do pobrania.</p></details>
-        <details><summary>Czy mogę trenować kilka dyscyplin w tygodniu?</summary><p>Tak — tygodniowy rozkład optymalizujemy pod Twoje priorytety i regenerację.</p></details>
-        <details><summary>W jakim języku dostanę plan?</summary><p>Interfejs i pliki dostępne są w dwóch wersjach językowych: PL oraz EN.</p></details>
-        <details><summary>Co jeśli mam kontuzję lub chorobę?</summary><p>To nie jest porada medyczna. Jeśli masz uraz lub wątpliwości zdrowotne, skonsultuj się z lekarzem lub fizjoterapeutą przed rozpoczęciem.</p></details>
-        <details><summary>Nie mam pełnego dostępu do sprzętu. Czy plan zadziała?</summary><p>Tak. W ankiecie podajesz dostępny sprzęt, a AI dopasuje ćwiczenia i objętość do Twoich warunków.</p></details>
+        <details>
+          <summary id="q1">Jak powstaje mój plan?</summary>
+          <p id="a1">Plan generuje AI na podstawie Twoich odpowiedzi w krótkiej ankiecie. Uwzględniamy cel, poziom, sprzęt, czas oraz ewentualne ograniczenia.</p>
+        </details>
+        <details>
+          <summary id="q2">Ile to trwa?</summary>
+          <p id="a2">Zwykle kilkanaście sekund od wysłania odpowiedzi. Otrzymujesz podgląd i plik Excel do pobrania.</p>
+        </details>
+        <details>
+          <summary id="q3">Czy mogę trenować kilka dyscyplin w tygodniu?</summary>
+          <p id="a3">Tak — tygodniowy rozkład optymalizujemy pod Twoje priorytety i regenerację.</p>
+        </details>
+        <details>
+          <summary id="q4">W jakim języku dostanę plan?</summary>
+          <p id="a4">Interfejs i pliki dostępne są w dwóch wersjach językowych: PL oraz EN.</p>
+        </details>
+        <details>
+          <summary id="q5">Co jeśli mam kontuzję lub chorobę?</summary>
+          <p id="a5">To nie jest porada medyczna. Jeśli masz uraz lub wątpliwości zdrowotne, skonsultuj się z lekarzem lub fizjoterapeutą przed rozpoczęciem.</p>
+        </details>
+        <details>
+          <summary id="q6">Nie mam pełnego dostępu do sprzętu. Czy plan zadziała?</summary>
+          <p id="a6">Tak. W ankiecie podajesz dostępny sprzęt, a AI dopasuje ćwiczenia i objętość do Twoich warunków.</p>
+        </details>
       </div>
     </div>
   </section>
@@ -414,7 +430,7 @@ document.querySelectorAll('.requires-email').forEach(a=>{
   });
 });
 
-/* i18n – PL/EN pełne tłumaczenie (w tym oferta i przyciski) */
+/* i18n – pełne PL/EN, łącznie z „O mnie” i FAQ */
 (function () {
   const params = new URLSearchParams(location.search);
   const lang = (params.get('lang') || localStorage.getItem('hp_lang') || 'pl').toLowerCase();
@@ -441,18 +457,16 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     setText('btnDetails','See details');
     if (heroDisclaimer) heroDisclaimer.textContent = 'This is not medical advice.';
 
-    setText('featuresTitle','Training plan — how it’s built');
-    if (detailsCards.length === 5) {
-      detailsCards[0].querySelector('.icon-dot strong').textContent = 'AI personalization';
-      detailsCards[0].querySelector('p').textContent = 'Tailored to your goal, level, weekly time and constraints.';
-      detailsCards[1].querySelector('.icon-dot strong').textContent = 'Safe progression';
-      detailsCards[1].querySelector('p').textContent = '24–48 h spacing between hard stimuli, deloads and volume control.';
-      detailsCards[2].querySelector('.icon-dot strong').textContent = 'Preview + Excel file';
-      detailsCards[2].querySelector('p').textContent = 'Your plan is emailed as an Excel file right after generation.';
-      detailsCards[3].querySelector('.icon-dot strong').textContent = 'Universal exercise naming';
-      detailsCards[3].querySelector('p').textContent = 'Unified PL/EN names — easy to recognise and search.';
-      detailsCards[4].querySelector('.icon-dot strong').textContent = 'Detailed weekly layout';
-      detailsCards[4].querySelector('p').textContent = 'A week laid out day by day with recovery placement and progression.';
+    setText('featuresTitle','How your training plan is built');
+    if (detailsCards.length === 4) {
+      detailsCards[0].querySelector('.icon-dot strong').textContent = 'Safe progression';
+      detailsCards[0].querySelector('p').textContent = '24–48 h spacing between hard stimuli, deloads and volume control.';
+      detailsCards[1].querySelector('.icon-dot strong').textContent = 'Preview + Excel file';
+      detailsCards[1].querySelector('p').textContent = 'Your plan is emailed as an Excel file right after generation.';
+      detailsCards[2].querySelector('.icon-dot strong').textContent = 'Universal exercise naming';
+      detailsCards[2].querySelector('p').textContent = 'Unified PL/EN names — easy to recognise and search.';
+      detailsCards[3].querySelector('.icon-dot strong').textContent = 'Detailed weekly layout';
+      detailsCards[3].querySelector('p').textContent = 'A week laid out day by day with recovery placement and progression.';
     }
 
     setText('offerTitle','Offer');
@@ -470,6 +484,18 @@ document.querySelectorAll('.requires-email').forEach(a=>{
       const customBtn = offerCards[1].querySelector('a.btn');
       if (customBtn){ customBtn.textContent = 'Buy now'; }
     }
+
+    // About
+    setText('aboutTitle','About me');
+    setText('aboutText',"My name is Tolek — I’m a certified personal trainer and a gym enthusiast. In strength training — both mine and my clients’ — I focus on the highest possible intensity with low exercise volume.");
+
+    // FAQ EN
+    setText('q1','How is my plan created?');     setText('a1','AI generates your plan from a short questionnaire. We factor in your goal, level, equipment, time and any constraints.');
+    setText('q2','How long does it take?');      setText('a2','Usually a few seconds after you submit your answers. You get a preview and an Excel file to download.');
+    setText('q3','Can I train multiple disciplines in a week?'); setText('a3','Yes — we optimise your weekly layout for your priorities and recovery.');
+    setText('q4','What language will I get the plan in?');       setText('a4','The interface and files are available in two languages: PL and EN.');
+    setText('q5','What if I’m injured or ill?');                 setText('a5','This is not medical advice. If you have an injury or health concerns, consult a doctor or physiotherapist before starting.');
+    setText('q6','I don’t have full access to equipment. Will it work?'); setText('a6','Yes. In the questionnaire you list your available equipment and AI adapts exercises and volume to your conditions.');
 
     // Legal
     setText('legalPolicy','Policy'); setText('legalTerms','Terms');
@@ -511,6 +537,21 @@ document.querySelectorAll('.requires-email').forEach(a=>{
       const customBtn = offerCards[1].querySelector('a.btn');
       if (customBtn){ customBtn.textContent = 'Kup teraz'; }
     }
+
+    // About PL (z diakrytykami)
+    setText('aboutTitle','O mnie');
+    setText('aboutText','Nazywam się Tolek, jestem certyfikowanym trenerem personalnym oraz pasjonatem siłowni. W treningu siłowym – zarówno swoim, jak i swoich podopiecznych – skupiam się na możliwie najwyższej intensywności przy niskiej objętości ćwiczeń.');
+
+    // FAQ PL (ID te same)
+    setText('q1','Jak powstaje mój plan?'); setText('a1','Plan generuje AI na podstawie Twoich odpowiedzi w krótkiej ankiecie. Uwzględniamy cel, poziom, sprzęt, czas oraz ewentualne ograniczenia.');
+    setText('q2','Ile to trwa?'); setText('a2','Zwykle kilkanaście sekund od wysłania odpowiedzi. Otrzymujesz podgląd i plik Excel do pobrania.');
+    setText('q3','Czy mogę trenować kilka dyscyplin w tygodniu?'); setText('a3','Tak — tygodniowy rozkład optymalizujemy pod Twoje priorytety i regenerację.');
+    setText('q4','W jakim języku dostanę plan?'); setText('a4','Interfejs i pliki dostępne są w dwóch wersjach językowych: PL oraz EN.');
+    setText('q5','Co jeśli mam kontuzję lub chorobę?'); setText('a5','To nie jest porada medyczna. Jeśli masz uraz lub wątpliwości zdrowotne, skonsultuj się z lekarzem lub fizjoterapeutą przed rozpoczęciem.');
+    setText('q6','Nie mam pełnego dostępu do sprzętu. Czy plan zadziała?'); setText('a6','Tak. W ankiecie podajesz dostępny sprzęt, a AI dopasuje ćwiczenia i objętość do Twoich warunków.');
+
+    setText('legalPolicy','Polityka'); setText('legalTerms','Regulamin');
+    setText('legalContact','Kontakt'); setText('legalFaq','FAQ');
   }
 })();
 </script>
