@@ -37,7 +37,7 @@ section.snap{padding:64px 0}
 .icon-dot{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .icon-dot img{width:22px;height:22px;object-fit:contain}
 
-/* Reveal na scroll (m.in. sekcja „Szczegóły…”) */
+/* Reveal na scroll */
 .reveal{opacity:0;transform:translateY(14px);transition:opacity .45s ease, transform .45s ease}
 .reveal.show{opacity:1;transform:none}
 
@@ -55,35 +55,14 @@ section.snap{padding:64px 0}
 
 /* JOIN HERE */
 .joinhere-card{
-  grid-column: 1 / -1;
-  height: 220px;
-  width: 100%;
-  position:relative;
-  display:grid;
-  place-items:center;
-  border-radius:16px;
-  border:1px solid var(--border);
-  overflow:hidden;
-  text-decoration:none;
-  background:#141414;
+  grid-column: 1 / -1; height: 220px; width: 100%; position:relative;
+  display:grid; place-items:center; border-radius:16px; border:1px solid var(--border);
+  overflow:hidden; text-decoration:none; background:#141414;
 }
-.joinhere-card::before{
-  content:"";
-  position:absolute; inset:0;
-  background: linear-gradient(180deg,#1a1a1a 0%, #0f0f0f 100%);
-  opacity:.55;
-  transition: opacity .3s ease, transform .3s ease, filter .3s ease;
-}
-.joinhere-text{
-  position:relative;
-  font:800 clamp(28px,7.5vw,72px)/1 Poppins;
-  letter-spacing:.06em;
-  text-transform:uppercase;
-  color:rgba(255,255,255,.18);
-  transition: color .3s ease, transform .3s ease;
-}
-.joinhere-card:hover::before{ opacity:.35; filter:saturate(1.05) }
-.joinhere-card:hover .joinhere-text{ color:rgba(255,255,255,.92); transform:translateY(-1px) }
+.joinhere-card::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#1a1a1a 0%, #0f0f0f 100%);opacity:.55;transition:opacity .3s, transform .3s, filter .3s}
+.joinhere-text{position:relative;font:800 clamp(28px,7.5vw,72px)/1 Poppins;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.18);transition:color .3s, transform .3s}
+.joinhere-card:hover::before{opacity:.35;filter:saturate(1.05)}
+.joinhere-card:hover .joinhere-text{color:rgba(255,255,255,.92);transform:translateY(-1px)}
 
 /* Sekcje jasne/ciemne */
 .section-light{background:#fff;color:#111}
@@ -91,16 +70,12 @@ section.snap{padding:64px 0}
 .section-dark{background:var(--bg);color:var(--text)}
 .section-dark p{color:#C9C7C2}
 
-/* „O mnie” – układ tekst lewo, zdjęcie prawo + typografia */
+/* „O mnie” */
 .about-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:28px;align-items:center}
 .about-media{border-radius:16px;border:1px solid var(--border);overflow:hidden;background:transparent}
 .about-media img{width:100%;height:100%;object-fit:cover}
 #about .about-text{max-width:720px}
-#about .about-text p{
-  font:400 clamp(18px, 2.2vw, 20px)/1.8 Inter;
-  color:#E0DFDC;
-  margin-top:8px;
-}
+#about .about-text p{font:400 clamp(18px, 2.2vw, 20px)/1.8 Inter;color:#E0DFDC;margin-top:8px}
 
 /* Buttons */
 .btn{display:inline-flex;align-items:center;gap:10px;padding:12px 18px;border-radius:12px;border:2px solid var(--text);color:var(--text);background:transparent;font:600 16px/1 Inter;transition:.25s;cursor:pointer}
@@ -108,23 +83,13 @@ section.snap{padding:64px 0}
 .btn-brown{background:var(--brown);border-color:var(--brown);color:#fff}
 .btn-light{background:#fff;color:#111;border-color:#fff}
 
-/* LANG TOGGLE (LEWY GÓRNY) */
-.lang-toggle{
-  position:fixed; top:14px; left:14px; z-index:9999;
-  background:#111; color:#fff; border:1px solid #333;
-  padding:6px 10px; border-radius:10px; font:600 12px/1 Inter; text-decoration:none; opacity:.9
-}
+/* LANG TOGGLE */
+.lang-toggle{position:fixed; top:14px; left:14px; z-index:9999; background:#111; color:#fff; border:1px solid #333; padding:6px 10px; border-radius:10px; font:600 12px/1 Inter; text-decoration:none; opacity:.9}
 .lang-toggle:hover{opacity:1}
 
-/* HAMBURGER + DRAWER (prawy górny) – WERSJA MINIMAL */
-.menu-btn{
-  position:fixed; top:14px; right:14px; z-index:9999;
-  width:40px; height:32px; display:grid; place-items:center;
-  background:transparent; border:none; cursor:pointer;
-}
-.menu-btn span, .menu-btn::before, .menu-btn::after{
-  content:""; display:block; width:20px; height:2px; background:#fff; border-radius:2px; transition:.25s; transform-origin:center;
-}
+/* HAMBURGER + DRAWER */
+.menu-btn{position:fixed; top:14px; right:14px; z-index:9999; width:40px; height:32px; display:grid; place-items:center; background:transparent; border:none; cursor:pointer}
+.menu-btn span, .menu-btn::before, .menu-btn::after{content:""; display:block; width:20px; height:2px; background:#fff; border-radius:2px; transition:.25s; transform-origin:center}
 .menu-btn::before{ transform:translateY(-4px) }
 .menu-btn::after{  transform:translateY(4px)  }
 .menu-btn.active span{ opacity:0 }
@@ -135,10 +100,7 @@ section.snap{padding:64px 0}
 /* Drawer */
 .drawer{ position:fixed; inset:0 0 0 auto; width:min(88vw,340px); translate: 100% 0; transition:translate .28s ease; z-index:9998; }
 .drawer.open{ translate: 0 0; }
-.drawer .panel{
-  position:absolute; inset:0 0 0 auto; width:100%; height:100%; background:#fff; color:#111; box-shadow:-20px 0 60px rgba(0,0,0,.35);
-  display:flex; flex-direction:column;
-}
+.drawer .panel{position:absolute; inset:0 0 0 auto; width:100%; height:100%; background:#fff; color:#111; box-shadow:-20px 0 60px rgba(0,0,0,.35); display:flex; flex-direction:column;}
 .drawer .head{ padding:18px; border-bottom:1px solid #eee; font:700 18px/1 Poppins; color:var(--brown) }
 .drawer nav{ display:flex; flex-direction:column; }
 .drawer nav a{ padding:18px; border-bottom:1px solid #eee; font:600 16px/1.2 Inter; }
@@ -148,65 +110,42 @@ section.snap{padding:64px 0}
 .backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.45); opacity:0; pointer-events:none; transition:opacity .25s; z-index:9997; }
 .backdrop.show{ opacity:1; pointer-events:auto; }
 
-/* CTA pełna szerokość (desktop/tablet) */
-@media (min-width: 641px){
-  #pricing .card-light .btn-cta{ display:block;width:100%;text-align:center;padding:16px 20px;font-size:17px }
-}
+/* CTA pełna szerokość */
+@media (min-width: 641px){ #pricing .card-light .btn-cta{ display:block;width:100%;text-align:center;padding:16px 20px;font-size:17px }}
 
 /* Cena w ofercie */
 #pricing .price-tag{ margin-top:10px; display:flex; align-items:baseline; gap:8px }
 #pricing .price{ font:800 clamp(22px,4vw,34px)/1 Poppins; color:#111 }
 #pricing .price-note{ color:#6a6966; font:600 14px/1.2 Inter }
 
-/* Auto-fit siatka szczegółów */
+/* Szczegóły */
 #details .grid-3{grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); align-items: stretch}
 
-/* ---- Oferta: siatka dwóch kart obok siebie (desktop), jedna na mobile ---- */
-#pricing .products{
-  display:grid;
-  grid-template-columns: repeat(2, minmax(280px, 1fr));
-  gap:24px;
-  align-items: stretch;
-  margin-top:20px;
-}
-#pricing .products .card-light{
-  display:flex;
-  flex-direction:column;
-  min-height:260px;
-}
+/* Oferta: 2 karty */
+#pricing .products{display:grid; grid-template-columns: repeat(2, minmax(280px, 1fr)); gap:24px; align-items: stretch; margin-top:20px}
+#pricing .products .card-light{display:flex; flex-direction:column; min-height:260px}
 #pricing .product-body{flex:1}
 #pricing .product-footer{margin-top:auto;display:flex;flex-direction:column;gap:12px}
 
-@media (max-width: 900px){
-  #pricing .products{ grid-template-columns:1fr; }
-}
+@media (max-width: 900px){ #pricing .products{ grid-template-columns:1fr }}
 
-/* ====== MOBILE ====== */
-@media (max-width: 900px){
-  .grid-3{ grid-template-columns: repeat(2, 1fr); }
-}
+/* MOBILE */
+@media (max-width: 900px){ .grid-3{ grid-template-columns: repeat(2, 1fr) } }
 @media (max-width: 640px){
-  .container{ padding: 0 16px; }
-  section.snap{ padding: 72px 0; }
-  .section-light{ padding-top: 72px; padding-bottom: 72px; }
-
-  .grid-2{ grid-template-columns: 1fr; gap:20px; }
-  .right-stack{ grid-template-columns: 1fr; gap: 12px; }
-
-  /* chowamy Bytol1 i przycisk JOIN HERE na mobile */
-  .right-stack .climb-photo{ display:none; }
-  .joinhere-card{ display:none; }
-
-  .hero-bg{ padding: 18px; border-radius: 14px; }
-  .kicker{ font-size: 12px; }
-  p{  font-size: 15px; }
-  .btn{ padding: 10px 14px; font-size: 15px; border-radius: 10px; }
-  .card-light{ padding: 16px; border-radius: 14px; }
-
-  #pricing .legal-row{ margin-top: 56px !important; padding-bottom: 24px; }
-  #pricing .legal-row nav{ width:100%; justify-content:center; gap:20px; }
-
-  /* O mnie – 1 kolumna: NAJPIERW ZDJĘCIE, POTEM TEKST */
+  .container{ padding: 0 16px }
+  section.snap{ padding: 72px 0 }
+  .section-light{ padding-top: 72px; padding-bottom: 72px }
+  .grid-2{ grid-template-columns: 1fr; gap:20px }
+  .right-stack{ grid-template-columns: 1fr; gap: 12px }
+  .right-stack .climb-photo{ display:none }
+  .joinhere-card{ display:none }
+  .hero-bg{ padding: 18px; border-radius: 14px }
+  .kicker{ font-size: 12px }
+  p{ font-size: 15px }
+  .btn{ padding: 10px 14px; font-size: 15px; border-radius: 10px }
+  .card-light{ padding: 16px; border-radius: 14px }
+  #pricing .legal-row{ margin-top: 56px !important; padding-bottom: 24px }
+  #pricing .legal-row nav{ width:100%; justify-content:center; gap:20px }
   .about-grid{grid-template-columns:1fr}
   .about-media{grid-row:1}
   .about-text{grid-row:2}
@@ -215,10 +154,10 @@ section.snap{padding:64px 0}
 </head>
 <body>
 
-<!-- LANG (LEWY GÓRNY) -->
+<!-- LANG -->
 <a id="langToggle" class="lang-toggle" href="?lang=en" aria-label="English version">EN</a>
 
-<!-- MENU (PRAWY GÓRNY) -->
+<!-- MENU -->
 <button id="menuBtn" class="menu-btn" aria-label="Menu"><span></span></button>
 <div id="drawer" class="drawer" aria-hidden="true">
   <div class="panel">
@@ -234,7 +173,7 @@ section.snap{padding:64px 0}
 </div>
 <div id="backdrop" class="backdrop" aria-hidden="true"></div>
 
-<!-- Modal e-mail (bramka) -->
+<!-- Modal e-mail -->
 <div id="emailModal" aria-modal="true" role="dialog" style="position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center">
   <div class="box" style="background:#fff;color:#111;border-radius:16px;padding:22px;max-width:420px;width:92%;box-shadow:0 10px 40px rgba(0,0,0,.35)">
     <h3 style="margin-top:0">Dostęp do generatora</h3>
@@ -255,7 +194,7 @@ section.snap{padding:64px 0}
 
 <main id="main">
 
-  <!-- 1) INTRO / HERO -->
+  <!-- HERO -->
   <section class="snap">
     <div class="container">
       <div class="hero-bg reveal">
@@ -275,7 +214,8 @@ section.snap{padding:64px 0}
               Plan Treningowy. Minimalna objętość, maksymalne efekty.
             </p>
             <div class="reveal" style="margin-top:18px;display:flex;gap:12px;flex-wrap:wrap">
-              <a id="btnGenerate" class="btn btn-brown requires-email" href="generator.html">Wygeneruj</a>
+              <!-- HERO: teraz prowadzi do oferty, bez bramkowania -->
+              <a id="btnGenerate" class="btn btn-brown" href="#pricing">Kup teraz</a>
               <a id="btnDetails" class="btn" href="#details">Zobacz szczegóły</a>
             </div>
             <p class="reveal" style="margin-top:10px;color:#a9a7a3;font-size:13px">To nie jest porada medyczna.</p>
@@ -293,11 +233,11 @@ section.snap{padding:64px 0}
     </div>
   </section>
 
-  <!-- 2) SZCZEGÓŁY TWORZENIA PLANU -->
+  <!-- SZCZEGÓŁY -->
   <section id="details" class="snap section-light">
     <div class="container">
       <h2 id="featuresTitle" class="reveal">Szczegóły tworzenia planu treningowego</h2>
-    <div class="grid-3" style="margin-top:20px">
+      <div class="grid-3" style="margin-top:20px">
         <article class="card-light reveal">
           <div class="icon-dot">
             <img src="assets/trainer_10452493.svg" alt="Personalizacja AI"><strong>Personalizacja AI</strong>
@@ -332,7 +272,7 @@ section.snap{padding:64px 0}
     </div>
   </section>
 
-  <!-- 3) O MNIE (CZARNA) -->
+  <!-- O MNIE -->
   <section id="about" class="snap section-dark">
     <div class="container">
       <div class="about-grid">
@@ -350,12 +290,11 @@ section.snap{padding:64px 0}
     </div>
   </section>
 
-  <!-- 4) OFERTA -->
+  <!-- OFERTA -->
   <section id="pricing" class="snap section-light">
     <div class="container">
       <h2 id="offerTitle" class="reveal">Oferta</h2>
 
-      <!-- NOWA siatka produktów: 2 obok siebie na desktopie -->
       <div class="products reveal">
         <!-- AI produkt -->
         <article class="card-light">
@@ -368,12 +307,12 @@ section.snap{padding:64px 0}
               <span class="price">9,99&nbsp;zł</span>
               <span class="price-note">jednorazowo</span>
             </div>
-            <!-- Zamiast "Wygeneruj teraz" -> "kuo teraz" i prowadzi do sekcji Oferta -->
-            <a class="btn btn-brown btn-cta" href="#pricing">kuo teraz</a>
+            <!-- PRZYCISK: po e-mailu idzie do generatora -->
+            <a class="btn btn-brown btn-cta requires-email" href="generator.html">Kup teraz</a>
           </div>
         </article>
 
-        <!-- Indywidualny plan przez trenera -->
+        <!-- Indywidualny plan -->
         <article class="card-light">
           <div class="product-body">
             <h3>Indywidualny plan treningowy</h3>
@@ -400,7 +339,7 @@ section.snap{padding:64px 0}
     </div>
   </section>
 
-  <!-- 5) FAQ -->
+  <!-- FAQ -->
   <section id="faq" class="snap section-light">
     <div class="container">
       <h2 class="reveal">FAQ</h2>
@@ -418,7 +357,7 @@ section.snap{padding:64px 0}
 </main>
 
 <script>
-/* Animacje scroll (reveal) – działa także na mobilu */
+/* Animacje scroll (reveal) */
 const observed = new IntersectionObserver((entries)=>{
   entries.forEach(entry=>{
     if(entry.isIntersecting){
@@ -475,7 +414,7 @@ document.querySelectorAll('.requires-email').forEach(a=>{
   });
 });
 
-/* i18n – bez zmian poza pierwszą kartą oferty (druga pozostaje PL) */
+/* i18n – PL/EN pełne tłumaczenie (w tym oferta i przyciski) */
 (function () {
   const params = new URLSearchParams(location.search);
   const lang = (params.get('lang') || localStorage.getItem('hp_lang') || 'pl').toLowerCase();
@@ -486,7 +425,6 @@ document.querySelectorAll('.requires-email').forEach(a=>{
   const heroDisclaimer = document.querySelector('.hero-copy p:last-of-type');
   const detailsCards = document.querySelectorAll('#details .card-light');
   const offerCards = document.querySelectorAll('#pricing .card-light');
-  const pricingButtons = document.querySelectorAll('#pricing .card-light .requires-email');
 
   const modalEl = document.getElementById('emailModal');
   const modalH3 = modalEl ? modalEl.querySelector('h3') : null;
@@ -498,14 +436,15 @@ document.querySelectorAll('.requires-email').forEach(a=>{
 
   if (lang === 'en') {
     setHTML('heroH1','You set the goals — we make them real.');
-    setHTML('heroDesc','Training Plan. Minimum volume, maximum results.');
-    setText('btnGenerate','Generate'); setText('btnDetails','See details');
+    setHTML('heroDesc','Training plan. Minimum volume, maximum results.');
+    setText('btnGenerate','Buy now'); document.getElementById('btnGenerate').setAttribute('href','#pricing');
+    setText('btnDetails','See details');
     if (heroDisclaimer) heroDisclaimer.textContent = 'This is not medical advice.';
 
-    setText('featuresTitle','Training plan – how it’s built');
+    setText('featuresTitle','Training plan — how it’s built');
     if (detailsCards.length === 5) {
-      detailsCards[0].querySelector('.icon-dot strong').textContent = 'AI Personalization';
-      detailsCards[0].querySelector('p').textContent = 'Tailored to your goal, level, available weekly time and constraints.';
+      detailsCards[0].querySelector('.icon-dot strong').textContent = 'AI personalization';
+      detailsCards[0].querySelector('p').textContent = 'Tailored to your goal, level, weekly time and constraints.';
       detailsCards[1].querySelector('.icon-dot strong').textContent = 'Safe progression';
       detailsCards[1].querySelector('p').textContent = '24–48 h spacing between hard stimuli, deloads and volume control.';
       detailsCards[2].querySelector('.icon-dot strong').textContent = 'Preview + Excel file';
@@ -517,14 +456,26 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     }
 
     setText('offerTitle','Offer');
-    if (offerCards.length >= 1) {
-      offerCards[0].querySelector('h3').textContent = 'Training Plan';
+    if (offerCards.length >= 2) {
+      // AI card
+      offerCards[0].querySelector('h3').textContent = 'AI-generated training plan';
+      offerCards[0].querySelector('p').textContent  = 'A complete program with progression and recovery placement.';
+      offerCards[0].querySelector('.price-note').textContent = 'one-time';
+      const aiBtn = offerCards[0].querySelector('a.btn');
+      if (aiBtn){ aiBtn.textContent = 'Buy now'; aiBtn.setAttribute('href','generator.html'); aiBtn.classList.add('requires-email'); }
+      // Custom card
+      offerCards[1].querySelector('h3').textContent = 'Custom training plan';
+      offerCards[1].querySelector('p').textContent  = 'A detailed program handcrafted by a certified personal trainer.';
+      offerCards[1].querySelector('.price-note').textContent = 'one-time';
+      const customBtn = offerCards[1].querySelector('a.btn');
+      if (customBtn){ customBtn.textContent = 'Buy now'; }
     }
-    pricingButtons.forEach(b => b.textContent = 'Generate now');
 
+    // Legal
     setText('legalPolicy','Policy'); setText('legalTerms','Terms');
     setText('legalContact','Contact'); setText('legalFaq','FAQ');
 
+    // Modal
     if (modalH3) modalH3.textContent = 'Access to the generator';
     if (labelEmail) labelEmail.textContent = 'Your e-mail';
     if (labelConsent) labelConsent.textContent = 'I consent to the processing of my personal data.';
@@ -533,25 +484,33 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     if (gateErrorEl) gateErrorEl.textContent = 'Enter a valid e-mail and tick the consent box.';
 
     localStorage.setItem('hp_lang','en');
-    if (toggleBtn){ toggleBtn.href='?lang=pl'; toggleBtn.textContent='PL'; toggleBtn.setAttribute('aria-label','Polish version'); }
+    if (toggleBtn){ toggleBtn.href='?lang=pl'; toggleBtn.textContent='PL'; toggleBtn.setAttribute('aria-label','Polska wersja'); }
   } else {
     localStorage.setItem('hp_lang','pl');
     if (toggleBtn){ toggleBtn.href='?lang=en'; toggleBtn.textContent='EN'; toggleBtn.setAttribute('aria-label','English version'); }
 
-    setHTML('heroH1','Twoje cele dzięki nam stają sie rzeczywistością');
-    setHTML('heroDesc','Plan Treningowy. Minimalna objętość, maksymalne efekty.');
-    setText('btnGenerate','Wygeneruj'); setText('btnDetails','Zobacz szczegóły');
+    setHTML('heroH1','Twoje cele dzięki nam stają się rzeczywistością');
+    setHTML('heroDesc','Plan treningowy. Minimalna objętość, maksymalne efekty.');
+    setText('btnGenerate','Kup teraz'); document.getElementById('btnGenerate').setAttribute('href','#pricing');
+    setText('btnDetails','Zobacz szczegóły');
     if (heroDisclaimer) heroDisclaimer.textContent = 'To nie jest porada medyczna.';
 
     setText('featuresTitle','Szczegóły tworzenia planu treningowego');
 
     setText('offerTitle','Oferta');
-    if (offerCards.length >= 1) {
+    if (offerCards.length >= 2) {
       offerCards[0].querySelector('h3').textContent = 'Plan treningowy wygenerowany przez AI';
-    }
+      offerCards[0].querySelector('p').textContent  = 'Pełny program z progresją i rozmieszczeniem regeneracji.';
+      offerCards[0].querySelector('.price-note').textContent = 'jednorazowo';
+      const aiBtn = offerCards[0].querySelector('a.btn');
+      if (aiBtn){ aiBtn.textContent = 'Kup teraz'; aiBtn.setAttribute('href','generator.html'); aiBtn.classList.add('requires-email'); }
 
-    setText('legalPolicy','Polityka'); setText('legalTerms','Regulamin');
-    setText('legalContact','Kontakt'); setText('legalFaq','FAQ');
+      offerCards[1].querySelector('h3').textContent = 'Indywidualny plan treningowy';
+      offerCards[1].querySelector('p').textContent  = 'Szczegółowy program przygotowany ręcznie przez certyfikowanego trenera personalnego.';
+      offerCards[1].querySelector('.price-note').textContent = 'jednorazowo';
+      const customBtn = offerCards[1].querySelector('a.btn');
+      if (customBtn){ customBtn.textContent = 'Kup teraz'; }
+    }
   }
 })();
 </script>
