@@ -48,6 +48,11 @@ section.snap{padding:64px 0}
 .kicker{display:inline-block;padding:6px 10px;border:1px solid var(--border);border-radius:10px;font:600 13px/1 Inter;color:#C9C7C2;margin-bottom:14px}
 .hero-copy p{color:#C9C7C2}
 .hero-copy h1{ text-wrap: balance; }
+/* Mały disclaimer w rogu hero */
+.hero-disclaimer{
+  position:absolute; left:28px; bottom:14px;
+  font:600 11px/1.3 Inter; color:#a9a7a3; opacity:.85; margin:0;
+}
 
 /* Prawa kolumna */
 .right-stack{display:grid;grid-template-columns:1fr 1fr;gap:16px}
@@ -118,9 +123,12 @@ section.snap{padding:64px 0}
 #pricing .price{ font:800 clamp(22px,4vw,34px)/1 Poppins; color:#111 }
 #pricing .price-note{ color:#6a6966; font:600 14px/1.2 Inter }
 
-/* Szczegóły — równe rozłożenie kart */
+/* ===== Szczegóły: dokładnie 2×2, wyśrodkowane ===== */
 #details .grid-3{
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(2, minmax(320px, 1fr));
+  max-width: 980px;               /* węższa siatka wewnątrz kontenera */
+  margin: 20px auto 0;            /* centrowanie */
+  justify-items: stretch;
   align-items: stretch;
 }
 #details .card-light{ display:flex; flex-direction:column; height:100% }
@@ -131,10 +139,12 @@ section.snap{padding:64px 0}
 #pricing .product-body{flex:1}
 #pricing .product-footer{margin-top:auto;display:flex;flex-direction:column;gap:12px}
 
-@media (max-width: 900px){ #pricing .products{ grid-template-columns:1fr }}
-
-/* MOBILE */
-@media (max-width: 900px){ .grid-3{ grid-template-columns: repeat(2, 1fr) } }
+/* ===== MOBILE ===== */
+@media (max-width: 900px){
+  .grid-3{ grid-template-columns: repeat(2, 1fr) }
+  #details .grid-3{ grid-template-columns:1fr; max-width:640px }
+  #pricing .products{ grid-template-columns:1fr }
+}
 @media (max-width: 640px){
   .container{ padding: 0 16px }
   section.snap{ padding: 72px 0 }
@@ -153,6 +163,7 @@ section.snap{padding:64px 0}
   .about-grid{grid-template-columns:1fr}
   .about-media{grid-row:1}
   .about-text{grid-row:2}
+  .hero-disclaimer{ left:18px; bottom:10px; font-size:10px }
 }
 </style>
 </head>
@@ -218,11 +229,11 @@ section.snap{padding:64px 0}
               Plan treningowy. Minimalna objętość, maksymalne efekty.
             </p>
             <div class="reveal" style="margin-top:18px;display:flex;gap:12px;flex-wrap:wrap">
-              <!-- HERO: prowadzi do oferty -->
               <a id="btnGenerate" class="btn btn-brown" href="#pricing">Kup teraz</a>
               <a id="btnDetails" class="btn" href="#details">Zobacz szczegóły</a>
             </div>
-            <p class="reveal" style="margin-top:10px;color:#a9a7a3;font-size:13px">To nie jest porada medyczna.</p>
+            <!-- mały disclaimer przy dolnej krawędzi hero -->
+            <p id="heroDisclaimer" class="hero-disclaimer reveal">To nie jest porada medyczna.</p>
           </div>
 
           <div class="right-stack reveal-stagger">
@@ -237,7 +248,7 @@ section.snap{padding:64px 0}
     </div>
   </section>
 
-  <!-- SZCZEGÓŁY (usunęta 1. chmurka, reszta równomiernie) -->
+  <!-- SZCZEGÓŁY: 2×2 -->
   <section id="details" class="snap section-light">
     <div class="container">
       <h2 id="featuresTitle" class="reveal">Szczegóły tworzenia planu treningowego</h2>
@@ -305,7 +316,6 @@ section.snap{padding:64px 0}
               <span class="price">9,99&nbsp;zł</span>
               <span class="price-note">jednorazowo</span>
             </div>
-            <!-- po e-mailu do generatora -->
             <a class="btn btn-brown btn-cta requires-email" href="generator.html">Kup teraz</a>
           </div>
         </article>
@@ -430,7 +440,7 @@ document.querySelectorAll('.requires-email').forEach(a=>{
   });
 });
 
-/* i18n – pełne PL/EN, łącznie z „O mnie” i FAQ */
+/* i18n – pełne PL/EN, w tym nowy disclaimer */
 (function () {
   const params = new URLSearchParams(location.search);
   const lang = (params.get('lang') || localStorage.getItem('hp_lang') || 'pl').toLowerCase();
@@ -438,7 +448,6 @@ document.querySelectorAll('.requires-email').forEach(a=>{
   const setText  = (id, val) => { const el = document.getElementById(id); if (el && val) el.textContent = val; };
   const toggleBtn = document.getElementById('langToggle');
 
-  const heroDisclaimer = document.querySelector('.hero-copy p:last-of-type');
   const detailsCards = document.querySelectorAll('#details .card-light');
   const offerCards = document.querySelectorAll('#pricing .card-light');
 
@@ -455,7 +464,7 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     setHTML('heroDesc','Training plan. Minimum volume, maximum results.');
     setText('btnGenerate','Buy now'); document.getElementById('btnGenerate').setAttribute('href','#pricing');
     setText('btnDetails','See details');
-    if (heroDisclaimer) heroDisclaimer.textContent = 'This is not medical advice.';
+    setText('heroDisclaimer','This is not medical advice.');
 
     setText('featuresTitle','How your training plan is built');
     if (detailsCards.length === 4) {
@@ -471,13 +480,12 @@ document.querySelectorAll('.requires-email').forEach(a=>{
 
     setText('offerTitle','Offer');
     if (offerCards.length >= 2) {
-      // AI card
       offerCards[0].querySelector('h3').textContent = 'AI-generated training plan';
       offerCards[0].querySelector('p').textContent  = 'A complete program with progression and recovery placement.';
       offerCards[0].querySelector('.price-note').textContent = 'one-time';
       const aiBtn = offerCards[0].querySelector('a.btn');
       if (aiBtn){ aiBtn.textContent = 'Buy now'; aiBtn.setAttribute('href','generator.html'); aiBtn.classList.add('requires-email'); }
-      // Custom card
+
       offerCards[1].querySelector('h3').textContent = 'Custom training plan';
       offerCards[1].querySelector('p').textContent  = 'A detailed program handcrafted by a certified personal trainer.';
       offerCards[1].querySelector('.price-note').textContent = 'one-time';
@@ -485,32 +493,23 @@ document.querySelectorAll('.requires-email').forEach(a=>{
       if (customBtn){ customBtn.textContent = 'Buy now'; }
     }
 
-    // About
     setText('aboutTitle','About me');
     setText('aboutText',"My name is Tolek — I’m a certified personal trainer and a gym enthusiast. In strength training — both mine and my clients’ — I focus on the highest possible intensity with low exercise volume.");
 
-    // FAQ EN
-    setText('q1','How is my plan created?');     setText('a1','AI generates your plan from a short questionnaire. We factor in your goal, level, equipment, time and any constraints.');
-    setText('q2','How long does it take?');      setText('a2','Usually a few seconds after you submit your answers. You get a preview and an Excel file to download.');
-    setText('q3','Can I train multiple disciplines in a week?'); setText('a3','Yes — we optimise your weekly layout for your priorities and recovery.');
-    setText('q4','What language will I get the plan in?');       setText('a4','The interface and files are available in two languages: PL and EN.');
-    setText('q5','What if I’m injured or ill?');                 setText('a5','This is not medical advice. If you have an injury or health concerns, consult a doctor or physiotherapist before starting.');
-    setText('q6','I don’t have full access to equipment. Will it work?'); setText('a6','Yes. In the questionnaire you list your available equipment and AI adapts exercises and volume to your conditions.');
-
-    // Legal
-    setText('legalPolicy','Policy'); setText('legalTerms','Terms');
-    setText('legalContact','Contact'); setText('legalFaq','FAQ');
-
-    // Modal
+    // Modal + nav
     if (modalH3) modalH3.textContent = 'Access to the generator';
     if (labelEmail) labelEmail.textContent = 'Your e-mail';
     if (labelConsent) labelConsent.textContent = 'I consent to the processing of my personal data.';
     if (gateConfirm) gateConfirm.textContent = 'Continue';
     if (gateClose) gateClose.textContent = 'Cancel';
     if (gateErrorEl) gateErrorEl.textContent = 'Enter a valid e-mail and tick the consent box.';
-
     localStorage.setItem('hp_lang','en');
     if (toggleBtn){ toggleBtn.href='?lang=pl'; toggleBtn.textContent='PL'; toggleBtn.setAttribute('aria-label','Polska wersja'); }
+    document.getElementById('legalPolicy').textContent='Policy';
+    document.getElementById('legalTerms').textContent='Terms';
+    document.getElementById('legalContact').textContent='Contact';
+    document.getElementById('legalFaq').textContent='FAQ';
+
   } else {
     localStorage.setItem('hp_lang','pl');
     if (toggleBtn){ toggleBtn.href='?lang=en'; toggleBtn.textContent='EN'; toggleBtn.setAttribute('aria-label','English version'); }
@@ -519,7 +518,7 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     setHTML('heroDesc','Plan treningowy. Minimalna objętość, maksymalne efekty.');
     setText('btnGenerate','Kup teraz'); document.getElementById('btnGenerate').setAttribute('href','#pricing');
     setText('btnDetails','Zobacz szczegóły');
-    if (heroDisclaimer) heroDisclaimer.textContent = 'To nie jest porada medyczna.';
+    setText('heroDisclaimer','To nie jest porada medyczna.');
 
     setText('featuresTitle','Szczegóły tworzenia planu treningowego');
 
@@ -538,20 +537,10 @@ document.querySelectorAll('.requires-email').forEach(a=>{
       if (customBtn){ customBtn.textContent = 'Kup teraz'; }
     }
 
-    // About PL (z diakrytykami)
-    setText('aboutTitle','O mnie');
-    setText('aboutText','Nazywam się Tolek, jestem certyfikowanym trenerem personalnym oraz pasjonatem siłowni. W treningu siłowym – zarówno swoim, jak i swoich podopiecznych – skupiam się na możliwie najwyższej intensywności przy niskiej objętości ćwiczeń.');
-
-    // FAQ PL (ID te same)
-    setText('q1','Jak powstaje mój plan?'); setText('a1','Plan generuje AI na podstawie Twoich odpowiedzi w krótkiej ankiecie. Uwzględniamy cel, poziom, sprzęt, czas oraz ewentualne ograniczenia.');
-    setText('q2','Ile to trwa?'); setText('a2','Zwykle kilkanaście sekund od wysłania odpowiedzi. Otrzymujesz podgląd i plik Excel do pobrania.');
-    setText('q3','Czy mogę trenować kilka dyscyplin w tygodniu?'); setText('a3','Tak — tygodniowy rozkład optymalizujemy pod Twoje priorytety i regenerację.');
-    setText('q4','W jakim języku dostanę plan?'); setText('a4','Interfejs i pliki dostępne są w dwóch wersjach językowych: PL oraz EN.');
-    setText('q5','Co jeśli mam kontuzję lub chorobę?'); setText('a5','To nie jest porada medyczna. Jeśli masz uraz lub wątpliwości zdrowotne, skonsultuj się z lekarzem lub fizjoterapeutą przed rozpoczęciem.');
-    setText('q6','Nie mam pełnego dostępu do sprzętu. Czy plan zadziała?'); setText('a6','Tak. W ankiecie podajesz dostępny sprzęt, a AI dopasuje ćwiczenia i objętość do Twoich warunków.');
-
-    setText('legalPolicy','Polityka'); setText('legalTerms','Regulamin');
-    setText('legalContact','Kontakt'); setText('legalFaq','FAQ');
+    document.getElementById('legalPolicy').textContent='Polityka';
+    document.getElementById('legalTerms').textContent='Regulamin';
+    document.getElementById('legalContact').textContent='Kontakt';
+    document.getElementById('legalFaq').textContent='FAQ';
   }
 })();
 </script>
