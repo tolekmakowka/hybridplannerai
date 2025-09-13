@@ -305,37 +305,37 @@ section.snap{padding:64px 0}
     <div class="container">
       <h2 id="offerTitle" class="reveal">Oferta</h2>
 
-      <div class="products reveal">
-        <!-- AI produkt -->
-        <article class="card-light">
-          <div class="product-body">
-            <h3>Plan treningowy wygenerowany przez AI</h3>
-            <p>Pełny program z progresją i rozmieszczeniem regeneracji.</p>
+    <div class="products reveal">
+      <!-- AI produkt -->
+      <article class="card-light">
+        <div class="product-body">
+          <h3>Plan treningowy wygenerowany przez AI</h3>
+          <p>Pełny program z progresją i rozmieszczeniem regeneracji.</p>
+        </div>
+        <div class="product-footer">
+          <div class="price-tag" aria-label="Cena planu">
+            <span class="price">9,99&nbsp;zł</span>
+            <span class="price-note">jednorazowo</span>
           </div>
-          <div class="product-footer">
-            <div class="price-tag" aria-label="Cena planu">
-              <span class="price">9,99&nbsp;zł</span>
-              <span class="price-note">jednorazowo</span>
-            </div>
-            <button type="button" class="btn btn-brown btn-cta" data-plan="ai">Kup teraz</button>
-          </div>
-        </article>
+          <button type="button" class="btn btn-brown btn-cta" data-plan="ai">Kup teraz</button>
+        </div>
+      </article>
 
-        <!-- Indywidualny plan -->
-        <article class="card-light">
-          <div class="product-body">
-            <h3>Indywidualny plan treningowy</h3>
-            <p>Szczegółowy program przygotowany ręcznie przez certyfikowanego trenera personalnego.</p>
+      <!-- Indywidualny plan -->
+      <article class="card-light">
+        <div class="product-body">
+          <h3>Indywidualny plan treningowy</h3>
+          <p>Szczegółowy program przygotowany ręcznie przez certyfikowanego trenera personalnego.</p>
+        </div>
+        <div class="product-footer">
+          <div class="price-tag" aria-label="Cena planu indywidualnego">
+            <span class="price">129,99&nbsp;zł</span>
+            <span class="price-note">jednorazowo</span>
           </div>
-          <div class="product-footer">
-            <div class="price-tag" aria-label="Cena planu indywidualnego">
-              <span class="price">129,99&nbsp;zł</span>
-              <span class="price-note">jednorazowo</span>
-            </div>
-            <button type="button" class="btn btn-brown btn-cta" data-plan="custom">Kup teraz</button>
-          </div>
-        </article>
-      </div>
+          <button type="button" class="btn btn-brown btn-cta" data-plan="custom">Kup teraz</button>
+        </div>
+      </article>
+    </div>
 
       <div class="legal-row" style="display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between;margin-top:24px">
         <nav style="display:flex;gap:16px">
@@ -446,36 +446,52 @@ document.querySelectorAll('.requires-email').forEach(a=>{
   const params = new URLSearchParams(location.search);
   const lang = (params.get('lang') || localStorage.getItem('hp_lang') || 'pl').toLowerCase();
   const txtLoading = lang === 'en' ? 'Redirecting…' : 'Przekierowanie…';
-  const txtBuy     = lang === 'en' ? 'Buy now' : 'Kup teraz';
 
-  async function startCheckout(plan){
+  async function tryCheckout(endpoint, payload){
+    const r = await fetch(endpoint, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const text = await r.text();
+    let data = null; try{ data = JSON.parse(text) }catch{}
+    if(!r.ok || !data?.url) throw new Error(data?.error || text || 'checkout failed');
+    return data.url;
+  }
+
+  async function startCheckout(plan){            // 'ai' | 'custom'
+    // wymuś bramkę e-mail
+    if(!localStorage.getItem('hp_email') || !localStorage.getItem('hp_consent')){
+      showModal(); return;
+    }
+    const email = localStorage.getItem('hp_email') || '';
     const btn = document.querySelector(`[data-plan="${plan}"]`);
-    if(!btn) return;
-    const prev = btn.textContent;
-    btn.disabled = true; btn.textContent = txtLoading;
+    const prev = btn?.textContent;
+    if(btn){ btn.disabled = true; btn.textContent = txtLoading; }
+
+    // sukces/odwołanie – pełne URL, różne strony
+    const origin = window.location.origin;
+    const target = (plan === 'ai') ? 'generator.html' : 'ankieta.html';
+    const successUrl = `${origin}/${target}?checkout=success`;
+    const cancelUrl  = `${origin}/${target}?checkout=cancel`;
+
+    const payload = {
+      type: (plan === 'ai' ? 'AI' : 'CUSTOM'),
+      email, successUrl, cancelUrl
+    };
 
     try{
-      const res = await fetch('/.netlify/functions/create-checkout', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          plan,                    // 'ai' | 'custom'
-          lang,                    // do ewentualnych tłumaczeń na success/cancel
-          // sugerowane ścieżki sukcesu po stronie backendu:
-          successPath: plan==='ai' ? '/generator.html' : '/ankieta.html'
-        })
-      });
-      if(!res.ok) throw new Error(await res.text().catch(()=>res.statusText));
-      const data = await res.json();
-      if(data && data.url){ window.location.href = data.url; return; }
-      throw new Error('Missing checkout url');
+      // najpierw nowa funkcja z mapą cen
+      const url = await tryCheckout('/.netlify/functions/create-checkout-session', payload)
+                 .catch(()=> tryCheckout('/.netlify/functions/create-checkout', payload)); // fallback
+      window.location.href = url;
     }catch(err){
       console.error('create-checkout error:', err);
       alert(lang==='en'
         ? 'Could not start payment. Please try again.'
         : 'Nie udało się rozpocząć płatności. Spróbuj ponownie.');
     }finally{
-      btn.disabled = false; btn.textContent = prev || txtBuy;
+      if(btn){ btn.disabled = false; btn.textContent = prev || 'Kup teraz'; }
     }
   }
 
@@ -535,7 +551,6 @@ document.querySelectorAll('.requires-email').forEach(a=>{
       offerCards[1].querySelector('h3').textContent = 'Custom training plan';
       offerCards[1].querySelector('p').textContent  = 'A detailed program handcrafted by a certified personal trainer.';
       offerCards[1].querySelector('.price-note').textContent = 'one-time';
-      // tekst przycisków zostaje – obsługę Stripe robi skrypt wyżej
     }
 
     setText('aboutTitle','About me');
