@@ -31,20 +31,43 @@ exports.handler = async (event) => {
 
   try {
     const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
-    const STRIPE_PRICE_ID   = process.env.STRIPE_PRICE_ID;
-    if (!STRIPE_SECRET_KEY || !STRIPE_PRICE_ID) {
-      return { statusCode: 500, headers: corsHeaders(origin), body: JSON.stringify({ error: 'Stripe env missing' }) };
+
+    // Mapowanie cen: AI i Indywidualny
+    const PRICE_AI     = process.env.STRIPE_PRICE_AI_ID     || process.env.STRIPE_PRICE_ID; // wsteczna zgodność
+    const PRICE_CUSTOM = process.env.STRIPE_PRICE_CUSTOM_ID;
+
+    if (!STRIPE_SECRET_KEY) {
+      return { statusCode: 500, headers: corsHeaders(origin), body: JSON.stringify({ error: 'Stripe secret key missing' }) };
     }
 
-    const { email, successUrl, cancelUrl } = JSON.parse(event.body || '{}');
+    const { email, successUrl, cancelUrl, product } = JSON.parse(event.body || '{}');
+
+    // Wybór priceId na podstawie produktu
+    const priceId = (product === 'custom')
+      ? PRICE_CUSTOM
+      : PRICE_AI;
+
+    if (!priceId) {
+      return {
+        statusCode: 400,
+        headers: corsHeaders(origin),
+        body: JSON.stringify({ error: 'Missing Stripe price id for product', details: { product } })
+      };
+    }
+
     const stripe = require('stripe')(STRIPE_SECRET_KEY);
+
+    // Domyślne adresy powrotu (jeśli klient nie poda)
+    const path = (product === 'custom') ? '/ankieta.html' : '/generator.html';
+    const defSuccess = origin ? `${origin}${path}?checkout=success` : undefined;
+    const defCancel  = origin ? `${origin}${path}?checkout=cancel`  : undefined;
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
-      line_items: [{ price: STRIPE_PRICE_ID, quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       customer_email: email || undefined,
-      success_url: successUrl || `${origin}/generator.html?checkout=success`,
-      cancel_url:  cancelUrl  || `${origin}/generator.html?checkout=cancel`,
+      success_url: successUrl || defSuccess,
+      cancel_url:  cancelUrl  || defCancel,
       billing_address_collection: 'auto',
       allow_promotion_codes: true
     });
