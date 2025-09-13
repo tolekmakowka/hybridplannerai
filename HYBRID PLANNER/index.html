@@ -48,7 +48,7 @@ section.snap{padding:64px 0}
 .kicker{display:inline-block;padding:6px 10px;border:1px solid var(--border);border-radius:10px;font:600 13px/1 Inter;color:#C9C7C2;margin-bottom:14px}
 .hero-copy p{color:#C9C7C2}
 .hero-copy h1{ text-wrap: balance; }
-/* Mały disclaimer w rogu hero */
+/* Mały disclaimer – desktop: przy dolnej krawędzi hero */
 .hero-disclaimer{
   position:absolute; left:28px; bottom:14px;
   font:600 11px/1.3 Inter; color:#a9a7a3; opacity:.85; margin:0;
@@ -126,8 +126,8 @@ section.snap{padding:64px 0}
 /* ===== Szczegóły: dokładnie 2×2, wyśrodkowane ===== */
 #details .grid-3{
   grid-template-columns: repeat(2, minmax(320px, 1fr));
-  max-width: 980px;               /* węższa siatka wewnątrz kontenera */
-  margin: 20px auto 0;            /* centrowanie */
+  max-width: 980px;
+  margin: 20px auto 0;
   justify-items: stretch;
   align-items: stretch;
 }
@@ -163,7 +163,8 @@ section.snap{padding:64px 0}
   .about-grid{grid-template-columns:1fr}
   .about-media{grid-row:1}
   .about-text{grid-row:2}
-  .hero-disclaimer{ left:18px; bottom:10px; font-size:10px }
+  /* MOBILE: disclaimer nad zdjęciem (statyczny, malutki) */
+  .hero-disclaimer{ position:static; margin-top:8px; font-size:10px; }
 }
 </style>
 </head>
@@ -188,7 +189,7 @@ section.snap{padding:64px 0}
 </div>
 <div id="backdrop" class="backdrop" aria-hidden="true"></div>
 
-<!-- Modal e-mail -->
+<!-- Modal e-mail (pozostaje dla bezpośredniego wejścia do generatora z menu) -->
 <div id="emailModal" aria-modal="true" role="dialog" style="position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center">
   <div class="box" style="background:#fff;color:#111;border-radius:16px;padding:22px;max-width:420px;width:92%;box-shadow:0 10px 40px rgba(0,0,0,.35)">
     <h3 style="margin-top:0">Dostęp do generatora</h3>
@@ -232,7 +233,7 @@ section.snap{padding:64px 0}
               <a id="btnGenerate" class="btn btn-brown" href="#pricing">Kup teraz</a>
               <a id="btnDetails" class="btn" href="#details">Zobacz szczegóły</a>
             </div>
-            <!-- mały disclaimer przy dolnej krawędzi hero -->
+            <!-- mały disclaimer -->
             <p id="heroDisclaimer" class="hero-disclaimer reveal">To nie jest porada medyczna.</p>
           </div>
 
@@ -316,7 +317,7 @@ section.snap{padding:64px 0}
               <span class="price">9,99&nbsp;zł</span>
               <span class="price-note">jednorazowo</span>
             </div>
-            <a class="btn btn-brown btn-cta requires-email" href="generator.html">Kup teraz</a>
+            <button type="button" class="btn btn-brown btn-cta" data-plan="ai">Kup teraz</button>
           </div>
         </article>
 
@@ -331,7 +332,7 @@ section.snap{padding:64px 0}
               <span class="price">129,99&nbsp;zł</span>
               <span class="price-note">jednorazowo</span>
             </div>
-            <a class="btn btn-brown btn-cta" href="ankieta.html">Kup teraz</a>
+            <button type="button" class="btn btn-brown btn-cta" data-plan="custom">Kup teraz</button>
           </div>
         </article>
       </div>
@@ -410,7 +411,7 @@ backdrop.addEventListener('click', ()=>toggleDrawer(false));
 window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') toggleDrawer(false); });
 drawer.querySelectorAll('a').forEach(a=>a.addEventListener('click', ()=>toggleDrawer(false)));
 
-/* Bramka e-mail */
+/* Bramka e-mail – tylko dla linków .requires-email (menu) */
 const modal = document.getElementById('emailModal');
 const closeBtn = document.getElementById('gateClose');
 const confirmBtn = document.getElementById('gateConfirm');
@@ -440,7 +441,54 @@ document.querySelectorAll('.requires-email').forEach(a=>{
   });
 });
 
-/* i18n – pełne PL/EN, w tym nowy disclaimer */
+/* ===== Stripe Checkout z oferty (AI / INDYWIDUALNY) ===== */
+(function initCheckoutButtons(){
+  const params = new URLSearchParams(location.search);
+  const lang = (params.get('lang') || localStorage.getItem('hp_lang') || 'pl').toLowerCase();
+  const txtLoading = lang === 'en' ? 'Redirecting…' : 'Przekierowanie…';
+  const txtBuy     = lang === 'en' ? 'Buy now' : 'Kup teraz';
+
+  async function startCheckout(plan){
+    const btn = document.querySelector(`[data-plan="${plan}"]`);
+    if(!btn) return;
+    const prev = btn.textContent;
+    btn.disabled = true; btn.textContent = txtLoading;
+
+    try{
+      const res = await fetch('/.netlify/functions/create-checkout', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          plan,                    // 'ai' | 'custom'
+          lang,                    // do ewentualnych tłumaczeń na success/cancel
+          // sugerowane ścieżki sukcesu po stronie backendu:
+          successPath: plan==='ai' ? '/generator.html' : '/ankieta.html'
+        })
+      });
+      if(!res.ok) throw new Error(await res.text().catch(()=>res.statusText));
+      const data = await res.json();
+      if(data && data.url){ window.location.href = data.url; return; }
+      throw new Error('Missing checkout url');
+    }catch(err){
+      console.error('create-checkout error:', err);
+      alert(lang==='en'
+        ? 'Could not start payment. Please try again.'
+        : 'Nie udało się rozpocząć płatności. Spróbuj ponownie.');
+    }finally{
+      btn.disabled = false; btn.textContent = prev || txtBuy;
+    }
+  }
+
+  document.querySelectorAll('[data-plan]').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.preventDefault();
+      const plan = btn.getAttribute('data-plan');
+      startCheckout(plan);
+    });
+  });
+})();
+
+/* i18n – pełne PL/EN, w tym disclaimer */
 (function () {
   const params = new URLSearchParams(location.search);
   const lang = (params.get('lang') || localStorage.getItem('hp_lang') || 'pl').toLowerCase();
@@ -483,26 +531,23 @@ document.querySelectorAll('.requires-email').forEach(a=>{
       offerCards[0].querySelector('h3').textContent = 'AI-generated training plan';
       offerCards[0].querySelector('p').textContent  = 'A complete program with progression and recovery placement.';
       offerCards[0].querySelector('.price-note').textContent = 'one-time';
-      const aiBtn = offerCards[0].querySelector('a.btn');
-      if (aiBtn){ aiBtn.textContent = 'Buy now'; aiBtn.setAttribute('href','generator.html'); aiBtn.classList.add('requires-email'); }
 
       offerCards[1].querySelector('h3').textContent = 'Custom training plan';
       offerCards[1].querySelector('p').textContent  = 'A detailed program handcrafted by a certified personal trainer.';
       offerCards[1].querySelector('.price-note').textContent = 'one-time';
-      const customBtn = offerCards[1].querySelector('a.btn');
-      if (customBtn){ customBtn.textContent = 'Buy now'; }
+      // tekst przycisków zostaje – obsługę Stripe robi skrypt wyżej
     }
 
     setText('aboutTitle','About me');
     setText('aboutText',"My name is Tolek — I’m a certified personal trainer and a gym enthusiast. In strength training — both mine and my clients’ — I focus on the highest possible intensity with low exercise volume.");
 
-    // Modal + nav
     if (modalH3) modalH3.textContent = 'Access to the generator';
     if (labelEmail) labelEmail.textContent = 'Your e-mail';
     if (labelConsent) labelConsent.textContent = 'I consent to the processing of my personal data.';
     if (gateConfirm) gateConfirm.textContent = 'Continue';
     if (gateClose) gateClose.textContent = 'Cancel';
     if (gateErrorEl) gateErrorEl.textContent = 'Enter a valid e-mail and tick the consent box.';
+
     localStorage.setItem('hp_lang','en');
     if (toggleBtn){ toggleBtn.href='?lang=pl'; toggleBtn.textContent='PL'; toggleBtn.setAttribute('aria-label','Polska wersja'); }
     document.getElementById('legalPolicy').textContent='Policy';
@@ -527,14 +572,10 @@ document.querySelectorAll('.requires-email').forEach(a=>{
       offerCards[0].querySelector('h3').textContent = 'Plan treningowy wygenerowany przez AI';
       offerCards[0].querySelector('p').textContent  = 'Pełny program z progresją i rozmieszczeniem regeneracji.';
       offerCards[0].querySelector('.price-note').textContent = 'jednorazowo';
-      const aiBtn = offerCards[0].querySelector('a.btn');
-      if (aiBtn){ aiBtn.textContent = 'Kup teraz'; aiBtn.setAttribute('href','generator.html'); aiBtn.classList.add('requires-email'); }
 
       offerCards[1].querySelector('h3').textContent = 'Indywidualny plan treningowy';
       offerCards[1].querySelector('p').textContent  = 'Szczegółowy program przygotowany ręcznie przez certyfikowanego trenera personalnego.';
       offerCards[1].querySelector('.price-note').textContent = 'jednorazowo';
-      const customBtn = offerCards[1].querySelector('a.btn');
-      if (customBtn){ customBtn.textContent = 'Kup teraz'; }
     }
 
     document.getElementById('legalPolicy').textContent='Polityka';
