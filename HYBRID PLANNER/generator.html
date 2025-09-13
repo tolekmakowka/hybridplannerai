@@ -1,131 +1,208 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HybridPlanner — Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brown:#3E2723; --white:#FFFFFF; --beige:#8D8C87;
+  --text:#EDEDEA; --muted:#C9C7C2; --bg:#0F0F0F; --card:#1B1B1B;
+  --border:#2A2A2A; --radius:16px; --shadow:0 12px 40px rgba(0,0,0,.35);
+  --maxw:980px;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);color:var(--text)}
+a{color:inherit;text-decoration:none}
+h1{font:700 34px/1.2 Poppins;margin:0 0 8px}
+h2{font:700 22px/1.25 Poppins;margin:14px 0 8px}
+label{font:600 14px/1.4 Inter}
+small{color:#a9a7a3}
+.container{max-width:var(--maxw);margin:0 auto;padding:20px}
 .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .back{display:inline-flex;gap:8px;align-items:center;border:1px solid var(--border);padding:8px 12px;border-radius:10px}
 .lang-toggle{background:#111;color:#fff;border:1px solid #333;padding:6px 10px;border-radius:10px;font:600 12px/1 Inter;text-decoration:none}
-
-/* Drawer button right + drawer itself */
-.menu-toggle{
-  background:#111;color:#fff;border:1px solid #333;width:42px;height:38px;border-radius:10px;
-  display:grid;place-items:center;cursor:pointer
-}
-.menu-toggle span{display:block;width:18px;height:2px;background:#fff;position:relative}
-.menu-toggle span::before,.menu-toggle span::after{content:"";position:absolute;left:0;width:18px;height:2px;background:#fff}
-.menu-toggle span::before{top:-6px}.menu-toggle span::after{top:6px}
-.header-right{display:flex;gap:10px;align-items:center}
-
-.drawer{position:fixed;inset:0;z-index:10000;display:none}
-.drawer.open{display:block}
-.drawer .backdrop{position:absolute;inset:0;background:rgba(0,0,0,.55)}
-.drawer .panel{
-  position:absolute;top:0;right:0;height:100%;width:min(86vw,360px);
-  background:#fff;color:#111;box-shadow:-20px 0 40px rgba(0,0,0,.35);display:flex;flex-direction:column
-}
-.drawer header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #eee}
-.drawer header h4{margin:0;font:700 16px/1 Poppins;color:#111}
-.drawer header button{background:#111;color:#fff;border:1px solid #333;border-radius:999px;width:34px;height:34px;cursor:pointer}
-.drawer nav a{display:block;padding:18px 16px;border-bottom:1px solid #eee;font:700 16px/1.2 Poppins;color:#111}
-
 .card{background:#141414;border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .row{display:grid;gap:8px;margin:10px 0}
-@@ -71,36 +48,15 @@
+input[type="text"], input[type="number"], input[type="email"], select, textarea{
+  width:100%;background:#0f0f0f;color:#fff;border:1px solid #3a3a3a;border-radius:10px;padding:10px;font:400 14px/1.4 Inter
+}
+textarea{min-height:90px;resize:vertical}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:12px 18px;border-radius:12px;border:2px solid var(--text);color:var(--text);background:transparent;font:600 16px/1 Inter;cursor:pointer}
+.btn-brown{background:var(--brown);border-color:var(--brown);color:#fff}
+.btn-ghost{background:transparent;border-color:#3a3a3a;color:#ddd}
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+.hr{height:1px;background:#2A2A2A;margin:18px 0}
+.notice{display:flex;justify-content:space-between;gap:10px;align-items:center;border:1px dashed #3a3a3a;border-radius:12px;padding:10px 12px;margin-top:12px}
+.banner{display:flex;gap:10px;align-items:center;background:#112416;border:1px solid #1f4d2a;color:#cfead7;border-radius:12px;padding:10px 12px;margin:0 0 12px}
+footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
+.hidden{display:none!important}
+@media (max-width:700px){ .grid-2{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+
 <div class="container">
-<div class="header">
-<a class="back" href="index.html" id="backLbl">← Wróć</a>
-    <div class="header-right">
-      <a id="langToggle" class="lang-toggle" href="?lang=en" aria-label="English version">EN</a>
-      <button id="menuBtn" class="menu-toggle" aria-label="Menu"><span></span></button>
-    </div>
+  <div class="header">
+    <a class="back" href="index.html" id="backLbl">← Wróć</a>
     <a id="langToggle" class="lang-toggle" href="?lang=en" aria-label="English version">EN</a>
-</div>
+  </div>
 
-  <!-- Drawer -->
-  <aside id="drawer" class="drawer" aria-hidden="true">
-    <div class="backdrop" id="drawerBackdrop"></div>
-    <div class="panel" role="dialog" aria-modal="true">
-      <header>
-        <h4 id="drawerTitle">Menu</h4>
-        <button id="menuClose" aria-label="Zamknij">✕</button>
-      </header>
-      <nav>
-        <a id="menuPlan" href="generator.html">Plan treningowy</a>
-        <a id="menuDetails" href="index.html#features">Szczegóły tworzenia planu treningowego</a>
-        <a id="menuAbout" href="index.html#about">O mnie</a>
-        <a id="menuContact" href="mailto:hello@hybridplanner.app">Kontakt</a>
-      </nav>
+  <!-- GATE: pokazuje się przed opłaceniem -->
+  <div id="purchaseGate" class="card">
+    <h1 id="gateTitle">Dostęp do generatora</h1>
+    <p id="gateDesc" style="margin:6px 0 14px;color:#C9C7C2">
+      Aby wypełnić krótką ankietę i otrzymać plan (Excel) na e-mail, najpierw opłać dostęp.
+    </p>
+    <div class="actions">
+      <button id="payBtn" class="btn btn-brown">Przejdź do płatności — 9,99&nbsp;zł</button>
     </div>
-  </aside>
+    <div class="notice">
+      <small id="whoLbl_gate">Plan zostanie wysłany na e-mail: <strong id="who_gate"></strong></small>
+      <small id="rodoLbl_gate">To nie jest porada medyczna.</small>
+    </div>
+  </div>
 
-<div class="card">
-<h1 id="title">Generator planów</h1>
-<p id="subtitle" style="margin:6px 0 14px;color:#C9C7C2">
-Wybierz odpowiedzi i <strong>opłać zamówienie</strong>. Po płatności plan (Excel) zostanie wysłany na Twój e-mail.
-</p>
+  <!-- FORM: pojawia się dopiero po opłaceniu -->
+  <div id="formSection" class="card hidden">
+    <div id="paidBanner" class="banner"><strong id="paidOk">Płatność potwierdzona.</strong> <span id="paidNext">Wypełnij ankietę, a my wygenerujemy plan.</span></div>
 
-    <!-- tylko Plan A -->
-<h2 id="hA">Plan — pytania (5)</h2>
-<div class="grid-2">
-<div class="row">
-@@ -149,24 +105,15 @@ <h2 id="hA">Plan — pytania (5)</h2>
+    <h1 id="title">Generator planów</h1>
+    <p id="subtitle" style="margin:6px 0 14px;color:#C9C7C2">
+      Wybierz odpowiedzi i kliknij <strong>Wygeneruj plan</strong>. Gotowy plik (Excel) wyślemy na Twój e-mail.
+    </p>
+
+    <h2 id="hA">Plan — pytania (5)</h2>
+    <div class="grid-2">
+      <div class="row">
+        <label id="a1lbl">Ile razy w tygodniu chciałbyś/chciałabyś ćwiczyć?</label>
+        <input id="a1" type="number" min="1" max="14" value="3">
+      </div>
+      <div class="row">
+        <label id="a2lbl">Jaki jest twój główny cel?</label>
+        <input id="a2" type="text" placeholder="np. zwiększyć siłę / redukcja tkanki tłuszczowej">
+      </div>
+      <div class="row">
+        <label id="a3lbl">Jaki jest twój poziom aktywności fizycznej?</label>
+        <select id="a3">
+          <option>Zaawansowany</option>
+          <option>Średniozaawansowany</option>
+          <option>Początkujący</option>
+        </select>
+      </div>
+      <div class="row">
+        <label id="a4lbl">Do jakiego sprzętu treningowego masz dostęp?</label>
+        <input id="a4" type="text" placeholder="np. siłownia pełna / hantle + drążek / dom">
+      </div>
+      <div class="row">
+        <label id="a5lbl">Płeć</label>
+        <select id="a5">
+          <option value="Mężczyzna">Mężczyzna</option>
+          <option value="Kobieta">Kobieta</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="hr"></div>
+
+    <div class="actions">
+      <button id="genBtn" class="btn btn-brown">Wygeneruj plan</button>
+      <a id="dlBtn" class="btn btn-ghost" href="#" download="Plan Treningowy.xlsx" style="display:none">Pobierz Excel</a>
+    </div>
+
+    <div class="notice">
+      <small id="whoLbl">Plan zostanie wysłany na e-mail: <strong id="who"></strong></small>
+      <small id="rodoLbl">To nie jest porada medyczna. Korzystasz na własną odpowiedzialność.</small>
+    </div>
+  </div>
+
+  <footer>© 2025 Anatol Makówka</footer>
 </div>
 
 <script>
-/* ---------- Endpoints funkcji Netlify ---------- */
 /* ---------- Endpoints ---------- */
 const HP = {
-generate: '/.netlify/functions/generate-plan',
-sendEmail: '/.netlify/functions/send-email',
-  checkout:  '/.netlify/functions/create-checkout'
-  // główna ścieżka + fallback (dla zgodności z różnymi nazwami funkcji)
+  generate: '/.netlify/functions/generate-plan',
+  sendEmail: '/.netlify/functions/send-email',
   checkoutPrimary:  '/.netlify/functions/create-checkout-session',
   checkoutFallback: '/.netlify/functions/create-checkout'
 };
 
-/* ---------- Drawer ---------- */
-const drawer = document.getElementById('drawer');
-const menuBtn = document.getElementById('menuBtn');
-const menuClose = document.getElementById('menuClose');
-const drawerBackdrop = document.getElementById('drawerBackdrop');
-function openDrawer(){ drawer.classList.add('open'); document.body.style.overflow='hidden'; }
-function closeDrawer(){ drawer.classList.remove('open'); document.body.style.overflow=''; }
-menuBtn.addEventListener('click', openDrawer);
-menuClose.addEventListener('click', closeDrawer);
-drawerBackdrop.addEventListener('click', closeDrawer);
-
-/* ---------- Bramka e-mail ---------- */
+/* ---------- E-mail gate ---------- */
 (function(){
-const mail = localStorage.getItem('hp_email');
-@@ -175,7 +122,7 @@ <h2 id="hA">Plan — pytania (5)</h2>
-else { document.getElementById('who').textContent = mail; }
+  const mail = localStorage.getItem('hp_email');
+  const consent = localStorage.getItem('hp_consent');
+  if(!mail || !consent){ window.location.href = 'index.html'; return; }
+  (document.getElementById('who')||{}).textContent = mail;
+  (document.getElementById('who_gate')||{}).textContent = mail;
 })();
 
-/* ===================== payload ===================== */
-/* ---------- payload ---------- */
+/* ---------- UI state helpers ---------- */
+function qs(id){ return document.getElementById(id); }
+function show(el){ el.classList.remove('hidden'); }
+function hide(el){ el.classList.add('hidden'); }
+
+function isPaid(){
+  // 1) URL param po Stripe
+  const p = new URLSearchParams(location.search);
+  if (p.get('checkout') === 'success') return true;
+  // 2) zapamiętany stan
+  return localStorage.getItem('hp_paid_ai') === '1';
+}
+function markPaid(){
+  localStorage.setItem('hp_paid_ai','1');
+}
+
+/* ---------- Build payload ---------- */
 function buildPayload(){
-return {
-type: 'A',
-@@ -190,7 +137,7 @@ <h2 id="hA">Plan — pytania (5)</h2>
-};
+  return {
+    type: 'A',
+    lang: (document.documentElement.lang || 'pl'),
+    inputs: {
+      sessionsPerWeek: Number(qs('a1').value || 0),
+      goal: qs('a2').value.trim(),
+      level: qs('a3').value,
+      equipment: qs('a4').value.trim(),
+      gender: qs('a5').value
+    }
+  };
 }
 
-/* ===================== generate-plan ===================== */
-/* ---------- generate-plan ---------- */
+/* ---------- Backend calls ---------- */
 async function callBackendForXlsx(payload){
-const res = await fetch(HP.generate, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-const text = await res.text();
-@@ -203,7 +150,7 @@ <h2 id="hA">Plan — pytania (5)</h2>
-return { xlsxBase64: base64, xlsxFilename: filename };
+  const res = await fetch(HP.generate, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+  const text = await res.text();
+  let data = null; try { data = JSON.parse(text) } catch {}
+  if (!res.ok || !data) throw new Error(`generate-plan ${res.status}: ${text.slice(0,300)}`);
+  if (data.ok === false) throw new Error(data.error || data.details || 'Błąd backendu');
+  const base64 = data.fileBase64 || data.xlsxBase64;
+  const filename = data.filename || data.xlsxFilename || 'Plan Treningowy.xlsx';
+  if (!base64) throw new Error('Brak pliku XLSX w odpowiedzi');
+  return { xlsxBase64: base64, xlsxFilename: filename };
 }
 
-/* ===================== e-mail ===================== */
-/* ---------- e-mail ---------- */
 async function sendPlanByEmail(base64, filename){
-const to = localStorage.getItem('hp_email') || '';
-if(!to) return;
-@@ -221,17 +168,33 @@ <h2 id="hA">Plan — pytania (5)</h2>
-if(!resp.ok){ console.warn('send-email error:', await resp.text()); }
+  const to = localStorage.getItem('hp_email') || '';
+  if(!to) return;
+  const resp = await fetch(HP.sendEmail, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      to,
+      subject: 'Twój plan treningowy',
+      html: '<p>W załączniku Twój plan (XLSX). Dziękujemy za skorzystanie z HybridPlanner.</p>',
+      attachmentBase64: base64,
+      filename: filename || 'Plan Treningowy.xlsx'
+    })
+  });
+  if(!resp.ok){ console.warn('send-email error:', await resp.text()); }
 }
 
-/* ===================== Stripe Checkout ===================== */
 /* ---------- Stripe Checkout ---------- */
 async function tryCreateCheckout(endpoint, payload){
   const r = await fetch(endpoint, {
@@ -140,89 +217,144 @@ async function tryCreateCheckout(endpoint, payload){
 }
 
 async function createCheckout(){
-const email = localStorage.getItem('hp_email') || '';
-  const url = new URL(window.location.href);
-  url.searchParams.set('checkout','success');
-  const successUrl = url.toString();
-  const cancelUrl = window.location.origin + window.location.pathname + '?checkout=cancel';
-  const r = await fetch(HP.checkout, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, successUrl, cancelUrl }) });
-  const data = await r.json().catch(()=>null);
-  if(!r.ok || !data?.url) throw new Error((data && (data.error||data.details)) || 'checkout failed');
-  return data.url;
-
-  // urls muszą być HTTPS i kompletne
+  const email = localStorage.getItem('hp_email') || '';
   const base = window.location.origin + window.location.pathname;
   const successUrl = base + '?checkout=success';
   const cancelUrl  = base + '?checkout=cancel';
-
   const payload = { email, successUrl, cancelUrl };
-
-  // 1) spróbuj nazwę standardową
   try { return await tryCreateCheckout(HP.checkoutPrimary, payload); }
-  // 2) fallback na starą nazwę
   catch { return await tryCreateCheckout(HP.checkoutFallback, payload); }
 }
 
-/* ---------- UI ---------- */
-@@ -247,7 +210,7 @@ <h2 id="hA">Plan — pytania (5)</h2>
-sessionStorage.setItem('hp_pending_payload', JSON.stringify(payload));
+/* ---------- Elements ---------- */
+const payBtn = qs('payBtn');
+const genBtn = qs('genBtn');
+const dlBtn  = qs('dlBtn');
+const purchaseGate = qs('purchaseGate');
+const formSection  = qs('formSection');
 
-const checkoutUrl = await createCheckout();
-    window.location.href = checkoutUrl;
-    window.location.href = checkoutUrl; // -> Stripe
-}catch(e){
-console.error(e);
-alert('Nie udało się rozpocząć płatności: ' + String(e.message || e));
-@@ -288,54 +251,5 @@ <h2 id="hA">Plan — pytania (5)</h2>
-}
+/* ---------- Init: decide which section to show ---------- */
+(function initGate(){
+  const p = new URLSearchParams(location.search);
+  const status = p.get('checkout');
+  if (status === 'success'){ markPaid(); history.replaceState({}, '', window.location.pathname); }
+  if (isPaid()){ hide(purchaseGate); show(formSection); }
+  else { show(purchaseGate); hide(formSection); }
 })();
-</script>
 
-<!-- i18n (menu + istniejące) -->
-<script>
-(function(){
+/* ---------- Actions ---------- */
+if (payBtn){
+  payBtn.addEventListener('click', async ()=>{
+    try{
+      payBtn.disabled = true; payBtn.textContent = 'Łączenie ze Stripe…';
+      const checkoutUrl = await createCheckout();
+      window.location.href = checkoutUrl;
+    }catch(e){
+      console.error(e);
+      alert('Nie udało się rozpocząć płatności: ' + String(e.message || e));
+    }finally{
+      payBtn.disabled = false; payBtn.textContent = 'Przejdź do płatności — 9,99 zł';
+    }
+  });
+}
+
+if (genBtn){
+  genBtn.addEventListener('click', async ()=>{
+    try{
+      if (!isPaid()){
+        // Bezpieczeństwo: jeśli ktoś ominął bramkę UI, wyślij do Stripe.
+        const checkoutUrl = await createCheckout();
+        window.location.href = checkoutUrl;
+        return;
+      }
+      genBtn.disabled = true; genBtn.textContent = 'Generowanie…'; dlBtn.style.display='none'; dlBtn.removeAttribute('href');
+
+      const payload = buildPayload();
+      const { xlsxBase64, xlsxFilename } = await callBackendForXlsx(payload);
+
+      const url = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + xlsxBase64;
+      dlBtn.href = url; dlBtn.download = xlsxFilename || 'Plan Treningowy.xlsx';
+      dlBtn.style.display='inline-flex';
+
+      await sendPlanByEmail(xlsxBase64, xlsxFilename);
+      genBtn.textContent = 'Gotowe ✓';
+    }catch(e){
+      console.error(e);
+      alert('Nie udało się wygenerować planu: ' + String(e.message || e));
+      genBtn.textContent = 'Wygeneruj plan';
+    }finally{
+      genBtn.disabled = false;
+    }
+  });
+}
+
+/* ---------- i18n ---------- */
+(function () {
   const params = new URLSearchParams(location.search);
   const lang = (params.get('lang') || localStorage.getItem('hp_lang') || 'pl').toLowerCase();
-  const setText  = (id, val) => { const el = document.getElementById(id); if (el && val) el.textContent = val; };
+  const t = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
   const toggleBtn = document.getElementById('langToggle');
 
-  const dTitle = document.getElementById('drawerTitle');
-  const mPlan = document.getElementById('menuPlan');
-  const mDetails = document.getElementById('menuDetails');
-  const mAbout = document.getElementById('menuAbout');
-  const mContact = document.getElementById('menuContact');
-
   if (lang === 'en') {
-    setText('title','Plan generator');
-    setText('subtitle','Choose answers and pay. After the payment the plan (Excel) will be sent to your e-mail.');
-    setText('hA','Plan — questions (5)');
-    setText('a1lbl','How many days per week would you like to train?');
-    setText('a2lbl','What is your main goal?');
-    setText('a3lbl','What is your training level?');
-    setText('a4lbl','What equipment do you have access to?');
-    setText('a5lbl','Gender');
-    setText('genBtn','Generate plan');
-    setText('dlBtn','Download Excel');
-    setText('whoLbl','The plan will be sent to e-mail: ');
-    setText('rodoLbl','This is not medical advice. Use at your own risk.');
+    // Header
+    t('backLbl','← Back');
+    if (toggleBtn){ toggleBtn.href='?lang=pl'; toggleBtn.textContent='PL'; toggleBtn.setAttribute('aria-label','Polska wersja'); }
+    document.documentElement.lang = 'en';
 
-    if (dTitle) dTitle.textContent = 'Menu';
-    if (mPlan) mPlan.textContent = 'Training plan';
-    if (mDetails) mDetails.textContent = 'Plan creation details';
-    if (mAbout) mAbout.textContent = 'About me';
-    if (mContact) mContact.textContent = 'Contact';
+    // Gate
+    t('gateTitle','Access to the generator');
+    t('gateDesc','To fill out a short questionnaire and receive your plan (Excel) by e-mail, please complete the payment first.');
+    t('payBtn','Go to payment — 9.99 PLN');
+    t('whoLbl_gate','The plan will be sent to:'); // prefix only; email injected separately
+    t('rodoLbl_gate','This is not medical advice.');
+
+    // Form after payment
+    t('paidOk','Payment confirmed.');
+    t('paidNext','Fill in the questionnaire and we will generate your plan.');
+    t('title','Plan generator');
+    t('subtitle','Choose the answers and click Generate plan. We will send the Excel file to your e-mail.');
+    t('hA','Plan — questions (5)');
+    t('a1lbl','How many sessions per week would you like?');
+    t('a2lbl','What is your main goal?');
+    t('a3lbl','What is your training level?');
+    t('a4lbl','What equipment do you have access to?');
+    t('a5lbl','Gender');
+    genBtn && (genBtn.textContent = 'Generate plan');
+    dlBtn && (dlBtn.textContent = 'Download Excel');
+    t('whoLbl','The plan will be sent to:');
+    t('rodoLbl','This is not medical advice. Use at your own risk.');
 
     localStorage.setItem('hp_lang','en');
-    if (toggleBtn){ toggleBtn.href='?lang=pl'; toggleBtn.textContent='PL'; }
   } else {
-    localStorage.setItem('hp_lang','pl');
-    if (toggleBtn){ toggleBtn.href='?lang=en'; toggleBtn.textContent='EN'; }
+    // Header
+    t('backLbl','← Wróć');
+    if (toggleBtn){ toggleBtn.href='?lang=en'; toggleBtn.textContent='EN'; toggleBtn.setAttribute('aria-label','English version'); }
+    document.documentElement.lang = 'pl';
 
-    if (dTitle) dTitle.textContent = 'Menu';
-    if (mPlan) mPlan.textContent = 'Plan treningowy';
-    if (mDetails) mDetails.textContent = 'Szczegóły tworzenia planu treningowego';
-    if (mAbout) mAbout.textContent = 'O mnie';
-    if (mContact) mContact.textContent = 'Kontakt';
+    // Gate
+    t('gateTitle','Dostęp do generatora');
+    t('gateDesc','Aby wypełnić krótką ankietę i otrzymać plan (Excel) na e-mail, najpierw opłać dostęp.');
+    t('payBtn','Przejdź do płatności — 9,99 zł');
+    t('whoLbl_gate','Plan zostanie wysłany na e-mail:');
+    t('rodoLbl_gate','To nie jest porada medyczna.');
+
+    // Form
+    t('paidOk','Płatność potwierdzona.');
+    t('paidNext','Wypełnij ankietę, a my wygenerujemy plan.');
+    t('title','Generator planów');
+    t('subtitle','Wybierz odpowiedzi i kliknij Wygeneruj plan. Gotowy plik (Excel) wyślemy na Twój e-mail.');
+    t('hA','Plan — pytania (5)');
+    t('a1lbl','Ile razy w tygodniu chciałbyś/chciałabyś ćwiczyć?');
+    t('a2lbl','Jaki jest twój główny cel?');
+    t('a3lbl','Jaki jest twój poziom aktywności fizycznej?');
+    t('a4lbl','Do jakiego sprzętu treningowego masz dostęp?');
+    t('a5lbl','Płeć');
+    genBtn && (genBtn.textContent = 'Wygeneruj plan');
+    dlBtn && (dlBtn.textContent = 'Pobierz Excel');
+    t('whoLbl','Plan zostanie wysłany na e-mail:');
+    t('rodoLbl','To nie jest porada medyczna. Korzystasz na własną odpowiedzialność.');
+
+    localStorage.setItem('hp_lang','pl');
   }
 })();
 </script>
