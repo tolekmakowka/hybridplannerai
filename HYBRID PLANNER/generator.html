@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HybridPlanner — Generator</title>
+<title>HybridPlanner — Plany treningowe z AI</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
@@ -11,243 +11,577 @@
 :root{
   --brown:#3E2723; --white:#FFFFFF; --beige:#8D8C87;
   --text:#EDEDEA; --muted:#C9C7C2; --bg:#0F0F0F; --card:#1B1B1B;
-  --border:#2A2A2A; --radius:16px; --shadow:0 12px 40px rgba(0,0,0,.35);
-  --maxw:980px;
+  --border:#2A2A2A; --radius:16px; --shadow:0 12px 40px rgba(0,0,0,.4);
+  --maxw:1200px;
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
 body{font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);color:var(--text)}
+img{max-width:100%;display:block}
 a{color:inherit;text-decoration:none}
-h1{font:700 34px/1.2 Poppins;margin:0 0 8px}
-h2{font:700 22px/1.25 Poppins;margin:14px 0 8px}
-label{font:600 14px/1.4 Inter}
-small{color:#a9a7a3}
-.container{max-width:var(--maxw);margin:0 auto;padding:20px}
-.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.back{display:inline-flex;gap:8px;align-items:center;border:1px solid var(--border);padding:8px 12px;border-radius:10px}
-.lang-toggle{background:#111;color:#fff;border:1px solid #333;padding:6px 10px;border-radius:10px;font:600 12px/1 Inter;text-decoration:none}
-.card{background:#141414;border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.row{display:grid;gap:8px;margin:10px 0}
-input[type="text"], input[type="number"], input[type="email"], select, textarea{
-  width:100%;background:#0f0f0f;color:#fff;border:1px solid #3a3a3a;border-radius:10px;padding:10px;font:400 14px/1.4 Inter
+h1{font:700 clamp(28px,5.5vw,44px)/1.15 Poppins;margin:0 0 12px}
+h2{font:700 clamp(22px,4vw,34px)/1.2 Poppins;margin:0 0 12px;color:#111}
+h3{font:600 20px/1.3 Poppins;margin:0 0 8px}
+p{font:400 16px/1.6 Inter;margin:0}
+
+/* ====== CONTINUOUS PAGE ====== */
+main{height:auto;overflow:visible;scroll-behavior:smooth}
+section.snap{padding:64px 0}
+.container{max-width:var(--maxw);margin:0 auto;padding:0 24px;width:100%}
+
+/* Layouty i komponenty */
+.grid-2{display:grid;grid-template-columns:1.1fr .9fr;gap:32px;align-items:center}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.card-light{background:#fff;border:1px solid #EEE;border-radius:16px;padding:20px}
+.round{border-radius:16px;border:1px solid var(--border);background:#1a1a1a}
+.icon-dot{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.icon-dot img{width:22px;height:22px;object-fit:contain}
+
+/* Reveal na scroll */
+.reveal{opacity:0;transform:translateY(14px);transition:opacity .45s ease, transform .45s ease}
+.reveal.show{opacity:1;transform:none}
+
+/* Hero */
+.hero-bg{width:100%;border-radius:24px;border:1px solid var(--border);padding:28px;background:linear-gradient(180deg,#191919,#121212);box-shadow:var(--shadow);overflow:hidden;position:relative}
+.curves{position:absolute;inset:0;pointer-events:none;opacity:.25}
+.curves svg{width:100%;height:100%}
+.kicker{display:inline-block;padding:6px 10px;border:1px solid var(--border);border-radius:10px;font:600 13px/1 Inter;color:#C9C7C2;margin-bottom:14px}
+.hero-copy p{color:#C9C7C2}
+.hero-copy h1{ text-wrap: balance; }
+/* Mały disclaimer – desktop: przy dolnej krawędzi hero */
+.hero-disclaimer{
+  position:absolute; left:28px; bottom:14px;
+  font:600 11px/1.3 Inter; color:#a9a7a3; opacity:.85; margin:0;
 }
-textarea{min-height:90px;resize:vertical}
-.btn{display:inline-flex;align-items:center;gap:10px;padding:12px 18px;border-radius:12px;border:2px solid var(--text);color:var(--text);background:transparent;font:600 16px/1 Inter;cursor:pointer}
+
+/* Prawa kolumna */
+.right-stack{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.right-stack .wide{grid-column:1/-1;position:relative}
+
+/* JOIN HERE */
+.joinhere-card{
+  grid-column: 1 / -1; height: 220px; width: 100%; position:relative;
+  display:grid; place-items:center; border-radius:16px; border:1px solid var(--border);
+  overflow:hidden; text-decoration:none; background:#141414;
+}
+.joinhere-card::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#1a1a1a 0%, #0f0f0f 100%);opacity:.55;transition:opacity .3s, transform .3s, filter .3s}
+.joinhere-text{position:relative;font:800 clamp(28px,7.5vw,72px)/1 Poppins;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.18);transition:color .3s, transform .3s}
+.joinhere-card:hover::before{opacity:.35;filter:saturate(1.05)}
+.joinhere-card:hover .joinhere-text{color:rgba(255,255,255,.92);transform:translateY(-1px)}
+
+/* Sekcje jasne/ciemne */
+.section-light{background:#fff;color:#111}
+.section-light p{color:#5f5e5b}
+.section-dark{background:var(--bg);color:var(--text)}
+.section-dark p{color:#C9C7C2}
+
+/* „O mnie” */
+.about-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:28px;align-items:center}
+.about-media{border-radius:16px;border:1px solid var(--border);overflow:hidden;background:transparent}
+.about-media img{width:100%;height:100%;object-fit:cover}
+#about .about-text{max-width:720px}
+#about .about-text p{font:400 clamp(18px, 2.2vw, 20px)/1.8 Inter;color:#E0DFDC;margin-top:8px}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:10px;padding:12px 18px;border-radius:12px;border:2px solid var(--text);color:var(--text);background:transparent;font:600 16px/1 Inter;transition:.25s;cursor:pointer}
+.btn:hover{transform:translateY(-1px)}
 .btn-brown{background:var(--brown);border-color:var(--brown);color:#fff}
-.btn-ghost{background:transparent;border-color:#3a3a3a;color:#ddd}
-.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
-.hr{height:1px;background:#2A2A2A;margin:18px 0}
-.notice{display:flex;justify-content:space-between;gap:10px;align-items:center;border:1px dashed #3a3a3a;border-radius:12px;padding:10px 12px;margin-top:12px}
-footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
-@media (max-width:700px){ .grid-2{grid-template-columns:1fr} }
+.btn-light{background:#fff;color:#111;border-color:#fff}
+
+/* LANG TOGGLE */
+.lang-toggle{position:fixed; top:14px; left:14px; z-index:9999; background:#111; color:#fff; border:1px solid #333; padding:6px 10px; border-radius:10px; font:600 12px/1 Inter; text-decoration:none; opacity:.9}
+.lang-toggle:hover{opacity:1}
+
+/* HAMBURGER + DRAWER */
+.menu-btn{position:fixed; top:14px; right:14px; z-index:9999; width:40px; height:32px; display:grid; place-items:center; background:transparent; border:none; cursor:pointer}
+.menu-btn span, .menu-btn::before, .menu-btn::after{content:""; display:block; width:20px; height:2px; background:#fff; border-radius:2px; transition:.25s; transform-origin:center}
+.menu-btn::before{ transform:translateY(-4px) }
+.menu-btn::after{  transform:translateY(4px)  }
+.menu-btn.active span{ opacity:0 }
+.menu-btn.active::before{ transform:rotate(45deg) }
+.menu-btn.active::after{  transform:rotate(-45deg) }
+.menu-btn:focus-visible{ outline:2px solid #fff3; outline-offset:4px }
+
+/* Drawer */
+.drawer{ position:fixed; inset:0 0 0 auto; width:min(88vw,340px); translate: 100% 0; transition:translate .28s ease; z-index:9998; }
+.drawer.open{ translate: 0 0; }
+.drawer .panel{position:absolute; inset:0 0 0 auto; width:100%; height:100%; background:#fff; color:#111; box-shadow:-20px 0 60px rgba(0,0,0,.35); display:flex; flex-direction:column;}
+.drawer .head{ padding:18px; border-bottom:1px solid #eee; font:700 18px/1 Poppins; color:var(--brown) }
+.drawer nav{ display:flex; flex-direction:column; }
+.drawer nav a{ padding:18px; border-bottom:1px solid #eee; font:600 16px/1.2 Inter; }
+.drawer .social{ display:flex; gap:16px; padding:16px 18px; margin-top:auto; }
+
+/* Overlay */
+.backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.45); opacity:0; pointer-events:none; transition:opacity .25s; z-index:9997; }
+.backdrop.show{ opacity:1; pointer-events:auto; }
+
+/* CTA pełna szerokość */
+@media (min-width: 641px){ #pricing .card-light .btn-cta{ display:block;width:100%;text-align:center;padding:16px 20px;font-size:17px }}
+
+/* Cena w ofercie */
+#pricing .price-tag{ margin-top:10px; display:flex; align-items:baseline; gap:8px }
+#pricing .price{ font:800 clamp(22px,4vw,34px)/1 Poppins; color:#111 }
+#pricing .price-note{ color:#6a6966; font:600 14px/1.2 Inter }
+
+/* ===== Szczegóły: dokładnie 2×2, wyśrodkowane ===== */
+#details .grid-3{
+  grid-template-columns: repeat(2, minmax(320px, 1fr));
+  max-width: 980px;
+  margin: 20px auto 0;
+  justify-items: stretch;
+  align-items: stretch;
+}
+#details .card-light{ display:flex; flex-direction:column; height:100% }
+
+/* Oferta: 2 karty */
+#pricing .products{display:grid; grid-template-columns: repeat(2, minmax(280px, 1fr)); gap:24px; align-items: stretch; margin-top:20px}
+#pricing .products .card-light{display:flex; flex-direction:column; min-height:260px}
+#pricing .product-body{flex:1}
+#pricing .product-footer{margin-top:auto;display:flex;flex-direction:column;gap:12px}
+
+/* ===== MOBILE ===== */
+@media (max-width: 900px){
+  .grid-3{ grid-template-columns: repeat(2, 1fr) }
+  #details .grid-3{ grid-template-columns:1fr; max-width:640px }
+  #pricing .products{ grid-template-columns:1fr }
+}
+@media (max-width: 640px){
+  .container{ padding: 0 16px }
+  section.snap{ padding: 72px 0 }
+  .section-light{ padding-top: 72px; padding-bottom: 72px }
+  .grid-2{ grid-template-columns: 1fr; gap:20px }
+  .right-stack{ grid-template-columns: 1fr; gap: 12px }
+  .right-stack .climb-photo{ display:none }
+  .joinhere-card{ display:none }
+  .hero-bg{ padding: 18px; border-radius: 14px }
+  .kicker{ font-size: 12px }
+  p{ font-size: 15px }
+  .btn{ padding: 10px 14px; font-size: 15px; border-radius: 10px }
+  .card-light{ padding: 16px; border-radius: 14px }
+  #pricing .legal-row{ margin-top: 56px !important; padding-bottom: 24px }
+  #pricing .legal-row nav{ width:100%; justify-content:center; gap:20px }
+  .about-grid{grid-template-columns:1fr}
+  .about-media{grid-row:1}
+  .about-text{grid-row:2}
+  /* MOBILE: disclaimer nad zdjęciem (statyczny, malutki) */
+  .hero-disclaimer{ position:static; margin-top:8px; font-size:10px; }
+}
 </style>
 </head>
 <body>
 
-<div class="container">
-  <div class="header">
-    <a class="back" href="index.html" id="backLbl">← Wróć</a>
-    <a id="langToggle" class="lang-toggle" href="?lang=en" aria-label="English version">EN</a>
+<!-- LANG -->
+<a id="langToggle" class="lang-toggle" href="?lang=en" aria-label="English version">EN</a>
+
+<!-- MENU -->
+<button id="menuBtn" class="menu-btn" aria-label="Menu"><span></span></button>
+<div id="drawer" class="drawer" aria-hidden="true">
+  <div class="panel">
+    <div class="head">MENU</div>
+    <nav>
+      <a class="requires-email" href="generator.html">Plan treningowy</a>
+      <a href="#details">Szczegóły tworzenia planu treningowego</a>
+      <a href="#about">O mnie</a>
+      <a href="mailto:hello@hybridplanner.app">Kontakt</a>
+    </nav>
+    <div class="social"></div>
   </div>
+</div>
+<div id="backdrop" class="backdrop" aria-hidden="true"></div>
 
-  <div class="card">
-    <h1 id="title">Generator planów</h1>
-    <p id="subtitle" style="margin:6px 0 14px;color:#C9C7C2">
-      Wybierz odpowiedzi i <strong>opłać zamówienie</strong>. Po płatności plan (Excel) zostanie wysłany na Twój e-mail.
-    </p>
-
-    <h2 id="hA">Plan — pytania (5)</h2>
-    <div class="grid-2">
-      <div class="row">
-        <label id="a1lbl">Ile razy w tygodniu chciałbyś/chciałabyś ćwiczyć?</label>
-        <input id="a1" type="number" min="1" max="14" value="3">
-      </div>
-      <div class="row">
-        <label id="a2lbl">Jaki jest twój główny cel?</label>
-        <input id="a2" type="text" placeholder="np. zwiększyć siłę / redukcja tkanki tłuszczowej">
-      </div>
-      <div class="row">
-        <label id="a3lbl">Jaki jest twój poziom aktywności fizycznej?</label>
-        <select id="a3">
-          <option>Zaawansowany</option>
-          <option>Średniozaawansowany</option>
-          <option>Początkujący</option>
-        </select>
-      </div>
-      <div class="row">
-        <label id="a4lbl">Do jakiego sprzętu treningowego masz dostęp?</label>
-        <input id="a4" type="text" placeholder="np. siłownia pełna / hantle + drążek / dom">
-      </div>
-      <div class="row">
-        <label id="a5lbl">Płeć</label>
-        <select id="a5">
-          <option value="Mężczyzna">Mężczyzna</option>
-          <option value="Kobieta">Kobieta</option>
-        </select>
-      </div>
+<!-- Modal e-mail (pozostaje dla bezpośredniego wejścia do generatora z menu) -->
+<div id="emailModal" aria-modal="true" role="dialog" style="position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center">
+  <div class="box" style="background:#fff;color:#111;border-radius:16px;padding:22px;max-width:420px;width:92%;box-shadow:0 10px 40px rgba(0,0,0,.35)">
+    <h3 style="margin-top:0">Dostęp do generatora</h3>
+    <label for="gateEmail" style="display:block;font:600 14px/1.3 Inter;margin-bottom:6px">Twój e-mail</label>
+    <input id="gateEmail" type="email" placeholder="np. imie@domena.com" autocomplete="email" required
+           style="width:100%;padding:12px 12px;border-radius:10px;border:1px solid #DDD;font:400 15px/1.3 Inter">
+    <div class="row" style="display:flex;align-items:flex-start;gap:10px;margin:12px 0">
+      <input id="gateConsent" type="checkbox" required>
+      <label for="gateConsent" style="margin:0">Wyrażam zgodę na przetwarzanie moich danych osobowych.</label>
     </div>
-
-    <div class="hr"></div>
-
-    <div class="actions">
-      <button id="genBtn" class="btn btn-brown">Wygeneruj plan</button>
-      <a id="dlBtn" class="btn btn-ghost" href="#" download="Plan Treningowy.xlsx" style="display:none">Pobierz Excel</a>
+    <div style="margin-top:10px">
+      <button id="gateConfirm" style="background:#3E2723;color:#fff;border:none;border-radius:12px;padding:10px 14px;font:600 14px;cursor:pointer">Kontynuuj</button>
+      <button class="close" id="gateClose" type="button" style="background:#111;border:1px solid #333;color:#fff;border-radius:12px;padding:10px 14px;font:600 14px;cursor:pointer;margin-left:8px">Anuluj</button>
     </div>
-
-    <div class="notice">
-      <small id="whoLbl">Plan zostanie wysłany na e-mail: <strong id="who"></strong></small>
-      <small id="rodoLbl">To nie jest porada medyczna. Korzystasz na własną odpowiedzialność.</small>
-    </div>
+    <p id="gateError" style="color:#b00020;margin-top:10px;display:none">Podaj poprawny e-mail i zaznacz zgodę.</p>
   </div>
-
-  <footer>© 2025 Anatol Makówka</footer>
 </div>
 
+<main id="main">
+
+  <!-- HERO -->
+  <section class="snap">
+    <div class="container">
+      <div class="hero-bg reveal">
+        <div class="curves" aria-hidden="true">
+          <svg viewBox="0 0 1200 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M-50 430C200 290 380 560 650 430C920 300 1040 380 1250 260" stroke="#2A2A2A" stroke-width="1.2"/>
+            <path d="M-120 360C120 220 360 420 620 320C880 220 1040 320 1260 180" stroke="#2A2A2A" stroke-width="1.2"/>
+            <path d="M-90 300C150 180 350 300 580 220C820 140 1030 220 1240 120" stroke="#2A2A2A" stroke-width="1.2"/>
+          </svg>
+        </div>
+
+        <div class="grid-2">
+          <div class="hero-copy">
+            <span class="kicker reveal">Trainingplanner • AI</span>
+            <h1 id="heroH1" class="reveal">Twoje cele dzięki nam stają się rzeczywistością</h1>
+            <p id="heroDesc" class="reveal" style="max-width:560px;margin-top:12px">
+              Plan treningowy. Minimalna objętość, maksymalne efekty.
+            </p>
+            <div class="reveal" style="margin-top:18px;display:flex;gap:12px;flex-wrap:wrap">
+              <a id="btnGenerate" class="btn btn-brown" href="#pricing">Kup teraz</a>
+              <a id="btnDetails" class="btn" href="#details">Zobacz szczegóły</a>
+            </div>
+            <!-- mały disclaimer -->
+            <p id="heroDisclaimer" class="hero-disclaimer reveal">To nie jest porada medyczna.</p>
+          </div>
+
+          <div class="right-stack reveal-stagger">
+            <img class="round climb-photo" src="assets/Bytol1.jpg" alt="Bytol 1" style="height:220px;object-fit:cover">
+            <img class="round" src="assets/Bytol2.jpg" alt="Bytol 2" style="height:220px;object-fit:cover">
+            <a href="#pricing" class="joinhere-card" aria-label="Przejdź do oferty — Join here">
+              <span class="joinhere-text">JOIN HERE</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SZCZEGÓŁY: 2×2 -->
+  <section id="details" class="snap section-light">
+    <div class="container">
+      <h2 id="featuresTitle" class="reveal">Szczegóły tworzenia planu treningowego</h2>
+      <div class="grid-3" style="margin-top:20px">
+        <article class="card-light reveal">
+          <div class="icon-dot">
+            <img src="assets/gym_1025929.svg" alt="Bezpieczna progresja"><strong>Bezpieczna progresja</strong>
+          </div>
+          <p>24–48 h odstępu między ciężkimi bodźcami, deload, kontrola objętości.</p>
+        </article>
+        <article class="card-light reveal">
+          <div class="icon-dot">
+            <img src="assets/note_13552540.svg" alt="Podgląd i plik Excel"><strong>Podgląd + Plik Excel</strong>
+          </div>
+          <p id="featPdfDesc">Plan wysyłany po wygenerowaniu na e-mail w formacie Excel.</p>
+        </article>
+        <article class="card-light reveal">
+          <div class="icon-dot">
+            <img src="assets/clipboard_15409277.svg" alt="Uniwersalne nazewnictwo ćwiczeń"><strong>Uniwersalne nazewnictwo ćwiczeń</strong>
+          </div>
+          <p>Ujednolicone nazwy w PL/EN – szybkie do rozpoznania i wyszukania.</p>
+        </article>
+        <article class="card-light reveal">
+          <div class="icon-dot">
+            <img src="assets/note_13552540.svg" alt="Dokładne rozplanowanie tygodnia"><strong>Dokładne rozplanowanie tygodnia</strong>
+          </div>
+          <p id="featWeekDesc">Tydzień ułożony dzień po dniu z rozmieszczeniem regeneracji i progresją.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- O MNIE -->
+  <section id="about" class="snap section-dark">
+    <div class="container">
+      <div class="about-grid">
+        <div class="about-text reveal">
+          <h2 id="aboutTitle">O mnie</h2>
+          <p id="aboutText">Nazywam się Tolek, jestem certyfikowanym trenerem personalnym oraz pasjonatem siłowni. W treningu siłowym – zarówno swoim, jak i swoich podopiecznych – skupiam się na możliwie najwyższej intensywności przy niskiej objętości ćwiczeń.</p>
+        </div>
+        <div class="about-media reveal">
+          <picture>
+            <source srcset="assets/Bytol3.jpg" type="image/jpeg">
+            <img src="assets/Bytol3.jpg" alt="Autor projektu">
+          </picture>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- OFERTA -->
+  <section id="pricing" class="snap section-light">
+    <div class="container">
+      <h2 id="offerTitle" class="reveal">Oferta</h2>
+
+      <div class="products reveal">
+        <!-- AI produkt -->
+        <article class="card-light">
+          <div class="product-body">
+            <h3>Plan treningowy wygenerowany przez AI</h3>
+            <p>Pełny program z progresją i rozmieszczeniem regeneracji.</p>
+          </div>
+          <div class="product-footer">
+            <div class="price-tag" aria-label="Cena planu">
+              <span class="price">9,99&nbsp;zł</span>
+              <span class="price-note">jednorazowo</span>
+            </div>
+            <button type="button" class="btn btn-brown btn-cta" data-plan="ai">Kup teraz</button>
+          </div>
+        </article>
+
+        <!-- Indywidualny plan -->
+        <article class="card-light">
+          <div class="product-body">
+            <h3>Indywidualny plan treningowy</h3>
+            <p>Szczegółowy program przygotowany ręcznie przez certyfikowanego trenera personalnego.</p>
+          </div>
+          <div class="product-footer">
+            <div class="price-tag" aria-label="Cena planu indywidualnego">
+              <span class="price">129,99&nbsp;zł</span>
+              <span class="price-note">jednorazowo</span>
+            </div>
+            <button type="button" class="btn btn-brown btn-cta" data-plan="custom">Kup teraz</button>
+          </div>
+        </article>
+      </div>
+
+      <div class="legal-row" style="display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between;margin-top:24px">
+        <nav style="display:flex;gap:16px">
+          <a id="legalPolicy" href="#" style="color:#6a6966">Polityka</a>
+          <a id="legalTerms" href="#" style="color:#6a6966">Regulamin</a>
+          <a id="legalContact" href="mailto:hello@hybridplanner.app" style="color:#6a6966">Kontakt</a>
+          <a id="legalFaq" href="#faq" style="color:#6a6966">FAQ</a>
+        </nav>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" class="snap section-light">
+    <div class="container">
+      <h2 class="reveal">FAQ</h2>
+      <div class="faq-list reveal-stagger" style="display:grid;gap:14px;margin-top:14px">
+        <details>
+          <summary id="q1">Jak powstaje mój plan?</summary>
+          <p id="a1">Plan generuje AI na podstawie Twoich odpowiedzi w krótkiej ankiecie. Uwzględniamy cel, poziom, sprzęt, czas oraz ewentualne ograniczenia.</p>
+        </details>
+        <details>
+          <summary id="q2">Ile to trwa?</summary>
+          <p id="a2">Zwykle kilkanaście sekund od wysłania odpowiedzi. Otrzymujesz podgląd i plik Excel do pobrania.</p>
+        </details>
+        <details>
+          <summary id="q3">Czy mogę trenować kilka dyscyplin w tygodniu?</summary>
+          <p id="a3">Tak — tygodniowy rozkład optymalizujemy pod Twoje priorytety i regenerację.</p>
+        </details>
+        <details>
+          <summary id="q4">W jakim języku dostanę plan?</summary>
+          <p id="a4">Interfejs i pliki dostępne są w dwóch wersjach językowych: PL oraz EN.</p>
+        </details>
+        <details>
+          <summary id="q5">Co jeśli mam kontuzję lub chorobę?</summary>
+          <p id="a5">To nie jest porada medyczna. Jeśli masz uraz lub wątpliwości zdrowotne, skonsultuj się z lekarzem lub fizjoterapeutą przed rozpoczęciem.</p>
+        </details>
+        <details>
+          <summary id="q6">Nie mam pełnego dostępu do sprzętu. Czy plan zadziała?</summary>
+          <p id="a6">Tak. W ankiecie podajesz dostępny sprzęt, a AI dopasuje ćwiczenia i objętość do Twoich warunków.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+</main>
+
 <script>
-/* ---------- Endpoints ---------- */
-const HP = {
-  generate: '/.netlify/functions/generate-plan',
-  sendEmail: '/.netlify/functions/send-email',
-  // główna ścieżka + fallback (dla zgodności z różnymi nazwami funkcji)
-  checkoutPrimary:  '/.netlify/functions/create-checkout-session',
-  checkoutFallback: '/.netlify/functions/create-checkout'
-};
-
-/* ---------- Bramka e-mail ---------- */
-(function(){
-  const mail = localStorage.getItem('hp_email');
-  const consent = localStorage.getItem('hp_consent');
-  if(!mail || !consent){ window.location.href = 'index.html'; }
-  else { document.getElementById('who').textContent = mail; }
-})();
-
-/* ---------- payload ---------- */
-function buildPayload(){
-  return {
-    type: 'A',
-    lang: (document.documentElement.lang || 'pl'),
-    inputs: {
-      sessionsPerWeek: Number(document.getElementById('a1').value || 0),
-      goal: document.getElementById('a2').value.trim(),
-      level: document.getElementById('a3').value,
-      equipment: document.getElementById('a4').value.trim(),
-      gender: document.getElementById('a5').value
+/* Animacje scroll (reveal) */
+const observed = new IntersectionObserver((entries)=>{
+  entries.forEach(entry=>{
+    if(entry.isIntersecting){
+      entry.target.classList.add('show');
+      observed.unobserve(entry.target);
     }
-  };
-}
-
-/* ---------- generate-plan ---------- */
-async function callBackendForXlsx(payload){
-  const res = await fetch(HP.generate, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-  const text = await res.text();
-  let data = null; try { data = JSON.parse(text) } catch {}
-  if (!res.ok || !data) throw new Error(`generate-plan ${res.status}: ${text.slice(0,300)}`);
-  if (data.ok === false) throw new Error(data.error || data.details || 'Błąd backendu');
-  const base64 = data.fileBase64 || data.xlsxBase64;
-  const filename = data.filename || data.xlsxFilename || 'Plan Treningowy.xlsx';
-  if (!base64) throw new Error('Brak pliku XLSX w odpowiedzi');
-  return { xlsxBase64: base64, xlsxFilename: filename };
-}
-
-/* ---------- e-mail ---------- */
-async function sendPlanByEmail(base64, filename){
-  const to = localStorage.getItem('hp_email') || '';
-  if(!to) return;
-  const resp = await fetch(HP.sendEmail, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({
-      to,
-      subject: 'Twój plan treningowy',
-      html: '<p>W załączniku Twój plan (XLSX). Dziękujemy za skorzystanie z HybridPlanner.</p>',
-      attachmentBase64: base64,
-      filename: filename || 'Plan Treningowy.xlsx'
-    })
   });
-  if(!resp.ok){ console.warn('send-email error:', await resp.text()); }
-}
+},{root:null, rootMargin:'0px 0px -10% 0px', threshold:0.15});
+document.querySelectorAll('.reveal, .reveal-stagger').forEach(el=>observed.observe(el));
 
-/* ---------- Stripe Checkout ---------- */
-async function tryCreateCheckout(endpoint, payload){
-  const r = await fetch(endpoint, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(payload)
+/* Drawer */
+const menuBtn = document.getElementById('menuBtn');
+const drawer  = document.getElementById('drawer');
+const backdrop= document.getElementById('backdrop');
+function toggleDrawer(force){
+  const willOpen = (force===true) || (!drawer.classList.contains('open') && force!==false);
+  drawer.classList.toggle('open', willOpen);
+  menuBtn.classList.toggle('active', willOpen);
+  backdrop.classList.toggle('show', willOpen);
+  drawer.setAttribute('aria-hidden', String(!willOpen));
+}
+menuBtn.addEventListener('click', ()=>toggleDrawer());
+backdrop.addEventListener('click', ()=>toggleDrawer(false));
+window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') toggleDrawer(false); });
+drawer.querySelectorAll('a').forEach(a=>a.addEventListener('click', ()=>toggleDrawer(false)));
+
+/* Bramka e-mail – tylko dla linków .requires-email (menu) */
+const modal = document.getElementById('emailModal');
+const closeBtn = document.getElementById('gateClose');
+const confirmBtn = document.getElementById('gateConfirm');
+const emailInput = document.getElementById('gateEmail');
+const consent = document.getElementById('gateConsent');
+const gateError = document.getElementById('gateError');
+function showModal(){ modal.style.display='flex'; emailInput.focus(); }
+function hideModal(){ modal.style.display='none'; }
+if(closeBtn){ closeBtn.addEventListener('click', hideModal); }
+function validEmail(v){ return /^[^\s@]+@[^\s@]+$/.test(v) && /\.[^\s@]{2,}$/.test(v); }
+if(confirmBtn){
+  confirmBtn.addEventListener('click', ()=>{
+    gateError.style.display='none';
+    const v = emailInput.value.trim();
+    if(!validEmail(v) || !consent.checked){ gateError.style.display='block'; return; }
+    localStorage.setItem('hp_email', v);
+    localStorage.setItem('hp_consent','1');
+    hideModal();
+    window.location.href = 'generator.html';
   });
-  const txt = await r.text();
-  let data = null; try { data = JSON.parse(txt) } catch {}
-  if(!r.ok || !data?.url) throw new Error((data && (data.error||data.details)) || txt || 'checkout failed');
-  return data.url;
 }
-
-async function createCheckout(){
-  const email = localStorage.getItem('hp_email') || '';
-
-  // urls muszą być HTTPS i kompletne
-  const base = window.location.origin + window.location.pathname;
-  const successUrl = base + '?checkout=success';
-  const cancelUrl  = base + '?checkout=cancel';
-
-  const payload = { email, successUrl, cancelUrl };
-
-  // 1) spróbuj nazwę standardową
-  try { return await tryCreateCheckout(HP.checkoutPrimary, payload); }
-  // 2) fallback na starą nazwę
-  catch { return await tryCreateCheckout(HP.checkoutFallback, payload); }
-}
-
-/* ---------- UI ---------- */
-const genBtn = document.getElementById('genBtn');
-const dlBtn  = document.getElementById('dlBtn');
-
-genBtn.addEventListener('click', async ()=>{
-  try{
-    genBtn.disabled = true; genBtn.textContent = 'Przekierowanie do płatności…';
-    dlBtn.style.display='none'; dlBtn.removeAttribute('href');
-
-    const payload = buildPayload();
-    sessionStorage.setItem('hp_pending_payload', JSON.stringify(payload));
-
-    const checkoutUrl = await createCheckout();
-    window.location.href = checkoutUrl; // -> Stripe
-  }catch(e){
-    console.error(e);
-    alert('Nie udało się rozpocząć płatności: ' + String(e.message || e));
-    genBtn.textContent = 'Wygeneruj plan';
-  }finally{
-    genBtn.disabled = false;
-  }
+document.querySelectorAll('.requires-email').forEach(a=>{
+  a.addEventListener('click', (e)=>{
+    if(!localStorage.getItem('hp_email') || !localStorage.getItem('hp_consent')){
+      e.preventDefault(); showModal();
+    }
+  });
 });
 
-/* ---------- Po powrocie ze Stripe ---------- */
-(async function afterStripe(){
+/* ===== Stripe Checkout z oferty (AI / INDYWIDUALNY) ===== */
+(function initCheckoutButtons(){
   const params = new URLSearchParams(location.search);
-  const status = params.get('checkout');
-  if (status === 'success') {
-    const raw = sessionStorage.getItem('hp_pending_payload');
-    if (!raw) return;
+  const lang = (params.get('lang') || localStorage.getItem('hp_lang') || 'pl').toLowerCase();
+  const txtLoading = lang === 'en' ? 'Redirecting…' : 'Przekierowanie…';
+  const txtBuy     = lang === 'en' ? 'Buy now' : 'Kup teraz';
+
+  async function startCheckout(plan){
+    const btn = document.querySelector(`[data-plan="${plan}"]`);
+    if(!btn) return;
+    const prev = btn.textContent;
+    btn.disabled = true; btn.textContent = txtLoading;
+
     try{
-      genBtn.disabled = true; genBtn.textContent = 'Generowanie…';
-      const payload = JSON.parse(raw);
-      const { xlsxBase64, xlsxFilename } = await callBackendForXlsx(payload);
-
-      const url = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + xlsxBase64;
-      dlBtn.href = url; dlBtn.download = xlsxFilename || 'Plan Treningowy.xlsx';
-      dlBtn.style.display='inline-flex';
-
-      await sendPlanByEmail(xlsxBase64, xlsxFilename);
-      genBtn.textContent = 'Gotowe ✓';
-      sessionStorage.removeItem('hp_pending_payload');
-    }catch(e){
-      console.error(e);
-      alert('Nie udało się wygenerować planu po płatności: ' + String(e.message || e));
-      genBtn.textContent = 'Wygeneruj plan';
+      const res = await fetch('/.netlify/functions/create-checkout', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          plan,                    // 'ai' | 'custom'
+          lang,                    // do ewentualnych tłumaczeń na success/cancel
+          // sugerowane ścieżki sukcesu po stronie backendu:
+          successPath: plan==='ai' ? '/generator.html' : '/ankieta.html'
+        })
+      });
+      if(!res.ok) throw new Error(await res.text().catch(()=>res.statusText));
+      const data = await res.json();
+      if(data && data.url){ window.location.href = data.url; return; }
+      throw new Error('Missing checkout url');
+    }catch(err){
+      console.error('create-checkout error:', err);
+      alert(lang==='en'
+        ? 'Could not start payment. Please try again.'
+        : 'Nie udało się rozpocząć płatności. Spróbuj ponownie.');
     }finally{
-      genBtn.disabled = false;
+      btn.disabled = false; btn.textContent = prev || txtBuy;
     }
-  } else if (status === 'cancel') {
-    sessionStorage.removeItem('hp_pending_payload');
+  }
+
+  document.querySelectorAll('[data-plan]').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.preventDefault();
+      const plan = btn.getAttribute('data-plan');
+      startCheckout(plan);
+    });
+  });
+})();
+
+/* i18n – pełne PL/EN, w tym disclaimer */
+(function () {
+  const params = new URLSearchParams(location.search);
+  const lang = (params.get('lang') || localStorage.getItem('hp_lang') || 'pl').toLowerCase();
+  const setHTML = (id, val) => { const el = document.getElementById(id); if (el && val) el.innerHTML = val; };
+  const setText  = (id, val) => { const el = document.getElementById(id); if (el && val) el.textContent = val; };
+  const toggleBtn = document.getElementById('langToggle');
+
+  const detailsCards = document.querySelectorAll('#details .card-light');
+  const offerCards = document.querySelectorAll('#pricing .card-light');
+
+  const modalEl = document.getElementById('emailModal');
+  const modalH3 = modalEl ? modalEl.querySelector('h3') : null;
+  const labelEmail = modalEl ? modalEl.querySelector('label[for="gateEmail"]') : null;
+  const labelConsent = modalEl ? modalEl.querySelector('label[for="gateConsent"]') : null;
+  const gateConfirm = document.getElementById('gateConfirm');
+  const gateClose = document.getElementById('gateClose');
+  const gateErrorEl = document.getElementById('gateError');
+
+  if (lang === 'en') {
+    setHTML('heroH1','You set the goals — we make them real.');
+    setHTML('heroDesc','Training plan. Minimum volume, maximum results.');
+    setText('btnGenerate','Buy now'); document.getElementById('btnGenerate').setAttribute('href','#pricing');
+    setText('btnDetails','See details');
+    setText('heroDisclaimer','This is not medical advice.');
+
+    setText('featuresTitle','How your training plan is built');
+    if (detailsCards.length === 4) {
+      detailsCards[0].querySelector('.icon-dot strong').textContent = 'Safe progression';
+      detailsCards[0].querySelector('p').textContent = '24–48 h spacing between hard stimuli, deloads and volume control.';
+      detailsCards[1].querySelector('.icon-dot strong').textContent = 'Preview + Excel file';
+      detailsCards[1].querySelector('p').textContent = 'Your plan is emailed as an Excel file right after generation.';
+      detailsCards[2].querySelector('.icon-dot strong').textContent = 'Universal exercise naming';
+      detailsCards[2].querySelector('p').textContent = 'Unified PL/EN names — easy to recognise and search.';
+      detailsCards[3].querySelector('.icon-dot strong').textContent = 'Detailed weekly layout';
+      detailsCards[3].querySelector('p').textContent = 'A week laid out day by day with recovery placement and progression.';
+    }
+
+    setText('offerTitle','Offer');
+    if (offerCards.length >= 2) {
+      offerCards[0].querySelector('h3').textContent = 'AI-generated training plan';
+      offerCards[0].querySelector('p').textContent  = 'A complete program with progression and recovery placement.';
+      offerCards[0].querySelector('.price-note').textContent = 'one-time';
+
+      offerCards[1].querySelector('h3').textContent = 'Custom training plan';
+      offerCards[1].querySelector('p').textContent  = 'A detailed program handcrafted by a certified personal trainer.';
+      offerCards[1].querySelector('.price-note').textContent = 'one-time';
+      // tekst przycisków zostaje – obsługę Stripe robi skrypt wyżej
+    }
+
+    setText('aboutTitle','About me');
+    setText('aboutText',"My name is Tolek — I’m a certified personal trainer and a gym enthusiast. In strength training — both mine and my clients’ — I focus on the highest possible intensity with low exercise volume.");
+
+    if (modalH3) modalH3.textContent = 'Access to the generator';
+    if (labelEmail) labelEmail.textContent = 'Your e-mail';
+    if (labelConsent) labelConsent.textContent = 'I consent to the processing of my personal data.';
+    if (gateConfirm) gateConfirm.textContent = 'Continue';
+    if (gateClose) gateClose.textContent = 'Cancel';
+    if (gateErrorEl) gateErrorEl.textContent = 'Enter a valid e-mail and tick the consent box.';
+
+    localStorage.setItem('hp_lang','en');
+    if (toggleBtn){ toggleBtn.href='?lang=pl'; toggleBtn.textContent='PL'; toggleBtn.setAttribute('aria-label','Polska wersja'); }
+    document.getElementById('legalPolicy').textContent='Policy';
+    document.getElementById('legalTerms').textContent='Terms';
+    document.getElementById('legalContact').textContent='Contact';
+    document.getElementById('legalFaq').textContent='FAQ';
+
+  } else {
+    localStorage.setItem('hp_lang','pl');
+    if (toggleBtn){ toggleBtn.href='?lang=en'; toggleBtn.textContent='EN'; toggleBtn.setAttribute('aria-label','English version'); }
+
+    setHTML('heroH1','Twoje cele dzięki nam stają się rzeczywistością');
+    setHTML('heroDesc','Plan treningowy. Minimalna objętość, maksymalne efekty.');
+    setText('btnGenerate','Kup teraz'); document.getElementById('btnGenerate').setAttribute('href','#pricing');
+    setText('btnDetails','Zobacz szczegóły');
+    setText('heroDisclaimer','To nie jest porada medyczna.');
+
+    setText('featuresTitle','Szczegóły tworzenia planu treningowego');
+
+    setText('offerTitle','Oferta');
+    if (offerCards.length >= 2) {
+      offerCards[0].querySelector('h3').textContent = 'Plan treningowy wygenerowany przez AI';
+      offerCards[0].querySelector('p').textContent  = 'Pełny program z progresją i rozmieszczeniem regeneracji.';
+      offerCards[0].querySelector('.price-note').textContent = 'jednorazowo';
+
+      offerCards[1].querySelector('h3').textContent = 'Indywidualny plan treningowy';
+      offerCards[1].querySelector('p').textContent  = 'Szczegółowy program przygotowany ręcznie przez certyfikowanego trenera personalnego.';
+      offerCards[1].querySelector('.price-note').textContent = 'jednorazowo';
+    }
+
+    document.getElementById('legalPolicy').textContent='Polityka';
+    document.getElementById('legalTerms').textContent='Regulamin';
+    document.getElementById('legalContact').textContent='Kontakt';
+    document.getElementById('legalFaq').textContent='FAQ';
   }
 })();
 </script>
