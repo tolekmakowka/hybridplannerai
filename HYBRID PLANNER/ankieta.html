@@ -25,6 +25,7 @@ small{color:#a9a7a3}
 .container{max-width:var(--maxw);margin:0 auto;padding:20px}
 .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .back{display:inline-flex;gap:8px;align-items:center;border:1px solid var(--border);padding:8px 12px;border-radius:10px}
+.lang-toggle{background:#111;color:#fff;border:1px solid #333;padding:6px 10px;border-radius:10px;font:600 12px/1 Inter;text-decoration:none}
 .card{background:#141414;border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .row{display:grid;gap:8px;margin:10px 0}
@@ -41,16 +42,12 @@ textarea{min-height:90px;resize:vertical}
 .notice{display:flex;justify-content:space-between;gap:10px;align-items:center;border:1px dashed #3a3a3a;border-radius:12px;padding:10px 12px;margin-top:12px}
 footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
 .helper{font-size:12px;color:#a9a7a3}
-.success{
-  display:none; margin-top:14px; background:#102a12;
-  border:1px solid #1f5f22; color:#dff3e0; padding:12px; border-radius:12px
-}
-.error{
-  display:none; margin-top:14px; background:#2a1010;
-  border:1px solid #5f1f1f; color:#f3dfe0; padding:12px; border-radius:12px
-}
+.success{display:none; margin-top:14px; background:#102a12; border:1px solid #1f5f22; color:#dff3e0; padding:12px; border-radius:12px}
+.error{display:none; margin-top:14px; background:#2a1010; border:1px solid #5f1f1f; color:#f3dfe0; padding:12px; border-radius:12px}
 .copybox{display:grid;gap:8px;background:#0f0f0f;border:1px solid #3a3a3a;border-radius:12px;padding:10px;margin-top:10px}
 pre{margin:0;white-space:pre-wrap;word-break:break-word;font:400 12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:#ddd}
+.hidden{display:none!important}
+.banner{display:flex;gap:10px;align-items:center;background:#112416;border:1px solid #1f4d2a;color:#cfead7;border-radius:12px;padding:10px 12px;margin:0 0 12px}
 @media (max-width:700px){ .grid-2{grid-template-columns:1fr} }
 </style>
 </head>
@@ -58,35 +55,55 @@ pre{margin:0;white-space:pre-wrap;word-break:break-word;font:400 12px/1.5 ui-mon
 
 <div class="container">
   <div class="header">
-    <a class="back" href="index.html">← Wróć</a>
-    <span class="badge">Indywidualny plan treningowy</span>
+    <a class="back" href="index.html" id="backLbl">← Wróć</a>
+    <div style="display:flex;gap:10px;align-items:center">
+      <span class="badge" id="badge">Indywidualny plan treningowy</span>
+      <a id="langToggle" class="lang-toggle" href="?lang=en" aria-label="English version">EN</a>
+    </div>
   </div>
 
-  <div class="card">
-    <h1>Ankieta — Indywidualny plan treningowy</h1>
-    <p class="helper" style="margin:6px 0 14px">Uzupełnij krótki formularz. Odpowiedzi trafią bezpośrednio do mnie, abym przygotował Twój plan.</p>
+  <!-- GATE: najpierw płatność -->
+  <div id="purchaseGate" class="card">
+    <h1 id="gateTitle">Dostęp do ankiety</h1>
+    <p id="gateDesc" class="helper" style="margin:6px 0 14px">
+      Aby wypełnić ankietę do indywidualnego planu i przekazać odpowiedzi trenerowi, najpierw opłać dostęp.
+    </p>
+    <div class="actions">
+      <button id="payBtn" class="btn btn-brown">Przejdź do płatności — 129,99&nbsp;zł</button>
+    </div>
+    <div class="notice">
+      <small id="gateWhoLbl">E-mail kontaktowy:</small>
+      <small id="gateRodo">To nie jest porada medyczna.</small>
+    </div>
+  </div>
+
+  <!-- FORM: tylko po opłaceniu -->
+  <div id="formCard" class="card hidden">
+    <div class="banner"><strong id="paidOk">Płatność potwierdzona.</strong> <span id="paidNext">Wypełnij ankietę, a skontaktuję się z Tobą z planem.</span></div>
+
+    <h1 id="title">Ankieta — Indywidualny plan treningowy</h1>
+    <p id="intro" class="helper" style="margin:6px 0 14px">Uzupełnij krótki formularz. Odpowiedzi trafią bezpośrednio do mnie, abym przygotował Twój plan.</p>
 
     <form id="survey" novalidate>
       <div class="row">
-        <label for="ig">Jak nazywasz się na Instagramie? <span class="helper">(informacja potrzebna w celach kontaktowych)</span></label>
-        <input id="ig" name="instagram" type="text" inputmode="text" autocomplete="username"
-               placeholder="np. @twojnick" required>
+        <label for="ig" id="lblIg">Jak nazywasz się na Instagramie? <span class="helper" id="lblIgHelp">(informacja potrzebna w celach kontaktowych)</span></label>
+        <input id="ig" name="instagram" type="text" inputmode="text" autocomplete="username" placeholder="np. @twojnick" required>
       </div>
 
       <div class="grid-2">
         <div class="row">
-          <label for="age">W jakim jesteś wieku?</label>
+          <label for="age" id="lblAge">W jakim jesteś wieku?</label>
           <input id="age" name="age" type="number" min="10" max="100" step="1" placeholder="np. 25" required>
         </div>
 
         <div class="row">
-          <label for="sessions">Ile razy w tygodniu chciałbyś trenować?</label>
+          <label for="sessions" id="lblSessions">Ile razy w tygodniu chciałbyś trenować?</label>
           <input id="sessions" name="sessions" type="number" min="1" max="14" step="1" placeholder="np. 3" required>
         </div>
       </div>
 
       <div class="row">
-        <label for="level">Jaki jest Twój poziom aktywności fizycznej?</label>
+        <label for="level" id="lblLevel">Jaki jest Twój poziom aktywności fizycznej?</label>
         <select id="level" name="level" required>
           <option value="" selected disabled>Wybierz…</option>
           <option>Początkujący</option>
@@ -96,7 +113,7 @@ pre{margin:0;white-space:pre-wrap;word-break:break-word;font:400 12px/1.5 ui-mon
       </div>
 
       <div class="row">
-        <label for="goal">Jaki jest Twój główny cel?</label>
+        <label for="goal" id="lblGoal">Jaki jest Twój główny cel?</label>
         <textarea id="goal" name="goal" placeholder="np. redukcja tkanki tłuszczowej / zwiększenie siły / rekompozycja…" required></textarea>
       </div>
 
@@ -119,11 +136,8 @@ pre{margin:0;white-space:pre-wrap;word-break:break-word;font:400 12px/1.5 ui-mon
     </form>
 
     <div class="notice" style="margin-top:16px">
-      <small>
-        <strong>E-mail kontaktowy:</strong>
-        <span id="who">brak</span>
-      </small>
-      <small>To nie jest porada medyczna.</small>
+      <small><strong id="whoLbl">E-mail kontaktowy:</strong> <span id="who">—</span></small>
+      <small id="rodoLbl">To nie jest porada medyczna.</small>
     </div>
   </div>
 
@@ -131,55 +145,96 @@ pre{margin:0;white-space:pre-wrap;word-break:break-word;font:400 12px/1.5 ui-mon
 </div>
 
 <script>
-/* ====== USTAWIENIA ====== */
-const SEND_EMAIL_ENDPOINT = '/.netlify/functions/send-email';
+/* ====== Endpoints / Settings ====== */
+const HP = {
+  sendEmail: '/.netlify/functions/send-email',
+  checkoutPrimary:  '/.netlify/functions/create-checkout-session',
+  checkoutFallback: '/.netlify/functions/create-checkout'
+};
 const ADMIN_EMAIL = 'tolek.makowka@gmail.com';
 
-/* ====== PREFILL E-MAIL Z BRAMKI (jeśli jest) ====== */
+/* ====== Helpers ====== */
+function $(id){ return document.getElementById(id); }
+function show(el){ el.classList.remove('hidden'); }
+function hide(el){ el.classList.add('hidden'); }
+function sanitize(s){ return String(s||'').trim(); }
+
+/* ====== Email from gate ====== */
 (function(){
-  const whoEl = document.getElementById('who');
-  const mail = localStorage.getItem('hp_email') || '';
-  if (mail) {
-    whoEl.textContent = mail;
-    whoEl.style.color = '#fff';
-  } else {
-    whoEl.textContent = '—';
-    whoEl.style.color = '#a9a7a3';
-  }
+  const email = localStorage.getItem('hp_email') || '';
+  $('who').textContent = email || '—';
+  $('gateWhoLbl').innerHTML = (document.documentElement.lang==='en' ? 'Contact e-mail:' : 'E-mail kontaktowy:') + ' <strong>' + (email || '—') + '</strong>';
 })();
 
-/* ====== POMOCNICZE ====== */
-const survey = document.getElementById('survey');
-const sendBtn = document.getElementById('sendBtn');
-const clearBtn = document.getElementById('clearBtn');
-const okBox = document.getElementById('success');
-const errBox = document.getElementById('error');
-const fallbackText = document.getElementById('fallbackText');
-const copyBtn = document.getElementById('copyBtn');
+/* ====== Payment state for CUSTOM product ====== */
+function isPaidCustom(){
+  const params = new URLSearchParams(location.search);
+  if (params.get('checkout') === 'success') return true;
+  return localStorage.getItem('hp_paid_custom') === '1';
+}
+function markPaidCustom(){
+  localStorage.setItem('hp_paid_custom','1');
+}
 
-function sanitize(s){ return String(s||'').trim(); }
+/* ====== Stripe Checkout (CUSTOM) ====== */
+async function tryCreateCheckout(endpoint, payload){
+  const r = await fetch(endpoint, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+  const txt = await r.text();
+  let data = null; try { data = JSON.parse(txt) } catch {}
+  if(!r.ok || !data?.url) throw new Error((data && (data.error||data.details)) || txt || 'checkout failed');
+  return data.url;
+}
+async function createCheckoutCustom(){
+  const email = localStorage.getItem('hp_email') || '';
+  const base = window.location.origin + window.location.pathname;
+  const successUrl = base + '?checkout=success';
+  const cancelUrl  = base + '?checkout=cancel';
+  const payload = { email, successUrl, cancelUrl, product: 'custom' }; // <<< ważne: rozróżnienie produktu
+  try { return await tryCreateCheckout(HP.checkoutPrimary, payload); }
+  catch { return await tryCreateCheckout(HP.checkoutFallback, payload); }
+}
+
+/* ====== Init gate vs form ====== */
+(function init(){
+  const params = new URLSearchParams(location.search);
+  const status = params.get('checkout');
+  if (status === 'success'){ markPaidCustom(); history.replaceState({}, '', window.location.pathname); }
+  if (isPaidCustom()){ hide($('purchaseGate')); show($('formCard')); }
+  else { show($('purchaseGate')); hide($('formCard')); }
+})();
+
+/* ====== Form logic ====== */
+const survey = $('survey');
+const sendBtn = $('sendBtn');
+const clearBtn = $('clearBtn');
+const okBox = $('success');
+const errBox = $('error');
+const fallbackText = $('fallbackText');
+const copyBtn = $('copyBtn');
 
 function collectValues(){
   return {
-    instagram: sanitize(document.getElementById('ig').value),
-    age: Number(document.getElementById('age').value || 0),
-    sessions: Number(document.getElementById('sessions').value || 0),
-    level: sanitize(document.getElementById('level').value),
-    goal: sanitize(document.getElementById('goal').value),
+    instagram: sanitize($('ig').value),
+    age: Number($('age').value || 0),
+    sessions: Number($('sessions').value || 0),
+    level: sanitize($('level').value),
+    goal: sanitize($('goal').value),
     emailFromGate: sanitize(localStorage.getItem('hp_email') || '')
   };
 }
-
 function validate(v){
   const issues = [];
-  if (!v.instagram || v.instagram.length < 2) issues.push('Podaj nazwę z Instagrama.');
-  if (!v.age || v.age < 10 || v.age > 100) issues.push('Wiek powinien być między 10 a 100.');
-  if (!v.sessions || v.sessions < 1 || v.sessions > 14) issues.push('Liczba treningów 1–14/tydz.');
-  if (!v.level) issues.push('Wybierz poziom aktywności.');
-  if (!v.goal || v.goal.length < 3) issues.push('Opisz swój główny cel.');
+  if (!v.instagram || v.instagram.length < 2) issues.push(document.documentElement.lang==='en' ? 'Enter your Instagram handle.' : 'Podaj nazwę z Instagrama.');
+  if (!v.age || v.age < 10 || v.age > 100) issues.push(document.documentElement.lang==='en' ? 'Age should be 10–100.' : 'Wiek powinien być między 10 a 100.');
+  if (!v.sessions || v.sessions < 1 || v.sessions > 14) issues.push(document.documentElement.lang==='en' ? 'Sessions per week: 1–14.' : 'Liczba treningów 1–14/tydz.');
+  if (!v.level) issues.push(document.documentElement.lang==='en' ? 'Select your level.' : 'Wybierz poziom aktywności.');
+  if (!v.goal || v.goal.length < 3) issues.push(document.documentElement.lang==='en' ? 'Describe your main goal.' : 'Opisz swój główny cel.');
   return issues;
 }
-
 function buildEmailHTML(v){
   const when = new Date().toLocaleString();
   const esc = (t)=>String(t).replace(/[&<>]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[s]));
@@ -197,7 +252,6 @@ function buildEmailHTML(v){
     <p style="margin-top:10px">Źródło: ankieta.html</p>
   `;
 }
-
 function buildPlainText(v){
   const when = new Date().toLocaleString();
   return [
@@ -211,14 +265,13 @@ function buildPlainText(v){
     'E-mail z bramki: ' + (v.emailFromGate || '—')
   ].join('\n');
 }
-
 async function sendEmail(v){
   const payload = {
     to: ADMIN_EMAIL,
     subject: 'Ankieta (indywidualny plan) — ' + (v.instagram || 'nowa odpowiedź'),
     html: buildEmailHTML(v)
   };
-  const res = await fetch(SEND_EMAIL_ENDPOINT, {
+  const res = await fetch(HP.sendEmail, {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify(payload)
@@ -229,51 +282,134 @@ async function sendEmail(v){
   }
 }
 
-/* ====== ZDARZENIA ====== */
+$('payBtn').addEventListener('click', async ()=>{
+  try{
+    $('payBtn').disabled = true; $('payBtn').textContent = (document.documentElement.lang==='en'?'Connecting to Stripe…':'Łączenie ze Stripe…');
+    const url = await createCheckoutCustom();
+    window.location.href = url;
+  }catch(e){
+    console.error(e);
+    alert((document.documentElement.lang==='en'?'Could not start payment: ':'Nie udało się rozpocząć płatności: ') + String(e.message||e));
+  }finally{
+    $('payBtn').disabled = false; $('payBtn').textContent = (document.documentElement.lang==='en'?'Go to payment — 129.99 PLN':'Przejdź do płatności — 129,99 zł');
+  }
+});
+
 survey.addEventListener('submit', async (e)=>{
   e.preventDefault();
   okBox.style.display='none'; errBox.style.display='none';
 
-  const v = collectValues();
-  const issues = validate(v);
-  if (issues.length){
-    alert(issues.join('\n'));
+  // Bezpieczeństwo: jeśli nieopłacone, otwórz Stripe zamiast wysyłać
+  if (!isPaidCustom()){
+    try{
+      const url = await createCheckoutCustom();
+      window.location.href = url;
+    }catch(err){
+      alert((document.documentElement.lang==='en'?'Payment required. Could not start payment: ':'Wymagana płatność. Nie udało się rozpocząć płatności: ') + String(err.message||err));
+    }
     return;
   }
 
-  sendBtn.disabled = true;
-  sendBtn.textContent = 'Wysyłanie…';
+  const v = collectValues();
+  const issues = validate(v);
+  if (issues.length){ alert(issues.join('\n')); return; }
 
+  sendBtn.disabled = true; sendBtn.textContent = (document.documentElement.lang==='en'?'Sending…':'Wysyłanie…');
   try{
     await sendEmail(v);
     okBox.style.display='block';
     survey.reset();
   }catch(err){
     console.error(err);
-    // fallback: pokaż tekst do skopiowania i ręcznego wysłania
     fallbackText.textContent = buildPlainText(v);
     errBox.style.display='block';
   }finally{
-    sendBtn.disabled = false;
-    sendBtn.textContent = 'Wyślij ankietę';
+    sendBtn.disabled = false; sendBtn.textContent = (document.documentElement.lang==='en'?'Send survey':'Wyślij ankietę');
   }
 });
 
 clearBtn.addEventListener('click', ()=>{
-  survey.reset();
-  okBox.style.display='none'; errBox.style.display='none';
+  survey.reset(); okBox.style.display='none'; errBox.style.display='none';
 });
 
-copyBtn.addEventListener('click', async ()=>{
+$('copyBtn').addEventListener('click', async ()=>{
   try{
     await navigator.clipboard.writeText(fallbackText.textContent || '');
-    copyBtn.textContent = 'Skopiowano ✓';
-    setTimeout(()=> copyBtn.textContent = 'Kopiuj odpowiedzi', 1200);
+    $('copyBtn').textContent = (document.documentElement.lang==='en'?'Copied ✓':'Skopiowano ✓');
+    setTimeout(()=> $('copyBtn').textContent = (document.documentElement.lang==='en'?'Copy answers':'Kopiuj odpowiedzi'), 1200);
   }catch{
-    copyBtn.textContent = 'Nie skopiowano';
-    setTimeout(()=> copyBtn.textContent = 'Kopiuj odpowiedzi', 1200);
+    $('copyBtn').textContent = (document.documentElement.lang==='en'?'Not copied':'Nie skopiowano');
+    setTimeout(()=> $('copyBtn').textContent = (document.documentElement.lang==='en'?'Copy answers':'Kopiuj odpowiedzi'), 1200);
   }
 });
+
+/* ====== i18n (PL/EN) ====== */
+(function () {
+  const params = new URLSearchParams(location.search);
+  const lang = (params.get('lang') || localStorage.getItem('hp_lang') || 'pl').toLowerCase();
+  const t = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  const toggleBtn = document.getElementById('langToggle');
+
+  if (lang === 'en') {
+    document.documentElement.lang = 'en';
+    t('backLbl','← Back');
+    t('badge','Custom training plan');
+
+    t('gateTitle','Access to the survey');
+    t('gateDesc','To fill out the survey for a custom plan and send answers to the coach, please complete the payment first.');
+    t('payBtn','Go to payment — 129.99 PLN');
+    t('gateWhoLbl','Contact e-mail:');
+    t('gateRodo','This is not medical advice.');
+
+    t('paidOk','Payment confirmed.');
+    t('paidNext','Fill in the survey and I will contact you with your plan.');
+    t('title','Survey — Custom training plan');
+    t('intro','Fill out a short form. Your answers will go directly to me so I can prepare your plan.');
+    t('lblIg','What is your Instagram handle? ');
+    t('lblIgHelp','(used for contact purposes)');
+    t('lblAge','How old are you?');
+    t('lblSessions','How many sessions per week would you like?');
+    t('lblLevel','What is your training level?');
+    t('lblGoal','What is your main goal?');
+
+    t('sendBtn','Send survey'); t('clearBtn','Clear');
+    t('success','Thank you! The survey has been sent. I will reach out via DM or e-mail.');
+    t('whoLbl','Contact e-mail:');
+    t('rodoLbl','This is not medical advice.');
+
+    if (toggleBtn){ toggleBtn.href='?lang=pl'; toggleBtn.textContent='PL'; toggleBtn.setAttribute('aria-label','Polska wersja'); }
+    localStorage.setItem('hp_lang','en');
+  } else {
+    document.documentElement.lang = 'pl';
+    t('backLbl','← Wróć');
+    t('badge','Indywidualny plan treningowy');
+
+    t('gateTitle','Dostęp do ankiety');
+    t('gateDesc','Aby wypełnić ankietę do indywidualnego planu i przekazać odpowiedzi trenerowi, najpierw opłać dostęp.');
+    t('payBtn','Przejdź do płatności — 129,99 zł');
+    t('gateWhoLbl','E-mail kontaktowy:');
+    t('gateRodo','To nie jest porada medyczna.');
+
+    t('paidOk','Płatność potwierdzona.');
+    t('paidNext','Wypełnij ankietę, a skontaktuję się z Tobą z planem.');
+    t('title','Ankieta — Indywidualny plan treningowy');
+    t('intro','Uzupełnij krótki formularz. Odpowiedzi trafią bezpośrednio do mnie, abym przygotował Twój plan.');
+    t('lblIg','Jak nazywasz się na Instagramie? ');
+    t('lblIgHelp','(informacja potrzebna w celach kontaktowych)');
+    t('lblAge','W jakim jesteś wieku?');
+    t('lblSessions','Ile razy w tygodniu chciałbyś trenować?');
+    t('lblLevel','Jaki jest Twój poziom aktywności fizycznej?');
+    t('lblGoal','Jaki jest Twój główny cel?');
+
+    t('sendBtn','Wyślij ankietę'); t('clearBtn','Wyczyść');
+    t('success','Dziękuję! Ankieta została wysłana. Odezwię się w wiadomości prywatnej lub na e-mailu.');
+    t('whoLbl','E-mail kontaktowy:');
+    t('rodoLbl','To nie jest porada medyczna.');
+
+    if (toggleBtn){ toggleBtn.href='?lang=en'; toggleBtn.textContent='EN'; toggleBtn.setAttribute('aria-label','English version'); }
+    localStorage.setItem('hp_lang','pl');
+  }
+})();
 </script>
 </body>
 </html>
