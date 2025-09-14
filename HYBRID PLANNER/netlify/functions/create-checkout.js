@@ -16,12 +16,14 @@ function corsHeaders(origin) {
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Max-Age': '86400',
-    'Content-Type': 'application/json; charset=utf-8'
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store'
   };
 }
 
 exports.handler = async (event) => {
   const origin = event.headers?.origin || '';
+
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: corsHeaders(origin) };
   }
@@ -32,48 +34,71 @@ exports.handler = async (event) => {
   try {
     const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 
-    // Mapowanie cen: AI i Indywidualny
+    // Ceny: AI i Indywidualny
     const PRICE_AI     = process.env.STRIPE_PRICE_AI_ID     || process.env.STRIPE_PRICE_ID; // wsteczna zgodność
-    const PRICE_CUSTOM = process.env.STRIPE_PRICE_CUSTOM_ID;
+    const PRICE_CUSTOM = process.env.STRIPE_PRICE_CUSTOM_ID; // np. price_1S6zK1Febnj7JgP86KjzysEq
 
     if (!STRIPE_SECRET_KEY) {
       return { statusCode: 500, headers: corsHeaders(origin), body: JSON.stringify({ error: 'Stripe secret key missing' }) };
     }
 
-    const { email, successUrl, cancelUrl, product } = JSON.parse(event.body || '{}');
+    const body = JSON.parse(event.body || '{}');
 
-    // Wybór priceId na podstawie produktu
-    const priceId = (product === 'custom')
-      ? PRICE_CUSTOM
-      : PRICE_AI;
+    // akceptuj zarówno "product" jak i "plan"
+    const planOrProduct = (body.product || body.plan || 'ai').toString().toLowerCase();
+    const email      = body.email || '';
+    const successUrl = body.successUrl || '';
+    const cancelUrl  = body.cancelUrl  || '';
+    const successPath = body.successPath || ''; // np. wysyłane z index.html (opcjonalnie)
 
+    // wybór priceId
+    const priceId = (planOrProduct === 'custom') ? PRICE_CUSTOM : PRICE_AI;
     if (!priceId) {
-      return {
-        statusCode: 400,
-        headers: corsHeaders(origin),
-        body: JSON.stringify({ error: 'Missing Stripe price id for product', details: { product } })
-      };
+      return { statusCode: 400, headers: corsHeaders(origin), body: JSON.stringify({ error: 'Missing Stripe price id for selected product', details: { plan: planOrProduct } }) };
     }
 
-    const stripe = require('stripe')(STRIPE_SECRET_KEY);
+    // bazowy adres (gdy origin nie jest dostępny)
+    const proto = event.headers['x-forwarded-proto'] || 'https';
+    const host  = event.headers['x-forwarded-host'] || event.headers.host || '';
+    const baseFromHeaders = (host ? `${proto}://${host}` : '');
 
-    // Domyślne adresy powrotu (jeśli klient nie poda)
-    const path = (product === 'custom') ? '/ankieta.html' : '/generator.html';
-    const defSuccess = origin ? `${origin}${path}?checkout=success` : undefined;
-    const defCancel  = origin ? `${origin}${path}?checkout=cancel`  : undefined;
+    // domyślne ścieżki powrotu
+    const defaultPath = planOrProduct === 'custom' ? '/ankieta.html' : '/generator.html';
+    const base = origin || baseFromHeaders;
+
+    // helper do łączenia query
+    const withParams = (u, params) => u + (u.includes('?') ? '&' : '?') + params;
+
+    // success/cancel URL
+    const finalSuccess = successUrl
+      ? (successUrl.includes('{CHECKOUT_SESSION_ID}')
+          ? successUrl
+          : withParams(successUrl, 'session_id={CHECKOUT_SESSION_ID}&checkout=success'))
+      : withParams(`${base}${successPath || defaultPath}`, 'session_id={CHECKOUT_SESSION_ID}&checkout=success');
+
+    const finalCancel = cancelUrl
+      ? (cancelUrl.includes('checkout=') ? cancelUrl : withParams(cancelUrl, 'checkout=cancel'))
+      : withParams(`${base}${successPath || defaultPath}`, 'checkout=cancel');
+
+    const stripe = require('stripe')(STRIPE_SECRET_KEY);
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       line_items: [{ price: priceId, quantity: 1 }],
       customer_email: email || undefined,
-      success_url: successUrl || defSuccess,
-      cancel_url:  cancelUrl  || defCancel,
+      success_url: finalSuccess,
+      cancel_url:  finalCancel,
       billing_address_collection: 'auto',
-      allow_promotion_codes: true
+      allow_promotion_codes: true,
+      metadata: {
+        product: planOrProduct
+      }
     });
 
     return { statusCode: 200, headers: corsHeaders(origin), body: JSON.stringify({ url: session.url }) };
   } catch (e) {
-    return { statusCode: 500, headers: corsHeaders(origin), body: JSON.stringify({ error: 'create-checkout failed', details: String(e) }) };
+    console.error('create-checkout failed', e);
+    const msg = (e && e.raw && e.raw.message) ? e.raw.message : (e.message || String(e));
+    return { statusCode: 500, headers: corsHeaders(origin), body: JSON.stringify({ error: 'create-checkout failed', details: msg }) };
   }
 };
