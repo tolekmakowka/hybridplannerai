@@ -43,6 +43,13 @@ textarea{min-height:90px;resize:vertical}
 footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
 .hidden{display:none!important}
 @media (max-width:700px){ .grid-2{grid-template-columns:1fr} }
+
+/* Modal e-mail po płatności */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:10000}
+.modal{background:#fff;color:#111;border-radius:16px;padding:22px;max-width:420px;width:92%;box-shadow:0 10px 40px rgba(0,0,0,.35)}
+.modal h3{margin:0 0 8px}
+.modal .row{margin:8px 0}
+.modal .actions{margin-top:10px}
 </style>
 </head>
 <body>
@@ -124,41 +131,61 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
   <footer>© 2025 Anatol Makówka</footer>
 </div>
 
+<!-- Modal e-mail (pokazywany PO płatności, jeżeli brak e-maila) -->
+<div id="emailModal" class="modal-backdrop" aria-modal="true" role="dialog">
+  <div class="modal">
+    <h3 id="mTitle">Podaj e-mail, aby wysłać plan</h3>
+    <div class="row">
+      <label id="mLabel" for="gateEmail">Twój e-mail</label>
+      <input id="gateEmail" type="email" placeholder="np. imie@domena.com" autocomplete="email" required>
+    </div>
+    <div class="row" style="display:flex;align-items:flex-start;gap:10px">
+      <input id="gateConsent" type="checkbox" required>
+      <label id="mConsent" for="gateConsent" style="margin:0">Wyrażam zgodę na przetwarzanie moich danych osobowych.</label>
+    </div>
+    <div class="actions">
+      <button id="gateConfirm" class="btn btn-brown" type="button">Kontynuuj</button>
+      <button id="gateClose" class="btn btn-ghost" type="button">Anuluj</button>
+    </div>
+    <p id="gateError" style="color:#b00020;margin-top:10px;display:none">Podaj poprawny e-mail i zaznacz zgodę.</p>
+  </div>
+</div>
+
 <script>
 /* ---------- Endpoints ---------- */
 const HP = {
   generate: '/.netlify/functions/generate-plan',
   sendEmail: '/.netlify/functions/send-email',
   checkoutPrimary:  '/.netlify/functions/create-checkout-session',
-  checkoutFallback: '/.netlify/functions/create-checkout'
+  checkoutFallback: '/.netlify/functions/create-checkout',
+  verifySession: '/.netlify/functions/verify-session' // opcjonalne
 };
 
-/* ---------- E-mail gate ---------- */
-(function(){
-  const mail = localStorage.getItem('hp_email');
-  const consent = localStorage.getItem('hp_consent');
-  if(!mail || !consent){ window.location.href = 'index.html'; return; }
-  (document.getElementById('who')||{}).textContent = mail;
-  (document.getElementById('who_gate')||{}).textContent = mail;
-})();
-
-/* ---------- UI state helpers ---------- */
+/* ---------- helpers ---------- */
 function qs(id){ return document.getElementById(id); }
 function show(el){ el.classList.remove('hidden'); }
 function hide(el){ el.classList.add('hidden'); }
+function setWho(email){
+  (qs('who')||{}).textContent = email || '—';
+  (qs('who_gate')||{}).textContent = email || '—';
+}
+function validEmail(v){ return /^[^\s@]+@[^\s@]+$/.test(v) && /\.[^\s@]{2,}$/.test(v); }
 
+/* ---------- e-mail w UI (bez wymuszania przed płatnością) ---------- */
+(function hydrateEmail(){
+  setWho(localStorage.getItem('hp_email') || '');
+})();
+
+/* ---------- PŁATNOŚĆ – stan ---------- */
 function isPaid(){
-  // 1) URL param po Stripe
   const p = new URLSearchParams(location.search);
   if (p.get('checkout') === 'success') return true;
-  // 2) zapamiętany stan
+  if (p.get('session_id')) return true; // po nowym success_url
   return localStorage.getItem('hp_paid_ai') === '1';
 }
-function markPaid(){
-  localStorage.setItem('hp_paid_ai','1');
-}
+function markPaid(){ localStorage.setItem('hp_paid_ai','1'); }
 
-/* ---------- Build payload ---------- */
+/* ---------- payload do generatora ---------- */
 function buildPayload(){
   return {
     type: 'A',
@@ -173,7 +200,7 @@ function buildPayload(){
   };
 }
 
-/* ---------- Backend calls ---------- */
+/* ---------- backend: generate & e-mail ---------- */
 async function callBackendForXlsx(payload){
   const res = await fetch(HP.generate, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
   const text = await res.text();
@@ -218,28 +245,100 @@ async function tryCreateCheckout(endpoint, payload){
 
 async function createCheckout(){
   const email = localStorage.getItem('hp_email') || '';
-  const base = window.location.origin + window.location.pathname;
-  const successUrl = base + '?checkout=success';
-  const cancelUrl  = base + '?checkout=cancel';
-  const payload = { email, successUrl, cancelUrl };
+  // Pozostawiamy success/cancel po stronie backendu (może wstawić session_id={CHECKOUT_SESSION_ID})
+  const payload = { email };
   try { return await tryCreateCheckout(HP.checkoutPrimary, payload); }
   catch { return await tryCreateCheckout(HP.checkoutFallback, payload); }
 }
 
-/* ---------- Elements ---------- */
+/* ---------- Opcjonalna weryfikacja płatności ---------- */
+async function verifyPaidIfPossible(){
+  const p = new URLSearchParams(location.search);
+  const sessionId = p.get('session_id');
+  if(!sessionId) return true; // brak – zakładamy success z query 'checkout=success'
+  try{
+    const r = await fetch(HP.verifySession, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ session_id: sessionId })
+    });
+    if(!r.ok) throw 0;
+    const data = await r.json();
+    return !!data?.paid;
+  }catch{ return true; } // łagodne domyślnie „true”, jeśli brak funkcji
+}
+
+/* ---------- Elementy ---------- */
 const payBtn = qs('payBtn');
 const genBtn = qs('genBtn');
 const dlBtn  = qs('dlBtn');
 const purchaseGate = qs('purchaseGate');
 const formSection  = qs('formSection');
 
-/* ---------- Init: decide which section to show ---------- */
-(function initGate(){
+/* ---------- Modal e-mail ---------- */
+const modal = qs('emailModal');
+const mClose = qs('gateClose');
+const mConfirm = qs('gateConfirm');
+const mEmail = qs('gateEmail');
+const mConsent = qs('gateConsent');
+const mError = qs('gateError');
+function openEmailModal(){ modal.style.display='flex'; mEmail.focus(); }
+function closeEmailModal(){ modal.style.display='none'; }
+mClose.addEventListener('click', closeEmailModal);
+mConfirm.addEventListener('click', ()=>{
+  mError.style.display='none';
+  const v = (mEmail.value||'').trim();
+  if(!validEmail(v) || !mConsent.checked){ mError.style.display='block'; return; }
+  localStorage.setItem('hp_email', v);
+  localStorage.setItem('hp_consent','1');
+  setWho(v);
+  closeEmailModal();
+});
+
+/* Upewnij się, że mamy e-mail (po płatności przed ankietą/generowaniem) */
+async function ensureEmail(){
+  const mail = localStorage.getItem('hp_email') || '';
+  if(mail) return true;
+  openEmailModal();
+  return new Promise(resolve=>{
+    const onClose = ()=>{ modal.removeEventListener('click', backdropHandler); resolve(!!localStorage.getItem('hp_email')); };
+    function backdropHandler(e){ if(e.target===modal) closeEmailModal(); }
+    modal.addEventListener('click', backdropHandler);
+    // mConfirm już zapisuje e-mail i zamyka modal
+    const obs = new MutationObserver(()=>{
+      if(modal.style.display==='none'){ obs.disconnect(); onClose(); }
+    });
+    obs.observe(modal, { attributes:true, attributeFilter:['style'] });
+  });
+}
+
+/* ---------- Init: pokaż odpowiednią sekcję ---------- */
+(async function initGate(){
   const p = new URLSearchParams(location.search);
   const status = p.get('checkout');
-  if (status === 'success'){ markPaid(); history.replaceState({}, '', window.location.pathname); }
-  if (isPaid()){ hide(purchaseGate); show(formSection); }
-  else { show(purchaseGate); hide(formSection); }
+  const hasSessionParam = !!p.get('session_id');
+
+  if (status === 'cancel'){ /* nic nie robimy – zostaje bramka */ }
+  if (status === 'success' || hasSessionParam){
+    const paidOk = await verifyPaidIfPossible();
+    if(paidOk){
+      markPaid();
+      // sprzątamy query po potwierdzeniu
+      history.replaceState({}, '', window.location.pathname);
+    }
+  }
+
+  if (isPaid()){
+    hide(purchaseGate);
+    show(formSection);
+    // jeśli nie mamy e-maila, poproś teraz:
+    if(!(localStorage.getItem('hp_email') && localStorage.getItem('hp_consent'))){
+      openEmailModal();
+    }
+  } else {
+    show(purchaseGate);
+    hide(formSection);
+  }
 })();
 
 /* ---------- Actions ---------- */
@@ -262,12 +361,15 @@ if (genBtn){
   genBtn.addEventListener('click', async ()=>{
     try{
       if (!isPaid()){
-        // Bezpieczeństwo: jeśli ktoś ominął bramkę UI, wyślij do Stripe.
         const checkoutUrl = await createCheckout();
         window.location.href = checkoutUrl;
         return;
       }
-      genBtn.disabled = true; genBtn.textContent = 'Generowanie…'; dlBtn.style.display='none'; dlBtn.removeAttribute('href');
+      const ok = await ensureEmail();
+      if(!ok) return;
+
+      genBtn.disabled = true; genBtn.textContent = 'Generowanie…';
+      dlBtn.style.display='none'; dlBtn.removeAttribute('href');
 
       const payload = buildPayload();
       const { xlsxBase64, xlsxFilename } = await callBackendForXlsx(payload);
@@ -305,7 +407,7 @@ if (genBtn){
     t('gateTitle','Access to the generator');
     t('gateDesc','To fill out a short questionnaire and receive your plan (Excel) by e-mail, please complete the payment first.');
     t('payBtn','Go to payment — 9.99 PLN');
-    t('whoLbl_gate','The plan will be sent to:'); // prefix only; email injected separately
+    t('whoLbl_gate','The plan will be sent to:');
     t('rodoLbl_gate','This is not medical advice.');
 
     // Form after payment
@@ -319,10 +421,18 @@ if (genBtn){
     t('a3lbl','What is your training level?');
     t('a4lbl','What equipment do you have access to?');
     t('a5lbl','Gender');
-    genBtn && (genBtn.textContent = 'Generate plan');
-    dlBtn && (dlBtn.textContent = 'Download Excel');
+    qs('genBtn') && (qs('genBtn').textContent = 'Generate plan');
+    qs('dlBtn')  && (qs('dlBtn').textContent  = 'Download Excel');
     t('whoLbl','The plan will be sent to:');
     t('rodoLbl','This is not medical advice. Use at your own risk.');
+
+    // Modal
+    t('mTitle','Enter your e-mail to receive the plan');
+    t('mLabel','Your e-mail');
+    t('mConsent','I consent to the processing of my personal data.');
+    qs('gateConfirm') && (qs('gateConfirm').textContent = 'Continue');
+    qs('gateClose') && (qs('gateClose').textContent = 'Cancel');
+    qs('gateError') && (qs('gateError').textContent = 'Enter a valid e-mail and tick the consent box.');
 
     localStorage.setItem('hp_lang','en');
   } else {
@@ -349,10 +459,18 @@ if (genBtn){
     t('a3lbl','Jaki jest twój poziom aktywności fizycznej?');
     t('a4lbl','Do jakiego sprzętu treningowego masz dostęp?');
     t('a5lbl','Płeć');
-    genBtn && (genBtn.textContent = 'Wygeneruj plan');
-    dlBtn && (dlBtn.textContent = 'Pobierz Excel');
+    qs('genBtn') && (qs('genBtn').textContent = 'Wygeneruj plan');
+    qs('dlBtn')  && (qs('dlBtn').textContent  = 'Pobierz Excel');
     t('whoLbl','Plan zostanie wysłany na e-mail:');
     t('rodoLbl','To nie jest porada medyczna. Korzystasz na własną odpowiedzialność.');
+
+    // Modal
+    t('mTitle','Podaj e-mail, aby wysłać plan');
+    t('mLabel','Twój e-mail');
+    t('mConsent','Wyrażam zgodę na przetwarzanie moich danych osobowych.');
+    qs('gateConfirm') && (qs('gateConfirm').textContent = 'Kontynuuj');
+    qs('gateClose') && (qs('gateClose').textContent = 'Anuluj');
+    qs('gateError') && (qs('gateError').textContent = 'Podaj poprawny e-mail i zaznacz zgodę.');
 
     localStorage.setItem('hp_lang','pl');
   }
