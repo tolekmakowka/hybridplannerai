@@ -1,3 +1,4 @@
+// netlify/functions/create-checkout-session.js
 'use strict';
 
 const ALLOWED_ORIGINS = new Set([
@@ -15,6 +16,7 @@ function corsHeaders(origin) {
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Max-Age': '86400',
+    'Vary': 'Origin',
     'Content-Type': 'application/json; charset=utf-8'
   };
 }
@@ -22,61 +24,90 @@ function corsHeaders(origin) {
 exports.handler = async (event) => {
   const origin = event.headers?.origin || '';
 
+  // CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: corsHeaders(origin) };
   }
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers: corsHeaders(origin), body: JSON.stringify({ ok:false, error:'Method not allowed' }) };
+    return { statusCode: 405, headers: corsHeaders(origin), body: JSON.stringify({ error:'Method not allowed' }) };
   }
 
   try {
-    // ====== ENV sprawdzenie ======
+    // ====== ENV ======
     const SECRET = process.env.STRIPE_SECRET_KEY;
-    const PRICE  = process.env.STRIPE_PRICE_ID;
     if (!SECRET) throw new Error('Missing STRIPE_SECRET_KEY');
-    if (!PRICE)  throw new Error('Missing STRIPE_PRICE_ID');
 
-    // Stripe init
-    const stripe = require('stripe')(SECRET);
+    // ceny z ENV (AI ma też fallback do starego STRIPE_PRICE_ID)
+    const PRICE_MAP = {
+      AI: process.env.STRIPE_PRICE_AI || process.env.STRIPE_PRICE_ID || '',
+      CUSTOM: process.env.STRIPE_PRICE_CUSTOM || ''
+    };
 
-    // ====== body ======
-    const body = JSON.parse(event.body || '{}');
-    const { email = '', voucher = '', inputs = {} } = body;
+    // ====== BODY ======
+    let body = {};
+    try { body = JSON.parse(event.body || '{}'); } catch {}
+    // front może wysłać: { type: 'AI'|'CUSTOM', email, successUrl, cancelUrl }
+    const {
+      type, plan, email = '',
+      successUrl, cancelUrl,
+      voucher = '',
+      inputs = {},
+      priceId // opcjonalny twardy override ceny (np. do testów)
+    } = body;
 
-    // Voucher „TGMPRJCT” → bez płatności
+    // normalizacja typu produktu
+    const productType = String(type || plan || 'AI').toUpperCase();
+    const chosenPrice = priceId || PRICE_MAP[productType];
+
+    if (!chosenPrice) {
+      throw new Error(`Missing price for type="${productType}". Set STRIPE_PRICE_${productType} in env.`);
+    }
+
+    // Voucher „TGMPRJCT” → bez płatności (np. do testów/giveaway)
     if ((voucher || '').trim().toUpperCase() === 'TGMPRJCT') {
       return { statusCode: 200, headers: corsHeaders(origin), body: JSON.stringify({ ok:true, free:true }) };
     }
 
-    // Success/Cancel URL
+    // ====== URL-e powrotu ======
+    // Preferuj absolutne URL-e z frontu; jeśli brak — buduj domyślne.
     const proto = event.headers['x-forwarded-proto'] || 'https';
     const host  = event.headers.host;
     const base  = (process.env.BASE_URL || `${proto}://${host}`).replace(/\/+$/,'');
-    const success_url = `${base}/generator.html?session_id={CHECKOUT_SESSION_ID}`;
-    const cancel_url  = `${base}/generator.html?cancelled=1`;
+    const defaultTarget = (productType === 'CUSTOM') ? 'ankieta.html' : 'generator.html';
 
-    // ====== tworzymy sesję ======
+    const okUrl  = (typeof successUrl === 'string' && successUrl.startsWith('http'))
+      ? successUrl
+      : `${base}/${defaultTarget}?checkout=success`;
+    const badUrl = (typeof cancelUrl === 'string' && cancelUrl.startsWith('http'))
+      ? cancelUrl
+      : `${base}/${defaultTarget}?checkout=cancel`;
+
+    // ====== Stripe ======
+    const stripe = require('stripe')(SECRET);
+
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
-      line_items: [{ price: PRICE, quantity: 1 }],
-      success_url,
-      cancel_url,
+      line_items: [{ price: chosenPrice, quantity: 1 }],
+      success_url: okUrl,
+      cancel_url:  badUrl,
       customer_email: email || undefined,
-      // zachowaj odpowiedzi, żeby po płatności wiedzieć co generować
-      metadata: { inputs: JSON.stringify(inputs || {}) },
-      allow_promotion_codes: true
+      billing_address_collection: 'auto',
+      allow_promotion_codes: true,
+      metadata: {
+        product_type: productType,       // 'AI' / 'CUSTOM'
+        // przechowaj ewentualne dane wejściowe (krótkie!)
+        inputs: (() => {
+          try { return JSON.stringify(inputs || {}); } catch { return '{}'; }
+        })()
+      }
     });
 
-    return {
-      statusCode: 200,
-      headers: corsHeaders(origin),
-      body: JSON.stringify({ ok:true, url: session.url })
-    };
+    return { statusCode: 200, headers: corsHeaders(origin), body: JSON.stringify({ ok:true, url: session.url }) };
   } catch (err) {
-    console.error('create-checkout error:', err);
+    console.error('create-checkout-session error:', err);
     return {
       statusCode: 500,
-      headers: corsHeaders(event.headers?.origin || ''),
+      headers: corsHeaders(origin),
       body: JSON.stringify({ ok:false, error:'create-checkout failed', details: String(err && err.message || err) })
     };
   }
