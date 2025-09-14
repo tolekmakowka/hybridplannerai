@@ -1,3 +1,4 @@
+// netlify/functions/generate-plan.js
 'use strict';
 
 const ALLOWED_ORIGINS = new Set([
@@ -30,7 +31,7 @@ exports.handler = async (event) => {
     const ses     = Number(inputs.sessionsPerWeek || 3);
     const split   = String(inputs.split || '').toUpperCase();   // FBW | PPL | UL | PPL_FBW | PPL_ARNOLD | PPLPP
     const gender  = String(inputs.gender || '');
-    const isFemale= gender.toLowerCase().includes('kobiet');
+    const isFemale= /kobiet|kobieta|female|woman/i.test(gender || '');
 
     // ---------- BANK ĆWICZEŃ ----------
     const bank = {
@@ -45,71 +46,82 @@ exports.handler = async (event) => {
       ABS:       ['Hanging knee raises','Cable crunch','Ab wheel rollout','Plank 60s']
     };
 
+    // ---------- LOSOWANIE BEZ POWTÓRZEŃ W TYGODNIU ----------
+    // Dla każdej kategorii pamiętamy, co już użyliśmy w bieżącym planie.
+    const usedGlobal = Object.fromEntries(Object.keys(bank).map(k => [k, new Set()]));
+
+    function randomPick(arr, usedSet){
+      if (!arr || arr.length === 0) return '';
+      // lista dostępnych (nieużytych)
+      const pool = arr.filter(x => !usedSet.has(x));
+      const choiceList = pool.length ? pool : arr; // jeśli wszystko już użyte, resetujemy pulę
+      const idx = Math.floor(Math.random() * choiceList.length);
+      const pick = choiceList[idx];
+      // jeśli resetowaliśmy pulę, czyścimy set i dopiero dodajemy
+      if (!pool.length) usedSet.clear();
+      usedSet.add(pick);
+      return pick;
+    }
+
+    // helper: wybór ćwiczenia z kategorii z globalną unikalnością
+    function pickUnique(cat){
+      const list = bank[cat] || [];
+      return randomPick(list, usedGlobal[cat] || (usedGlobal[cat] = new Set()));
+    }
+
+    // reps & sets – wg Twoich zasad
+    const SETS_ALWAYS = '3'; // w kolumnie SERIE wpisujemy wyłącznie tę liczbę
+    function repsFor(cat){
+      return (cat === 'BACK' || cat === 'CHEST') ? '8' : '10';
+    }
+
+    // Dni tygodnia
     const dniPL = ['Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota','Niedziela'];
     const dniEN = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
     const dni = (lang==='en'?dniEN:dniPL);
 
-    // ========== RULESET DLA KOBIET (Twoje wytyczne) ==========
+    // ========== RULESET DLA KOBIET (priorytet nóg, ale z losowaniem i Twoimi powtórzeniami) ==========
     function buildRuleBasedPlan_Women({ sessionsPerWeek = 3 }) {
-      const multi = new Set(['hip thrust','back squat','deadlift','bulgarian split squats','flat bench press','incline bench press','overhead press','barbell row','lat pulldown','pull-up']);
-      const iso   = (name) => !multi.has(name.toLowerCase());
-      const R = {
-        calves: ['Standing calf raise','Seated calf raise'],
-        abs:    ['Plank','Hanging knee raises','Cable crunch'],
-        upperA: ['Flat bench press','Lat pulldown','Overhead press','Barbell row','Lateral raise','Triceps extension','Biceps curl'],
-        upperB: ['Incline bench press','Seated cable row','Face pull','Push-up (obciążony)','Hammer curl','Triceps rope pressdown']
-      };
-      const LEG_PRIMARY = ['hip thrust','back squat','deadlift','bulgarian split squats'];
-      const LEG_SECOND  = ['hip adduction machine','hip adductor machine'];
-      const LEG_THIRD   = ['kickback horizontal','back extension'];
 
-      const rep = (n) => (iso(n) ? '12' : '10');
-      const ser = (n) => '3×' + rep(n);
-      const title = (n)=> n.replace(/\b\w/g, m => m.toUpperCase());
-
-      function legDay(idx){
-        const p1 = LEG_PRIMARY[idx % LEG_PRIMARY.length];
-        const p2 = LEG_SECOND [idx % LEG_SECOND .length];
-        const p3 = LEG_THIRD  [idx % LEG_THIRD  .length];
-        const extras = [ R.calves[idx % R.calves.length], R.abs[idx % R.abs.length] ];
-
-        const rows = []
-          .concat([p1,p2,p3].map(n => ({ cwiczenie: title(n), serie: ser(n), powtorzenia: rep(n) })))
-          .concat(extras.map(n => ({ cwiczenie: n, serie: ser(n), powtorzenia: rep(n) })))
-          .concat([{ cwiczenie: (lang==='en'?'Incline treadmill walk':'Incline treadmill walk'), serie:'X', powtorzenia:'20min' }]);
-
+      // Leg day: QUADS, POSTERIOR, CALVES, ABS + marsz po bieżni
+      function legDay(){
+        const rows = [];
+        const c1 = 'QUADS';     rows.push({ cwiczenie: pickUnique(c1), serie: SETS_ALWAYS, powtorzenia: repsFor(c1) });
+        const c2 = 'POSTERIOR'; rows.push({ cwiczenie: pickUnique(c2), serie: SETS_ALWAYS, powtorzenia: repsFor(c2) });
+        const c3 = 'CALVES';    rows.push({ cwiczenie: pickUnique(c3), serie: SETS_ALWAYS, powtorzenia: repsFor(c3) });
+        const c4 = 'ABS';       rows.push({ cwiczenie: pickUnique(c4), serie: SETS_ALWAYS, powtorzenia: repsFor(c4) });
+        rows.push({ cwiczenie: (lang==='en'?'Incline treadmill walk':'Incline treadmill walk'), serie: '1', powtorzenia: '20min' });
         return rows;
       }
-      function upperDay(idx){
-        const bankU = (idx % 2 === 0 ? R.upperA : R.upperB).slice(0,5);
-        return bankU.map(n => ({ cwiczenie:n, serie:'3×' + (n.match(/press|row|pulldown|push-up|overhead/i)?'10':'12'), powtorzenia:(n.match(/press|row|pulldown|push-up|overhead/i)?'10':'12') }));
+
+      // Upper day: CHEST, BACK, SHOULDERS, BICEPS, TRICEPS
+      function upperDay(){
+        const cats = ['CHEST','BACK','SHOULDERS','BICEPS','TRICEPS'];
+        return cats.map(cat => ({
+          cwiczenie: pickUnique(cat),
+          serie: SETS_ALWAYS,
+          powtorzenia: repsFor(cat)
+        }));
       }
 
       const days = [];
       const s = Math.min(Math.max(1, sessionsPerWeek|0), 7);
 
       if (s === 3) {
-        const order = [legDay(0), upperDay(0), legDay(1)];
+        const order = [legDay(), upperDay(), legDay()];
         for (let i=0;i<s;i++) days.push({ day: dni[i], exercises: order[i] });
       } else {
+        // co najmniej połowa dni to nogi
         const legCount = Math.ceil(s * 0.5);
         for (let i=0;i<s;i++){
-          const exs = (i < legCount) ? legDay(i) : upperDay(i);
+          const exs = (i < legCount) ? legDay() : upperDay();
           days.push({ day: dni[i], exercises: exs });
         }
       }
       return { days };
     }
 
-    // ========== TWARDY SCHEMAT (wszyscy poza „kobiet…”) ==========
-    function pick(cat, used) {
-      const list = bank[cat] || [];
-      for (const ex of list) if (!used.has(ex)) { used.add(ex); return ex; }
-      return list[0] || cat;
-    }
-    const setStr = (cat)=> (cat==='CALVES'||cat==='ABS') ? '3×12' : '3×10';
-    const repsStr= (cat)=> (cat==='CALVES'||cat==='ABS') ? '12'   : '10';
-
+    // ========== TWARDY SCHEMAT (wszyscy poza „kobiet…”) – z losowaniem i nowymi REP/SETS ==========
     function scheme3_FBW(){ return [
       ['BACK','CHEST','QUADS','TRICEPS','BICEPS'],
       ['BACK','CHEST','QUADS','TRICEPS','BICEPS'],
@@ -161,17 +173,16 @@ exports.handler = async (event) => {
 
       const days = [];
       layout.forEach((cats, i)=>{
-        const used = new Set();
         const rows = cats.map(cat=>{
-          const ex = pick(cat, used);
-          return { cwiczenie: ex, serie: setStr(cat), powtorzenia: repsStr(cat) };
+          const ex = pickUnique(cat);
+          return { cwiczenie: ex, serie: SETS_ALWAYS, powtorzenia: repsFor(cat) };
         });
         days.push({ day: dni[i], exercises: rows });
       });
       return { days };
     }
 
-    // ========== Workbook (ExcelJS) ==========
+    // ========== Workbook (ExcelJS) – 3 kolumny, SERIE = sama liczba ==========
     async function makeWorkbook3Cols(plan){
       const wb = new ExcelJS.Workbook();
       const ws = wb.addWorksheet('Plan', {
