@@ -189,7 +189,7 @@ section.snap{padding:64px 0}
 </div>
 <div id="backdrop" class="backdrop" aria-hidden="true"></div>
 
-<!-- Modal e-mail (pozostaje dla bezpośredniego wejścia do generatora z menu) -->
+<!-- Modal e-mail -->
 <div id="emailModal" aria-modal="true" role="dialog" style="position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center">
   <div class="box" style="background:#fff;color:#111;border-radius:16px;padding:22px;max-width:420px;width:92%;box-shadow:0 10px 40px rgba(0,0,0,.35)">
     <h3 style="margin-top:0">Dostęp do generatora</h3>
@@ -233,7 +233,6 @@ section.snap{padding:64px 0}
               <a id="btnGenerate" class="btn btn-brown" href="#pricing">Kup teraz</a>
               <a id="btnDetails" class="btn" href="#details">Zobacz szczegóły</a>
             </div>
-            <!-- mały disclaimer -->
             <p id="heroDisclaimer" class="hero-disclaimer reveal">To nie jest porada medyczna.</p>
           </div>
 
@@ -460,7 +459,6 @@ document.querySelectorAll('.requires-email').forEach(a=>{
   }
 
   async function startCheckout(plan){            // 'ai' | 'custom'
-    // wymuś bramkę e-mail
     if(!localStorage.getItem('hp_email') || !localStorage.getItem('hp_consent')){
       showModal(); return;
     }
@@ -469,7 +467,6 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     const prev = btn?.textContent;
     if(btn){ btn.disabled = true; btn.textContent = txtLoading; }
 
-    // sukces/odwołanie – pełne URL, różne strony
     const origin = window.location.origin;
     const target = (plan === 'ai') ? 'generator.html' : 'ankieta.html';
     const successUrl = `${origin}/${target}?checkout=success`;
@@ -481,9 +478,8 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     };
 
     try{
-      // najpierw nowa funkcja z mapą cen
       const url = await tryCheckout('/.netlify/functions/create-checkout-session', payload)
-                 .catch(()=> tryCheckout('/.netlify/functions/create-checkout', payload)); // fallback
+                 .catch(()=> tryCheckout('/.netlify/functions/create-checkout', payload));
       window.location.href = url;
     }catch(err){
       console.error('create-checkout error:', err);
@@ -491,7 +487,7 @@ document.querySelectorAll('.requires-email').forEach(a=>{
         ? 'Could not start payment. Please try again.'
         : 'Nie udało się rozpocząć płatności. Spróbuj ponownie.');
     }finally{
-      if(btn){ btn.disabled = false; btn.textContent = prev || 'Kup teraz'; }
+      if(btn){ btn.disabled = false; btn.textContent = prev || (lang==='en' ? 'Buy now' : 'Kup teraz'); }
     }
   }
 
@@ -504,17 +500,16 @@ document.querySelectorAll('.requires-email').forEach(a=>{
   });
 })();
 
-/* i18n – pełne PL/EN, w tym disclaimer */
+/* i18n – pełne PL/EN, w tym CTA i FAQ */
 (function () {
   const params = new URLSearchParams(location.search);
   const lang = (params.get('lang') || localStorage.getItem('hp_lang') || 'pl').toLowerCase();
   const setHTML = (id, val) => { const el = document.getElementById(id); if (el && val) el.innerHTML = val; };
-  const setText  = (id, val) => { const el = document.getElementById(id); if (el && val) el.textContent = val; };
+  const setText  = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.textContent = val; };
   const toggleBtn = document.getElementById('langToggle');
 
   const detailsCards = document.querySelectorAll('#details .card-light');
   const offerCards = document.querySelectorAll('#pricing .card-light');
-
   const modalEl = document.getElementById('emailModal');
   const modalH3 = modalEl ? modalEl.querySelector('h3') : null;
   const labelEmail = modalEl ? modalEl.querySelector('label[for="gateEmail"]') : null;
@@ -553,9 +548,32 @@ document.querySelectorAll('.requires-email').forEach(a=>{
       offerCards[1].querySelector('.price-note').textContent = 'one-time';
     }
 
+    /* EN: zmień wszystkie CTA na "Buy now" */
+    document.querySelectorAll('.btn-cta').forEach(btn => btn.textContent = 'Buy now');
+
     setText('aboutTitle','About me');
     setText('aboutText',"My name is Tolek, I'm a certified personal trainer, passionate about sports and a healthy lifestyle. In sports, the most important thing is pushing your body to its limits; this is the only way the body can continuously develop. In strength training, both for myself and my clients, I focus on the highest possible intensity with a low volume of exercises. Thanks to this method, I'm able to achieve better results in a shorter time. Train smarter and shorter!");
 
+    /* EN: FAQ tłumaczenie */
+    setText('q1','How is my plan created?');
+    setText('a1','AI generates your plan based on your answers to a short questionnaire. We consider your goal, level, available equipment, time, and any constraints.');
+
+    setText('q2','How long does it take?');
+    setText('a2','Usually a few to several seconds after you submit your answers. You get a preview and a downloadable Excel file.');
+
+    setText('q3','Can I train multiple disciplines in a week?');
+    setText('a3','Yes — the weekly schedule is optimized for your priorities and recovery.');
+
+    setText('q4','What language will I receive the plan in?');
+    setText('a4','The interface and files are available in two languages: PL and EN.');
+
+    setText('q5','What if I have an injury or illness?');
+    setText('a5','This is not medical advice. If you have an injury or health concerns, consult a doctor or physiotherapist before you start.');
+
+    setText('q6','I don’t have full access to equipment. Will the plan still work?');
+    setText('a6','Yes. In the questionnaire, you specify the equipment you have, and the AI adapts exercises and volume to your conditions.');
+
+    /* Modal / footer */
     if (modalH3) modalH3.textContent = 'Access to the generator';
     if (labelEmail) labelEmail.textContent = 'Your e-mail';
     if (labelConsent) labelConsent.textContent = 'I consent to the processing of my personal data.';
@@ -593,6 +611,9 @@ document.querySelectorAll('.requires-email').forEach(a=>{
       offerCards[1].querySelector('.price-note').textContent = 'jednorazowo';
     }
 
+    /* PL: upewnij się, że CTA są po polsku */
+    document.querySelectorAll('.btn-cta').forEach(btn => btn.textContent = 'Kup teraz');
+
     document.getElementById('legalPolicy').textContent='Polityka';
     document.getElementById('legalTerms').textContent='Regulamin';
     document.getElementById('legalContact').textContent='Kontakt';
@@ -600,6 +621,25 @@ document.querySelectorAll('.requires-email').forEach(a=>{
 
     setText('aboutTitle','O mnie');
     setText('aboutText','Nazywam się Tolek, jestem certyfikowanym trenerem personalnym, pasjonatem sportu i zdrowego stylu życia. W sporcie najważniejsze jest zmuszanie własnego ciała do granic możliwości, tylko w ten sposób ciało jest w stanie nieustannie się rozwijać. W treningu siłowym zarówno swoim, jak i swoich podopiecznych skupiam się na możliwie najwyższej intensywności przy niskiej objętości ćwiczeń, dzięki tej metodzie jestem w stanie osiągnąć lepsze efekty w krótszym czasie. Trenuj mądrze oraz krótko!');
+
+    /* PL: FAQ (na wypadek przełączania z EN) */
+    setText('q1','Jak powstaje mój plan?');
+    setText('a1','Plan generuje AI na podstawie Twoich odpowiedzi w krótkiej ankiecie. Uwzględniamy cel, poziom, sprzęt, czas oraz ewentualne ograniczenia.');
+
+    setText('q2','Ile to trwa?');
+    setText('a2','Zwykle kilkanaście sekund od wysłania odpowiedzi. Otrzymujesz podgląd i plik Excel do pobrania.');
+
+    setText('q3','Czy mogę trenować kilka dyscyplin w tygodniu?');
+    setText('a3','Tak — tygodniowy rozkład optymalizujemy pod Twoje priorytety i regenerację.');
+
+    setText('q4','W jakim języku dostanę plan?');
+    setText('a4','Interfejs i pliki dostępne są w dwóch wersjach językowych: PL oraz EN.');
+
+    setText('q5','Co jeśli mam kontuzję lub chorobę?');
+    setText('a5','To nie jest porada medyczna. Jeśli masz uraz lub wątpliwości zdrowotne, skonsultuj się z lekarzem lub fizjoterapeutą przed rozpoczęciem.');
+
+    setText('q6','Nie mam pełnego dostępu do sprzętu. Czy plan zadziała?');
+    setText('a6','Tak. W ankiecie podajesz dostępny sprzęt, a AI dopasuje ćwiczenia i objętość do Twoich warunków.');
   }
 })();
 </script>
