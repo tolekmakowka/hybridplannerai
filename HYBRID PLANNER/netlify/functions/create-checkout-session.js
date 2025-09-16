@@ -37,10 +37,10 @@ exports.handler = async (event) => {
     const SECRET = process.env.STRIPE_SECRET_KEY;
     if (!SECRET) throw new Error('Missing STRIPE_SECRET_KEY');
 
-    // ceny z ENV (AI ma też fallback do starego STRIPE_PRICE_ID)
+    // ceny z ENV (AI ↔ STRIPE_PRICE_AI, CUSTOM ↔ STRIPE_PRICE_CUSTOM) + fallbacki
     const PRICE_MAP = {
-      AI: process.env.STRIPE_PRICE_AI || process.env.STRIPE_PRICE_ID || '',
-      CUSTOM: process.env.STRIPE_PRICE_CUSTOM || ''
+      AI: process.env.STRIPE_PRICE_AI || process.env.STRIPE_PRICE_AI_ID || process.env.STRIPE_PRICE_ID || '',
+      CUSTOM: process.env.STRIPE_PRICE_CUSTOM || process.env.STRIPE_PRICE_CUSTOM_ID || ''
     };
 
     // ====== BODY ======
