@@ -44,7 +44,7 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
 .hidden{display:none!important}
 @media (max-width:700px){ .grid-2{grid-template-columns:1fr} }
 
-/* Modal e-mail po płatności */
+/* Modal e-mail */
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:10000}
 .modal{background:#fff;color:#111;border-radius:16px;padding:22px;max-width:420px;width:92%;box-shadow:0 10px 40px rgba(0,0,0,.35)}
 .modal h3{margin:0 0 8px}
@@ -60,28 +60,13 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
     <a id="langToggle" class="lang-toggle" href="?lang=en" aria-label="English version">EN</a>
   </div>
 
-  <!-- GATE: pokazuje się przed opłaceniem -->
-  <div id="purchaseGate" class="card">
-    <h1 id="gateTitle">Dostęp do generatora</h1>
-    <p id="gateDesc" style="margin:6px 0 14px;color:#C9C7C2">
-      Aby wypełnić krótką ankietę i otrzymać plan (Excel) na e-mail, najpierw opłać dostęp.
-    </p>
-    <div class="actions">
-      <button id="payBtn" class="btn btn-brown">Przejdź do płatności — 9,99&nbsp;zł</button>
-    </div>
-    <div class="notice">
-      <small id="whoLbl_gate">Plan zostanie wysłany na e-mail: <strong id="who_gate"></strong></small>
-      <small id="rodoLbl_gate">To nie jest porada medyczna.</small>
-    </div>
-  </div>
-
-  <!-- FORM: pojawia się dopiero po opłaceniu -->
-  <div id="formSection" class="card hidden">
-    <div id="paidBanner" class="banner"><strong id="paidOk">Płatność potwierdzona.</strong> <span id="paidNext">Wypełnij ankietę, a my wygenerujemy plan.</span></div>
+  <!-- FORM: zawsze dostępny; płatność po ankiecie -->
+  <div id="formSection" class="card">
+    <div id="paidBanner" class="banner hidden"><strong id="paidOk">Płatność potwierdzona.</strong> <span id="paidNext">Generujemy Twój plan…</span></div>
 
     <h1 id="title">Generator planów</h1>
     <p id="subtitle" style="margin:6px 0 14px;color:#C9C7C2">
-      Wybierz odpowiedzi i kliknij <strong>Wygeneruj plan</strong>. Gotowy plik (Excel) wyślemy na Twój e-mail.
+      Wypełnij ankietę i kliknij <strong>Wygeneruj plan</strong>. Najpierw przekierujemy do płatności, a po jej zakończeniu wyślemy plik (Excel) na e-mail.
     </p>
 
     <h2 id="hA">Plan — pytania (5)</h2>
@@ -131,7 +116,7 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
   <footer>© 2025 Anatol Makówka</footer>
 </div>
 
-<!-- Modal e-mail (pokazywany PO płatności, jeżeli brak e-maila) -->
+<!-- Modal e-mail (jeśli brak e-maila przed płatnością) -->
 <div id="emailModal" class="modal-backdrop" aria-modal="true" role="dialog">
   <div class="modal">
     <h3 id="mTitle">Podaj e-mail, aby wysłać plan</h3>
@@ -157,8 +142,7 @@ const HP = {
   generate: '/.netlify/functions/generate-plan',
   sendEmail: '/.netlify/functions/send-email',
   checkoutPrimary:  '/.netlify/functions/create-checkout-session',
-  checkoutFallback: '/.netlify/functions/create-checkout',
-  verifySession: '/.netlify/functions/verify-session' // opcjonalne
+  checkoutFallback: '/.netlify/functions/create-checkout'
 };
 
 /* ---------- helpers ---------- */
@@ -167,45 +151,32 @@ function show(el){ el.classList.remove('hidden'); }
 function hide(el){ el.classList.add('hidden'); }
 function setWho(email){
   (qs('who')||{}).textContent = email || '—';
-  (qs('who_gate')||{}).textContent = email || '—';
 }
 function validEmail(v){ return /^[^\s@]+@[^\s@]+$/.test(v) && /\.[^\s@]{2,}$/.test(v); }
 
-/* ---------- e-mail w UI (bez wymuszania przed płatnością) ---------- */
-(function hydrateEmail(){
-  setWho(localStorage.getItem('hp_email') || '');
-})();
+/* ---------- e-mail w UI ---------- */
+(function hydrateEmail(){ setWho(localStorage.getItem('hp_email') || ''); })();
 
-/* ---------- PŁATNOŚĆ – stan ---------- */
-function isPaid(){
-  const p = new URLSearchParams(location.search);
-  if (p.get('checkout') === 'success') return true;
-  if (p.get('session_id')) return true; // po nowym success_url
-  return localStorage.getItem('hp_paid_ai') === '1';
-}
-function markPaid(){ localStorage.setItem('hp_paid_ai','1'); }
-
-/* ---------- payload do generatora ---------- */
-function buildPayload(){
+/* ---------- payload z ankiety ---------- */
+function buildInputs(){
   return {
-    type: 'A',
-    lang: (document.documentElement.lang || 'pl'),
-    inputs: {
-      sessionsPerWeek: Number(qs('a1').value || 0),
-      goal: qs('a2').value.trim(),
-      level: qs('a3').value,
-      equipment: qs('a4').value.trim(),
-      gender: qs('a5').value
-    }
+    sessionsPerWeek: Number(qs('a1').value || 0),
+    goal: qs('a2').value.trim(),
+    level: qs('a3').value,
+    equipment: qs('a4').value.trim(),
+    gender: qs('a5').value
   };
+}
+function buildPayloadFromInputs(inputs){
+  return { type:'A', lang:(document.documentElement.lang || 'pl'), inputs };
 }
 
 /* ---------- backend: generate & e-mail ---------- */
 async function callBackendForXlsx(payload){
   const res = await fetch(HP.generate, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-  const text = await res.text();
-  let data = null; try { data = JSON.parse(text) } catch {}
-  if (!res.ok || !data) throw new Error(`generate-plan ${res.status}: ${text.slice(0,300)}`);
+  const txt = await res.text();
+  let data = null; try { data = JSON.parse(txt) } catch {}
+  if (!res.ok || !data) throw new Error(`generate-plan ${res.status}: ${txt.slice(0,300)}`);
   if (data.ok === false) throw new Error(data.error || data.details || 'Błąd backendu');
   const base64 = data.fileBase64 || data.xlsxBase64;
   const filename = data.filename || data.xlsxFilename || 'Plan Treningowy.xlsx';
@@ -242,38 +213,16 @@ async function tryCreateCheckout(endpoint, payload){
   if(!r.ok || !data?.url) throw new Error((data && (data.error||data.details)) || txt || 'checkout failed');
   return data.url;
 }
-
-async function createCheckout(){
+async function createCheckout(product){
   const email = localStorage.getItem('hp_email') || '';
-  // Pozostawiamy success/cancel po stronie backendu (może wstawić session_id={CHECKOUT_SESSION_ID})
-  const payload = { email };
+  const origin = window.location.origin;
+  const here   = window.location.pathname.replace(/\/+$/,'') || '/generator.html';
+  const successUrl = `${origin}${here}?checkout=success`;
+  const cancelUrl  = `${origin}${here}?checkout=cancel`;
+  const payload = { email, successUrl, cancelUrl, product }; // product: 'ai' | 'custom'
   try { return await tryCreateCheckout(HP.checkoutPrimary, payload); }
   catch { return await tryCreateCheckout(HP.checkoutFallback, payload); }
 }
-
-/* ---------- Opcjonalna weryfikacja płatności ---------- */
-async function verifyPaidIfPossible(){
-  const p = new URLSearchParams(location.search);
-  const sessionId = p.get('session_id');
-  if(!sessionId) return true; // brak – zakładamy success z query 'checkout=success'
-  try{
-    const r = await fetch(HP.verifySession, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ session_id: sessionId })
-    });
-    if(!r.ok) throw 0;
-    const data = await r.json();
-    return !!data?.paid;
-  }catch{ return true; } // łagodne domyślnie „true”, jeśli brak funkcji
-}
-
-/* ---------- Elementy ---------- */
-const payBtn = qs('payBtn');
-const genBtn = qs('genBtn');
-const dlBtn  = qs('dlBtn');
-const purchaseGate = qs('purchaseGate');
-const formSection  = qs('formSection');
 
 /* ---------- Modal e-mail ---------- */
 const modal = qs('emailModal');
@@ -294,98 +243,74 @@ mConfirm.addEventListener('click', ()=>{
   setWho(v);
   closeEmailModal();
 });
-
-/* Upewnij się, że mamy e-mail (po płatności przed ankietą/generowaniem) */
 async function ensureEmail(){
   const mail = localStorage.getItem('hp_email') || '';
-  if(mail) return true;
+  if(mail && localStorage.getItem('hp_consent')==='1') return true;
   openEmailModal();
   return new Promise(resolve=>{
-    const onClose = ()=>{ modal.removeEventListener('click', backdropHandler); resolve(!!localStorage.getItem('hp_email')); };
-    function backdropHandler(e){ if(e.target===modal) closeEmailModal(); }
-    modal.addEventListener('click', backdropHandler);
-    // mConfirm już zapisuje e-mail i zamyka modal
     const obs = new MutationObserver(()=>{
-      if(modal.style.display==='none'){ obs.disconnect(); onClose(); }
+      if(modal.style.display==='none'){ obs.disconnect(); resolve(!!localStorage.getItem('hp_email')); }
     });
     obs.observe(modal, { attributes:true, attributeFilter:['style'] });
   });
 }
 
-/* ---------- Init: pokaż odpowiednią sekcję ---------- */
-(async function initGate(){
+/* ---------- Autoresume po powrocie z płatności ---------- */
+async function resumeAfterPaymentIfNeeded(){
   const p = new URLSearchParams(location.search);
-  const status = p.get('checkout');
-  const hasSessionParam = !!p.get('session_id');
+  if(p.get('checkout') !== 'success') return;
 
-  if (status === 'cancel'){ /* nic nie robimy – zostaje bramka */ }
-  if (status === 'success' || hasSessionParam){
-    const paidOk = await verifyPaidIfPossible();
-    if(paidOk){
-      markPaid();
-      // sprzątamy query po potwierdzeniu
-      history.replaceState({}, '', window.location.pathname);
-    }
-  }
+  show(qs('paidBanner'));
+  // zdejmij param z URL, żeby nie powtarzać
+  history.replaceState({}, '', window.location.pathname);
 
-  if (isPaid()){
-    hide(purchaseGate);
-    show(formSection);
-    // jeśli nie mamy e-maila, poproś teraz:
-    if(!(localStorage.getItem('hp_email') && localStorage.getItem('hp_consent'))){
-      openEmailModal();
-    }
-  } else {
-    show(purchaseGate);
-    hide(formSection);
+  const raw = sessionStorage.getItem('hp_form_ai');
+  if(!raw){ return; }
+  const inputs = JSON.parse(raw);
+  const payload = buildPayloadFromInputs(inputs);
+
+  try{
+    const { xlsxBase64, xlsxFilename } = await callBackendForXlsx(payload);
+    const url = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + xlsxBase64;
+    const dlBtn = qs('dlBtn');
+    dlBtn.href = url; dlBtn.download = xlsxFilename || 'Plan Treningowy.xlsx';
+    dlBtn.style.display='inline-flex';
+    await sendPlanByEmail(xlsxBase64, xlsxFilename);
+    qs('paidNext').textContent = (document.documentElement.lang==='en') ? 'Plan generated. You can also download it below.' : 'Plan wygenerowany. Możesz też pobrać go poniżej.';
+  }catch(e){
+    console.error(e);
+    alert((document.documentElement.lang==='en')
+      ? 'We could not generate your plan after payment. Please click Generate plan again.'
+      : 'Nie udało się wygenerować planu po płatności. Kliknij jeszcze raz „Wygeneruj plan”.');
+  }finally{
+    sessionStorage.removeItem('hp_form_ai');
   }
-})();
+}
 
 /* ---------- Actions ---------- */
-if (payBtn){
-  payBtn.addEventListener('click', async ()=>{
-    try{
-      payBtn.disabled = true; payBtn.textContent = 'Łączenie ze Stripe…';
-      const checkoutUrl = await createCheckout();
-      window.location.href = checkoutUrl;
-    }catch(e){
-      console.error(e);
-      alert('Nie udało się rozpocząć płatności: ' + String(e.message || e));
-    }finally{
-      payBtn.disabled = false; payBtn.textContent = 'Przejdź do płatności — 9,99 zł';
-    }
-  });
-}
+const genBtn = qs('genBtn');
+const dlBtn  = qs('dlBtn');
 
 if (genBtn){
   genBtn.addEventListener('click', async ()=>{
     try{
-      if (!isPaid()){
-        const checkoutUrl = await createCheckout();
-        window.location.href = checkoutUrl;
-        return;
-      }
+      // 1) zbierz odpowiedzi i zapisz do sessionStorage
+      const inputs = buildInputs();
+      sessionStorage.setItem('hp_form_ai', JSON.stringify(inputs));
+
+      // 2) upewnij się, że mamy e-mail
       const ok = await ensureEmail();
       if(!ok) return;
 
-      genBtn.disabled = true; genBtn.textContent = 'Generowanie…';
-      dlBtn.style.display='none'; dlBtn.removeAttribute('href');
-
-      const payload = buildPayload();
-      const { xlsxBase64, xlsxFilename } = await callBackendForXlsx(payload);
-
-      const url = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + xlsxBase64;
-      dlBtn.href = url; dlBtn.download = xlsxFilename || 'Plan Treningowy.xlsx';
-      dlBtn.style.display='inline-flex';
-
-      await sendPlanByEmail(xlsxBase64, xlsxFilename);
-      genBtn.textContent = 'Gotowe ✓';
+      // 3) przekierowanie do płatności (produkt AI)
+      genBtn.disabled = true; genBtn.textContent = (document.documentElement.lang==='en') ? 'Redirecting to payment…' : 'Przekierowanie do płatności…';
+      const checkoutUrl = await createCheckout('ai'); // << AI produkt
+      window.location.href = checkoutUrl;
     }catch(e){
       console.error(e);
-      alert('Nie udało się wygenerować planu: ' + String(e.message || e));
-      genBtn.textContent = 'Wygeneruj plan';
+      alert((document.documentElement.lang==='en') ? 'Could not start payment.' : 'Nie udało się rozpocząć płatności.');
     }finally{
-      genBtn.disabled = false;
+      genBtn.disabled = false; genBtn.textContent = (document.documentElement.lang==='en') ? 'Generate plan' : 'Wygeneruj plan';
     }
   });
 }
@@ -403,18 +328,9 @@ if (genBtn){
     if (toggleBtn){ toggleBtn.href='?lang=pl'; toggleBtn.textContent='PL'; toggleBtn.setAttribute('aria-label','Polska wersja'); }
     document.documentElement.lang = 'en';
 
-    // Gate
-    t('gateTitle','Access to the generator');
-    t('gateDesc','To fill out a short questionnaire and receive your plan (Excel) by e-mail, please complete the payment first.');
-    t('payBtn','Go to payment — 9.99 PLN');
-    t('whoLbl_gate','The plan will be sent to:');
-    t('rodoLbl_gate','This is not medical advice.');
-
-    // Form after payment
-    t('paidOk','Payment confirmed.');
-    t('paidNext','Fill in the questionnaire and we will generate your plan.');
+    // Form
     t('title','Plan generator');
-    t('subtitle','Choose the answers and click Generate plan. We will send the Excel file to your e-mail.');
+    t('subtitle','Fill out the questionnaire and click Generate plan. You will be redirected to payment first; after success we will e-mail you the Excel file.');
     t('hA','Plan — questions (5)');
     t('a1lbl','How many sessions per week would you like?');
     t('a2lbl','What is your main goal?');
@@ -425,6 +341,8 @@ if (genBtn){
     qs('dlBtn')  && (qs('dlBtn').textContent  = 'Download Excel');
     t('whoLbl','The plan will be sent to:');
     t('rodoLbl','This is not medical advice. Use at your own risk.');
+    t('paidOk','Payment confirmed.');
+    t('paidNext','Generating your plan…');
 
     // Modal
     t('mTitle','Enter your e-mail to receive the plan');
@@ -441,18 +359,9 @@ if (genBtn){
     if (toggleBtn){ toggleBtn.href='?lang=en'; toggleBtn.textContent='EN'; toggleBtn.setAttribute('aria-label','English version'); }
     document.documentElement.lang = 'pl';
 
-    // Gate
-    t('gateTitle','Dostęp do generatora');
-    t('gateDesc','Aby wypełnić krótką ankietę i otrzymać plan (Excel) na e-mail, najpierw opłać dostęp.');
-    t('payBtn','Przejdź do płatności — 9,99 zł');
-    t('whoLbl_gate','Plan zostanie wysłany na e-mail:');
-    t('rodoLbl_gate','To nie jest porada medyczna.');
-
     // Form
-    t('paidOk','Płatność potwierdzona.');
-    t('paidNext','Wypełnij ankietę, a my wygenerujemy plan.');
     t('title','Generator planów');
-    t('subtitle','Wybierz odpowiedzi i kliknij Wygeneruj plan. Gotowy plik (Excel) wyślemy na Twój e-mail.');
+    t('subtitle','Wypełnij ankietę i kliknij Wygeneruj plan. Najpierw przekierujemy do płatności, a po jej zakończeniu wyślemy plik (Excel) na e-mail.');
     t('hA','Plan — pytania (5)');
     t('a1lbl','Ile razy w tygodniu chciałbyś/chciałabyś ćwiczyć?');
     t('a2lbl','Jaki jest twój główny cel?');
@@ -463,6 +372,8 @@ if (genBtn){
     qs('dlBtn')  && (qs('dlBtn').textContent  = 'Pobierz Excel');
     t('whoLbl','Plan zostanie wysłany na e-mail:');
     t('rodoLbl','To nie jest porada medyczna. Korzystasz na własną odpowiedzialność.');
+    t('paidOk','Płatność potwierdzona.');
+    t('paidNext','Generujemy Twój plan…');
 
     // Modal
     t('mTitle','Podaj e-mail, aby wysłać plan');
@@ -475,6 +386,9 @@ if (genBtn){
     localStorage.setItem('hp_lang','pl');
   }
 })();
+
+/* Start autoresume (po powrocie ze Stripe) */
+resumeAfterPaymentIfNeeded();
 </script>
 </body>
 </html>
