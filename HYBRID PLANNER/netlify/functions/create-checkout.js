@@ -34,9 +34,19 @@ exports.handler = async (event) => {
   try {
     const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 
-    // Ceny: AI i Indywidualny
-    const PRICE_AI     = process.env.STRIPE_PRICE_AI_ID     || process.env.STRIPE_PRICE_ID; // wsteczna zgodność
-    const PRICE_CUSTOM = process.env.STRIPE_PRICE_CUSTOM_ID; // np. price_1S6zK1Febnj7JgP86KjzysEq
+    // === CENY ===
+    // AI: STRIPE_PRICE_AI (głównie), z fallbackiem do *_AI_ID i historycznego STRIPE_PRICE_ID
+    // CUSTOM (indywidualny): STRIPE_PRICE_CUSTOM (głównie), z fallbackiem do *_CUSTOM_ID
+    const PRICE_AI =
+      process.env.STRIPE_PRICE_AI ||
+      process.env.STRIPE_PRICE_AI_ID ||
+      process.env.STRIPE_PRICE_ID || // backward compatibility
+      '';
+
+    const PRICE_CUSTOM =
+      process.env.STRIPE_PRICE_CUSTOM ||
+      process.env.STRIPE_PRICE_CUSTOM_ID ||
+      '';
 
     if (!STRIPE_SECRET_KEY) {
       return { statusCode: 500, headers: corsHeaders(origin), body: JSON.stringify({ error: 'Stripe secret key missing' }) };
@@ -51,7 +61,7 @@ exports.handler = async (event) => {
     const cancelUrl  = body.cancelUrl  || '';
     const successPath = body.successPath || ''; // np. wysyłane z index.html (opcjonalnie)
 
-    // wybór priceId
+    // wybór priceId wg produktu
     const priceId = (planOrProduct === 'custom') ? PRICE_CUSTOM : PRICE_AI;
     if (!priceId) {
       return { statusCode: 400, headers: corsHeaders(origin), body: JSON.stringify({ error: 'Missing Stripe price id for selected product', details: { plan: planOrProduct } }) };
@@ -91,7 +101,7 @@ exports.handler = async (event) => {
       billing_address_collection: 'auto',
       allow_promotion_codes: true,
       metadata: {
-        product: planOrProduct
+        product: planOrProduct // 'ai' | 'custom'
       }
     });
 
