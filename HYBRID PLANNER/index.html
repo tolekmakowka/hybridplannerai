@@ -440,62 +440,13 @@ document.querySelectorAll('.requires-email').forEach(a=>{
   });
 });
 
-/* ===== Stripe Checkout z oferty (AI / INDYWIDUALNY) ===== */
-(function initCheckoutButtons(){
-  const params = new URLSearchParams(location.search);
-  const lang = (params.get('lang') || localStorage.getItem('hp_lang') || 'pl').toLowerCase();
-  const txtLoading = lang === 'en' ? 'Redirecting…' : 'Przekierowanie…';
-
-  async function tryCheckout(endpoint, payload){
-    const r = await fetch(endpoint, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
-    });
-    const text = await r.text();
-    let data = null; try{ data = JSON.parse(text) }catch{}
-    if(!r.ok || !data?.url) throw new Error(data?.error || text || 'checkout failed');
-    return data.url;
-  }
-
-  async function startCheckout(plan){            // 'ai' | 'custom'
-    if(!localStorage.getItem('hp_email') || !localStorage.getItem('hp_consent')){
-      showModal(); return;
-    }
-    const email = localStorage.getItem('hp_email') || '';
-    const btn = document.querySelector(`[data-plan="${plan}"]`);
-    const prev = btn?.textContent;
-    if(btn){ btn.disabled = true; btn.textContent = txtLoading; }
-
-    const origin = window.location.origin;
-    const target = (plan === 'ai') ? 'generator.html' : 'ankieta.html';
-    const successUrl = `${origin}/${target}?checkout=success`;
-    const cancelUrl  = `${origin}/${target}?checkout=cancel`;
-
-    const payload = {
-      type: (plan === 'ai' ? 'AI' : 'CUSTOM'),
-      email, successUrl, cancelUrl
-    };
-
-    try{
-      const url = await tryCheckout('/.netlify/functions/create-checkout-session', payload)
-                 .catch(()=> tryCheckout('/.netlify/functions/create-checkout', payload));
-      window.location.href = url;
-    }catch(err){
-      console.error('create-checkout error:', err);
-      alert(lang==='en'
-        ? 'Could not start payment. Please try again.'
-        : 'Nie udało się rozpocząć płatności. Spróbuj ponownie.');
-    }finally{
-      if(btn){ btn.disabled = false; btn.textContent = prev || (lang==='en' ? 'Buy now' : 'Kup teraz'); }
-    }
-  }
-
+/* ===== ZMIANA: przyciski ofertowe prowadzą do formularzy (ankieta) zamiast od razu do Stripe ===== */
+(function initOfferButtons(){
   document.querySelectorAll('[data-plan]').forEach(btn=>{
     btn.addEventListener('click', (e)=>{
       e.preventDefault();
       const plan = btn.getAttribute('data-plan');
-      startCheckout(plan);
+      window.location.href = (plan === 'custom') ? 'ankieta.html' : 'generator.html';
     });
   });
 })();
@@ -580,7 +531,6 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     if (gateConfirm) gateConfirm.textContent = 'Continue';
     if (gateClose) gateClose.textContent = 'Cancel';
     if (gateErrorEl) gateErrorEl.textContent = 'Enter a valid e-mail and tick the consent box.';
-
     localStorage.setItem('hp_lang','en');
     if (toggleBtn){ toggleBtn.href='?lang=pl'; toggleBtn.textContent='PL'; toggleBtn.setAttribute('aria-label','Polska wersja'); }
     document.getElementById('legalPolicy').textContent='Policy';
