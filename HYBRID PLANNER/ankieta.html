@@ -47,7 +47,7 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
 .copybox{display:grid;gap:8px;background:#0f0f0f;border:1px solid #3a3a3a;border-radius:12px;padding:10px;margin-top:10px}
 pre{margin:0;white-space:pre-wrap;word-break:break-word;font:400 12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:#ddd}
 .hidden{display:none!important}
-.banner{display:flex;gap:10px;align-items:center;background:#112416;border:1px solid #1f4d2a;color:#cfead7;border-radius:12px;padding:10px 12px;margin:0 0 12px}
+.banner{display:none; gap:10px;align-items:center;background:#112416;border:1px solid #1f4d2a;color:#cfead7;border-radius:12px;padding:10px 12px;margin:0 0 12px}
 @media (max-width:700px){ .grid-2{grid-template-columns:1fr} }
 </style>
 </head>
@@ -62,27 +62,12 @@ pre{margin:0;white-space:pre-wrap;word-break:break-word;font:400 12px/1.5 ui-mon
     </div>
   </div>
 
-  <!-- GATE: najpierw płatność -->
-  <div id="purchaseGate" class="card">
-    <h1 id="gateTitle">Dostęp do ankiety</h1>
-    <p id="gateDesc" class="helper" style="margin:6px 0 14px">
-      Aby wypełnić ankietę do indywidualnego planu i przekazać odpowiedzi trenerowi, najpierw opłać dostęp.
-    </p>
-    <div class="actions">
-      <button id="payBtn" class="btn btn-brown">Przejdź do płatności — 129,99&nbsp;zł</button>
-    </div>
-    <div class="notice">
-      <small id="gateWhoLbl">E-mail kontaktowy:</small>
-      <small id="gateRodo">To nie jest porada medyczna.</small>
-    </div>
-  </div>
-
-  <!-- FORM: tylko po opłaceniu -->
-  <div id="formCard" class="card hidden">
-    <div class="banner"><strong id="paidOk">Płatność potwierdzona.</strong> <span id="paidNext">Wypełnij ankietę, a skontaktuję się z Tobą z planem.</span></div>
+  <!-- FORM: dostępny od razu; płatność po wysłaniu -->
+  <div id="formCard" class="card">
+    <div id="paidBanner" class="banner"><strong id="paidOk">Płatność potwierdzona.</strong> <span id="paidNext">Wysyłam Twoją ankietę…</span></div>
 
     <h1 id="title">Ankieta — Indywidualny plan treningowy</h1>
-    <p id="intro" class="helper" style="margin:6px 0 14px">Uzupełnij krótki formularz. Odpowiedzi trafią bezpośrednio do mnie, abym przygotował Twój plan.</p>
+    <p id="intro" class="helper" style="margin:6px 0 14px">Uzupełnij krótki formularz. Odpowiedzi trafią bezpośrednio do mnie, a płatność zrealizujesz po kliknięciu „Wyślij ankietę”.</p>
 
     <form id="survey" novalidate>
       <div class="row">
@@ -155,28 +140,17 @@ const ADMIN_EMAIL = 'tolek.makowka@gmail.com';
 
 /* ====== Helpers ====== */
 function $(id){ return document.getElementById(id); }
-function show(el){ el.classList.remove('hidden'); }
-function hide(el){ el.classList.add('hidden'); }
+function show(el){ el.classList.remove('hidden'); el.style.display=''; }
+function hide(el){ el.classList.add('hidden'); el.style.display='none'; }
 function sanitize(s){ return String(s||'').trim(); }
 
-/* ====== Email from gate ====== */
+/* ====== E-mail w UI ====== */
 (function(){
   const email = localStorage.getItem('hp_email') || '';
   $('who').textContent = email || '—';
-  $('gateWhoLbl').innerHTML = (document.documentElement.lang==='en' ? 'Contact e-mail:' : 'E-mail kontaktowy:') + ' <strong>' + (email || '—') + '</strong>';
 })();
 
-/* ====== Payment state for CUSTOM product ====== */
-function isPaidCustom(){
-  const params = new URLSearchParams(location.search);
-  if (params.get('checkout') === 'success') return true;
-  return localStorage.getItem('hp_paid_custom') === '1';
-}
-function markPaidCustom(){
-  localStorage.setItem('hp_paid_custom','1');
-}
-
-/* ====== Stripe Checkout (CUSTOM) ====== */
+/* ====== Płatność (CUSTOM) ====== */
 async function tryCreateCheckout(endpoint, payload){
   const r = await fetch(endpoint, {
     method:'POST',
@@ -193,25 +167,21 @@ async function createCheckoutCustom(){
   const base = window.location.origin + window.location.pathname;
   const successUrl = base + '?checkout=success';
   const cancelUrl  = base + '?checkout=cancel';
-
-  // ⬇⬇⬇ KLUCZOWA ZMIANA: dodajemy type: 'CUSTOM' (primary endpoint tego wymaga).
-  // Zostawiamy też product: 'custom' dla fallbacku.
-  const payload = { email, successUrl, cancelUrl, type: 'CUSTOM', product: 'custom' };
-
+  // ważne: endpoint „primary” patrzy na type/plan
+  const payload = { email, successUrl, cancelUrl, type: 'CUSTOM', plan: 'CUSTOM', product: 'custom' };
   try { return await tryCreateCheckout(HP.checkoutPrimary, payload); }
   catch { return await tryCreateCheckout(HP.checkoutFallback, payload); }
 }
 
-/* ====== Init gate vs form ====== */
-(function init(){
+/* ====== Stan płatności ====== */
+function isPaidCustom(){
   const params = new URLSearchParams(location.search);
-  const status = params.get('checkout');
-  if (status === 'success'){ markPaidCustom(); history.replaceState({}, '', window.location.pathname); }
-  if (isPaidCustom()){ hide($('purchaseGate')); show($('formCard')); }
-  else { show($('purchaseGate')); hide($('formCard')); }
-})();
+  if (params.get('checkout') === 'success') return true;
+  return localStorage.getItem('hp_paid_custom') === '1';
+}
+function markPaidCustom(){ localStorage.setItem('hp_paid_custom','1'); }
 
-/* ====== Form logic ====== */
+/* ====== Formularz ====== */
 const survey = $('survey');
 const sendBtn = $('sendBtn');
 const clearBtn = $('clearBtn');
@@ -219,6 +189,7 @@ const okBox = $('success');
 const errBox = $('error');
 const fallbackText = $('fallbackText');
 const copyBtn = $('copyBtn');
+const paidBanner = $('paidBanner');
 
 function collectValues(){
   return {
@@ -251,7 +222,7 @@ function buildEmailHTML(v){
       <tr><td><strong>Treningi/tydz.</strong></td><td>${esc(v.sessions)}</td></tr>
       <tr><td><strong>Poziom aktywności</strong></td><td>${esc(v.level)}</td></tr>
       <tr><td><strong>Główny cel</strong></td><td>${esc(v.goal)}</td></tr>
-      <tr><td><strong>E-mail z bramki</strong></td><td>${esc(v.emailFromGate || '—')}</td></tr>
+      <tr><td><strong>E-mail</strong></td><td>${esc(v.emailFromGate || '—')}</td></tr>
     </table>
     <p style="margin-top:10px">Źródło: ankieta.html</p>
   `;
@@ -266,7 +237,7 @@ function buildPlainText(v){
     'Treningi/tydz.: ' + v.sessions,
     'Poziom aktywności: ' + v.level,
     'Główny cel: ' + v.goal,
-    'E-mail z bramki: ' + (v.emailFromGate || '—')
+    'E-mail: ' + (v.emailFromGate || '—')
   ].join('\n');
 }
 async function sendEmail(v){
@@ -286,47 +257,68 @@ async function sendEmail(v){
   }
 }
 
-$('payBtn').addEventListener('click', async ()=>{
-  try{
-    $('payBtn').disabled = true; $('payBtn').textContent = (document.documentElement.lang==='en'?'Connecting to Stripe…':'Łączenie ze Stripe…');
-    const url = await createCheckoutCustom();
-    window.location.href = url;
-  }catch(e){
-    console.error(e);
-    alert((document.documentElement.lang==='en'?'Could not start payment: ':'Nie udało się rozpocząć płatności: ') + String(e.message||e));
-  }finally{
-    $('payBtn').disabled = false; $('payBtn').textContent = (document.documentElement.lang==='en'?'Go to payment — 129.99 PLN':'Przejdź do płatności — 129,99 zł');
-  }
-});
+/* ====== Autoresume po udanej płatności ====== */
+async function resumeAfterPaymentIfNeeded(){
+  const p = new URLSearchParams(location.search);
+  if (p.get('checkout') !== 'success') return;
 
+  markPaidCustom();
+  history.replaceState({}, '', window.location.pathname);
+  if (paidBanner) { paidBanner.style.display = 'flex'; }
+
+  const raw = sessionStorage.getItem('hp_survey_custom');
+  if (!raw) return;
+  let v = null; try { v = JSON.parse(raw); } catch {}
+  if (!v) return;
+
+  try{
+    await sendEmail(v);
+    show(okBox);
+    survey.reset();
+  }catch(err){
+    console.error(err);
+    fallbackText.textContent = buildPlainText(v);
+    show(errBox);
+  }finally{
+    sessionStorage.removeItem('hp_survey_custom');
+  }
+}
+
+/* ====== Obsługa formularza ====== */
 survey.addEventListener('submit', async (e)=>{
   e.preventDefault();
   okBox.style.display='none'; errBox.style.display='none';
-
-  // Bezpieczeństwo: jeśli nieopłacone, otwórz Stripe zamiast wysyłać
-  if (!isPaidCustom()){
-    try{
-      const url = await createCheckoutCustom();
-      window.location.href = url;
-    }catch(err){
-      alert((document.documentElement.lang==='en'?'Payment required. Could not start payment: ':'Wymagana płatność. Nie udało się rozpocząć płatności: ') + String(err.message||err));
-    }
-    return;
-  }
 
   const v = collectValues();
   const issues = validate(v);
   if (issues.length){ alert(issues.join('\n')); return; }
 
-  sendBtn.disabled = true; sendBtn.textContent = (document.documentElement.lang==='en'?'Sending…':'Wysyłanie…');
+  // jeśli brak płatności → zapisz odpowiedzi i otwórz Stripe
+  if (!isPaidCustom()){
+    sessionStorage.setItem('hp_survey_custom', JSON.stringify(v));
+    try{
+      sendBtn.disabled = true; sendBtn.textContent = (document.documentElement.lang==='en'?'Redirecting to payment…':'Przekierowanie do płatności…');
+      const url = await createCheckoutCustom();
+      window.location.href = url;
+    }catch(err){
+      console.error(err);
+      alert((document.documentElement.lang==='en'?'Could not start payment: ':'Nie udało się rozpocząć płatności: ') + String(err.message||err));
+    }finally{
+      sendBtn.disabled = false; sendBtn.textContent = (document.documentElement.lang==='en'?'Send survey':'Wyślij ankietę');
+    }
+    return;
+  }
+
+  // jeśli opłacone → wyślij teraz
   try{
+    sendBtn.disabled = true; sendBtn.textContent = (document.documentElement.lang==='en'?'Sending…':'Wysyłanie…');
     await sendEmail(v);
-    okBox.style.display='block';
+    show(okBox);
     survey.reset();
   }catch(err){
     console.error(err);
     fallbackText.textContent = buildPlainText(v);
-    errBox.style.display='block';
+    show(errBox);
   }finally{
     sendBtn.disabled = false; sendBtn.textContent = (document.documentElement.lang==='en'?'Send survey':'Wyślij ankietę');
   }
@@ -359,16 +351,8 @@ $('copyBtn').addEventListener('click', async ()=>{
     t('backLbl','← Back');
     t('badge','Custom training plan');
 
-    t('gateTitle','Access to the survey');
-    t('gateDesc','To fill out the survey for a custom plan and send answers to the coach, please complete the payment first.');
-    t('payBtn','Go to payment — 129.99 PLN');
-    t('gateWhoLbl','Contact e-mail:');
-    t('gateRodo','This is not medical advice.');
-
-    t('paidOk','Payment confirmed.');
-    t('paidNext','Fill in the survey and I will contact you with your plan.');
     t('title','Survey — Custom training plan');
-    t('intro','Fill out a short form. Your answers will go directly to me so I can prepare your plan.');
+    t('intro','Fill out a short form. You will pay after clicking “Send survey”.');
     t('lblIg','What is your Instagram handle? ');
     t('lblIgHelp','(used for contact purposes)');
     t('lblAge','How old are you?');
@@ -380,6 +364,8 @@ $('copyBtn').addEventListener('click', async ()=>{
     t('success','Thank you! The survey has been sent. I will reach out via DM or e-mail.');
     t('whoLbl','Contact e-mail:');
     t('rodoLbl','This is not medical advice.');
+    t('paidOk','Payment confirmed.');
+    t('paidNext','Sending your survey…');
 
     if (toggleBtn){ toggleBtn.href='?lang=pl'; toggleBtn.textContent='PL'; toggleBtn.setAttribute('aria-label','Polska wersja'); }
     localStorage.setItem('hp_lang','en');
@@ -388,16 +374,8 @@ $('copyBtn').addEventListener('click', async ()=>{
     t('backLbl','← Wróć');
     t('badge','Indywidualny plan treningowy');
 
-    t('gateTitle','Dostęp do ankiety');
-    t('gateDesc','Aby wypełnić ankietę do indywidualnego planu i przekazać odpowiedzi trenerowi, najpierw opłać dostęp.');
-    t('payBtn','Przejdź do płatności — 129,99 zł');
-    t('gateWhoLbl','E-mail kontaktowy:');
-    t('gateRodo','To nie jest porada medyczna.');
-
-    t('paidOk','Płatność potwierdzona.');
-    t('paidNext','Wypełnij ankietę, a skontaktuję się z Tobą z planem.');
     t('title','Ankieta — Indywidualny plan treningowy');
-    t('intro','Uzupełnij krótki formularz. Odpowiedzi trafią bezpośrednio do mnie, abym przygotował Twój plan.');
+    t('intro','Uzupełnij krótki formularz. Płatność zrealizujesz po kliknięciu „Wyślij ankietę”.');
     t('lblIg','Jak nazywasz się na Instagramie? ');
     t('lblIgHelp','(informacja potrzebna w celach kontaktowych)');
     t('lblAge','W jakim jesteś wieku?');
@@ -409,11 +387,16 @@ $('copyBtn').addEventListener('click', async ()=>{
     t('success','Dziękuję! Ankieta została wysłana. Odezwię się w wiadomości prywatnej lub na e-mailu.');
     t('whoLbl','E-mail kontaktowy:');
     t('rodoLbl','To nie jest porada medyczna.');
+    t('paidOk','Płatność potwierdzona.');
+    t('paidNext','Wysyłam Twoją ankietę…');
 
     if (toggleBtn){ toggleBtn.href='?lang=en'; toggleBtn.textContent='EN'; toggleBtn.setAttribute('aria-label','English version'); }
     localStorage.setItem('hp_lang','pl');
   }
 })();
+
+/* Start autoresume (po powrocie ze Stripe) */
+resumeAfterPaymentIfNeeded();
 </script>
 </body>
 </html>
