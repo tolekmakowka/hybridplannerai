@@ -83,8 +83,14 @@ section.snap{padding:64px 0}
 #about .about-text p{font:400 clamp(18px, 2.2vw, 20px)/1.8 Inter;color:#E0DFDC;margin-top:8px}
 
 /* Cytat i podpis */
-.about-quote{margin-top:14px;text-align:center;font:700 clamp(18px,2.2vw,22px)/1.4 Poppins;color:#EDEDEA}
-.sig-wrap{display:flex;justify-content:center}
+/* Cytat i podpis */
+.about-quote{
+  margin-top:14px;
+  text-align:left;                 /* lewa strona */
+  font:700 clamp(18px,2.2vw,22px)/1.4 Poppins;
+  color:#EDEDEA;
+}
+.sig-wrap{display:flex;justify-content:flex-start}  /* podpis również od lewej */
 .signature{
   display:block;
   margin-top:12px;
@@ -92,7 +98,7 @@ section.snap{padding:64px 0}
   width:auto;
   filter: invert(1) brightness(1.15) contrast(1.05);
   mix-blend-mode: screen;
-  opacity:.96
+  opacity:.96;
 }
 @media (max-width:640px){ .signature{ height:44px } }
 
@@ -294,26 +300,40 @@ section.snap{padding:64px 0}
 
   <!-- O MNIE -->
   <section id="about" class="snap section-dark">
-    <div class="container">
-      <div class="about-grid">
-        <div class="about-text reveal">
-          <h2 id="aboutTitle">O mnie</h2>
-          <p id="aboutText">Nazywam się Tolek, jestem certyfikowanym trenerem personalnym, pasjonatem sportu i zdrowego stylu życia. W sporcie najważniejsze jest zmuszanie własnego ciała do granic możliwości, tylko w ten sposób ciało jest w stanie nieustannie się rozwijać. W treningu siłowym zarówno swoim, jak i swoich podopiecznych skupiam się na możliwie najwyższej intensywności przy niskiej objętości ćwiczeń, dzięki tej metodzie jestem w stanie osiągnąć lepsze efekty w krótszym czasie.</p>
-          <p class="about-quote">Nie trać czasu, trenuj mądrze</p>
-          <div class="sig-wrap">
-            <img class="signature" src="assets/podpis.jpg" alt="Podpis Anatol Makówka" loading="lazy">
-          </div>
-        </div>
-        <div class="about-media reveal">
-          <picture>
-            <source srcset="assets/Bytol3.jpg" type="image/jpeg">
-            <img src="assets/Bytol3.jpg" alt="Autor projektu">
-          </picture>
+  <div class="container">
+    <div class="about-grid">
+      <div class="about-text reveal">
+        <h2 id="aboutTitle">O mnie</h2>
+
+        <!-- Nagłówek jak hero H1 (ta sama czcionka, waga i rozmiar) -->
+        <h1>Dlaczego Ja?</h1>
+
+        <p id="aboutText">
+          Nazywam się Tolek, jestem certyfikowanym trenerem personalnym, pasjonatem sportu i zdrowego stylu życia.
+          W sporcie najważniejsze jest zmuszanie własnego ciała do granic możliwości, tylko w ten sposób ciało jest
+          w stanie nieustannie się rozwijać. W treningu siłowym zarówno swoim, jak i swoich podopiecznych skupiam się
+          na możliwie najwyższej intensywności przy niskiej objętości ćwiczeń, dzięki tej metodzie jestem w stanie
+          osiągnąć lepsze efekty w krótszym czasie.
+        </p>
+
+        <!-- Cytat: nowa linia, lewa krawędź, z wykrzyknikiem -->
+        <p class="about-quote">Nie trać czasu trenuj mądrze!</p>
+
+        <!-- Podpis pod cytatem -->
+        <div class="sig-wrap">
+          <img class="signature" src="assets/podpis.jpg" alt="Podpis Anatol Makówka" loading="lazy">
         </div>
       </div>
-    </div>
-  </section>
 
+      <div class="about-media reveal">
+        <picture>
+          <source srcset="assets/Bytol3.jpg" type="image/jpeg">
+          <img src="assets/Bytol3.jpg" alt="Autor projektu">
+        </picture>
+      </div>
+    </div>
+  </div>
+</section>
   <!-- OFERTA -->
   <section id="pricing" class="snap section-light">
     <div class="container">
