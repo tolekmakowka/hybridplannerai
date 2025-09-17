@@ -83,14 +83,8 @@ section.snap{padding:64px 0}
 #about .about-text p{font:400 clamp(18px, 2.2vw, 20px)/1.8 Inter;color:#E0DFDC;margin-top:8px}
 
 /* Cytat i podpis */
-/* Cytat i podpis */
-.about-quote{
-  margin-top:14px;
-  text-align:left;                 /* lewa strona */
-  font:700 clamp(18px,2.2vw,22px)/1.4 Poppins;
-  color:#EDEDEA;
-}
-.sig-wrap{display:flex;justify-content:flex-start}  /* podpis również od lewej */
+.about-quote{margin-top:14px;text-align:left;font:700 clamp(18px,2.2vw,22px)/1.4 Poppins;color:#EDEDEA}
+.sig-wrap{display:flex;justify-content:flex-start}
 .signature{
   display:block;
   margin-top:12px;
@@ -98,7 +92,7 @@ section.snap{padding:64px 0}
   width:auto;
   filter: invert(1) brightness(1.15) contrast(1.05);
   mix-blend-mode: screen;
-  opacity:.96;
+  opacity:.96
 }
 @media (max-width:640px){ .signature{ height:44px } }
 
@@ -300,39 +294,32 @@ section.snap{padding:64px 0}
 
   <!-- O MNIE -->
   <section id="about" class="snap section-dark">
-  <div class="container">
-    <div class="about-grid">
-      <div class="about-text reveal">
-        <h2 id="aboutTitle">O mnie</h2>
+    <div class="container">
+      <div class="about-grid">
+        <div class="about-text reveal">
+          <h2 id="aboutTitle">O mnie</h2>
 
-       
+          <!-- NOWE DUŻE HASŁO, jak hero H1 -->
+          <h1 class="about-hero">Dlaczego Ja?</h1>
 
-        <p id="aboutText">
-          Nazywam się Tolek, jestem certyfikowanym trenerem personalnym, pasjonatem sportu i zdrowego stylu życia.
-          W sporcie najważniejsze jest zmuszanie własnego ciała do granic możliwości, tylko w ten sposób ciało jest
-          w stanie nieustannie się rozwijać. W treningu siłowym zarówno swoim, jak i swoich podopiecznych skupiam się
-          na możliwie najwyższej intensywności przy niskiej objętości ćwiczeń, dzięki tej metodzie jestem w stanie
-          osiągnąć lepsze efekty w krótszym czasie.
-        </p>
+          <p id="aboutText">Nazywam się Tolek, jestem certyfikowanym trenerem personalnym, pasjonatem sportu i zdrowego stylu życia. W sporcie najważniejsze jest zmuszanie własnego ciała do granic możliwości, tylko w ten sposób ciało jest w stanie nieustannie się rozwijać. W treningu siłowym zarówno swoim, jak i swoich podopiecznych skupiam się na możliwie najwyższej intensywności przy niskiej objętości ćwiczeń, dzięki tej metodzie jestem w stanie osiągnąć lepsze efekty w krótszym czasie.</p>
 
-        <!-- Cytat: nowa linia, lewa krawędź, z wykrzyknikiem -->
-        <p class="about-quote">Nie trać czasu trenuj mądrze!</p>
-
-        <!-- Podpis pod cytatem -->
-        <div class="sig-wrap">
-          <img class="signature" src="assets/podpis.jpg" alt="Podpis Anatol Makówka" loading="lazy">
+          <!-- CYTAT LEWO + PODPIS POD NIM -->
+          <p class="about-quote">Nie trać czasu trenuj mądrze!</p>
+          <div class="sig-wrap">
+            <img class="signature" src="assets/podpis.jpg" alt="Podpis Anatol Makówka" loading="lazy">
+          </div>
+        </div>
+        <div class="about-media reveal">
+          <picture>
+            <source srcset="assets/Bytol3.jpg" type="image/jpeg">
+            <img src="assets/Bytol3.jpg" alt="Autor projektu">
+          </picture>
         </div>
       </div>
-
-      <div class="about-media reveal">
-        <picture>
-          <source srcset="assets/Bytol3.jpg" type="image/jpeg">
-          <img src="assets/Bytol3.jpg" alt="Autor projektu">
-        </picture>
-      </div>
     </div>
-  </div>
-</section>
+  </section>
+
   <!-- OFERTA -->
   <section id="pricing" class="snap section-light">
     <div class="container">
@@ -343,7 +330,7 @@ section.snap{padding:64px 0}
       <article class="card-light">
         <div class="product-body">
           <h3>Plan treningowy wygenerowany przez AI</h3>
-          <p>Spersonalizowany plan treningowy generowany przez AI, dzięki wzorcom w postaci wielu moich planów treningowych sztuczna inteligencja jest w stanie rozpisać plan treningowy dostosowany do twoich potrzeb.</p>
+          <p>Pełny program z progresją i rozmieszczeniem regeneracji</p>
         </div>
         <div class="product-footer">
           <div class="price-tag" aria-label="Cena planu">
@@ -358,7 +345,7 @@ section.snap{padding:64px 0}
       <article class="card-light">
         <div class="product-body">
           <h3>Indywidualny plan treningowy</h3>
-          <p>Plan treningowy według autorskiej metody treningu siłowego, dzięki której poprawisz swoje wyniki w każdej płaszczyźnie. Metoda polega na intensywnym trenowaniu podstawowymi wzorcami ruchowymi w niskim zakresie powtórzeń.</p>
+          <p>Szczegółowy program przygotowany ręcznie przez certyfikowanego trenera personalnego</p>
         </div>
         <div class="product-footer">
           <div class="price-tag" aria-label="Cena planu indywidualnego">
@@ -485,7 +472,7 @@ document.querySelectorAll('.requires-email').forEach(a=>{
   });
 })();
 
-/* i18n (bez kropek poza "About me") */
+/* i18n (bez zmian dla nowego nagłówka/cytatu – są po polsku) */
 (function () {
   const params = new URLSearchParams(location.search);
   const lang = (params.get('lang') || localStorage.getItem('hp_lang') || 'pl').toLowerCase();
@@ -524,31 +511,24 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     setText('offerTitle','Offer');
     if (offerCards.length >= 2) {
       offerCards[0].querySelector('h3').textContent = 'AI-generated training plan';
-      offerCards[0].querySelector('p').textContent  = 'A personalised plan generated by AI using patterns from my library of training programs to tailor the plan to your needs';';
+      offerCards[0].querySelector('p').textContent  = 'A complete program with progression and recovery placement';
       offerCards[1].querySelector('h3').textContent = 'Custom training plan';
-      offerCards[1].querySelector('p').textContent  = 'A training plan based on a proprietary strength training method that will improve your performance in every area. This method involves intensive training of basic movement patterns in a low-repetition range.';
+      offerCards[1].querySelector('p').textContent  = 'A detailed program handcrafted by a certified personal trainer';
     }
-
-    /* EN CTA */
     document.querySelectorAll('.btn-cta').forEach(btn => btn.textContent = 'Buy now');
 
     setText('aboutTitle','About me');
-    /* About text w EN zostaje z kropkami (wyjątek) */
+
     setText('q1','How is my plan created');
     setText('a1','AI generates your plan based on your answers to a short questionnaire We consider your goal level available equipment time and any constraints');
-
     setText('q2','How long does it take');
     setText('a2','Usually a few to several seconds after you submit your answers You get a preview and a downloadable Excel file');
-
     setText('q3','Can I train multiple disciplines in a week');
     setText('a3','Yes — the weekly schedule is optimized for your priorities and recovery');
-
     setText('q4','What language will I receive the plan in');
     setText('a4','The interface and files are available in two languages PL and EN');
-
     setText('q5','What if I have an injury or illness');
     setText('a5','This is not medical advice If you have an injury or health concerns consult a doctor or physiotherapist before you start');
-
     setText('q6','I don’t have full access to equipment Will the plan still work');
     setText('a6','Yes In the questionnaire you specify the equipment you have and the AI adapts exercises and volume to your conditions');
 
@@ -591,23 +571,17 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     document.getElementById('legalFaq').textContent='FAQ';
 
     setText('aboutTitle','O mnie');
-    /* Tekst "O mnie" z kropkami zostaje (wyjątek) — cytat i podpis są niżej */
 
     setText('q1','Jak powstaje mój plan');
     setText('a1','Plan generuje AI na podstawie Twoich odpowiedzi w krótkiej ankiecie Uwzględniamy cel poziom sprzęt czas oraz ewentualne ograniczenia');
-
     setText('q2','Ile to trwa');
     setText('a2','Zwykle kilkanaście sekund od wysłania odpowiedzi Otrzymujesz podgląd i plik Excel do pobrania');
-
     setText('q3','Czy mogę trenować kilka dyscyplin w tygodniu');
     setText('a3','Tak — tygodniowy rozkład optymalizujemy pod Twoje priorytety i regenerację');
-
     setText('q4','W jakim języku dostanę plan');
     setText('a4','Interfejs i pliki dostępne są w dwóch wersjach językowych PL oraz EN');
-
     setText('q5','Co jeśli mam kontuzję lub chorobę');
     setText('a5','To nie jest porada medyczna Jeśli masz uraz lub wątpliwości zdrowotne skonsultuj się z lekarzem lub fizjoterapeutą przed rozpoczęciem');
-
     setText('q6','Nie mam pełnego dostępu do sprzętu Czy plan zadziała');
     setText('a6','Tak W ankiecie podajesz dostępny sprzęt a AI dopasuje ćwiczenia i objętość do Twoich warunków');
   }
