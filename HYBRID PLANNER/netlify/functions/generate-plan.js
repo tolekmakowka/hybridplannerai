@@ -43,34 +43,29 @@ exports.handler = async (event) => {
       QUADS:     ['Back squat','Leg press','Goblet squat','Split squat (DB)'],
       POSTERIOR: ['Romanian deadlift','Hip thrust','Seated leg curl','Lying leg curl'],
       CALVES:    ['Standing calf raise','Seated calf raise'],
+      // ABS zostaje w banku, ale nie używamy go w głównych schematach — akcesorium jest zawsze na końcu
       ABS:       ['Hanging knee raises','Cable crunch','Ab wheel rollout','Plank 60s']
     };
 
     // ---------- LOSOWANIE BEZ POWTÓRZEŃ W TYGODNIU ----------
-    // Dla każdej kategorii pamiętamy, co już użyliśmy w bieżącym planie.
     const usedGlobal = Object.fromEntries(Object.keys(bank).map(k => [k, new Set()]));
-
     function randomPick(arr, usedSet){
       if (!arr || arr.length === 0) return '';
-      // lista dostępnych (nieużytych)
       const pool = arr.filter(x => !usedSet.has(x));
-      const choiceList = pool.length ? pool : arr; // jeśli wszystko już użyte, resetujemy pulę
+      const choiceList = pool.length ? pool : arr;
       const idx = Math.floor(Math.random() * choiceList.length);
       const pick = choiceList[idx];
-      // jeśli resetowaliśmy pulę, czyścimy set i dopiero dodajemy
       if (!pool.length) usedSet.clear();
       usedSet.add(pick);
       return pick;
     }
-
-    // helper: wybór ćwiczenia z kategorii z globalną unikalnością
     function pickUnique(cat){
       const list = bank[cat] || [];
       return randomPick(list, usedGlobal[cat] || (usedGlobal[cat] = new Set()));
     }
 
     // reps & sets – wg Twoich zasad
-    const SETS_ALWAYS = '3'; // w kolumnie SERIE wpisujemy wyłącznie tę liczbę
+    const SETS_ALWAYS = '3'; // w kolumnie SERIE wpisujemy wyłącznie tę liczbę dla głównych ćwiczeń
     function repsFor(cat){
       return (cat === 'BACK' || cat === 'CHEST') ? '8' : '10';
     }
@@ -80,28 +75,60 @@ exports.handler = async (event) => {
     const dniEN = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
     const dni = (lang==='en'?dniEN:dniPL);
 
-    // ========== RULESET DLA KOBIET (priorytet nóg, ale z losowaniem i Twoimi powtórzeniami) ==========
+    // ========== AKCESORIA NA KONIEC DNIA ==========
+    // Mężczyźni: jedna pozycja z puli, zawsze 2×10
+    const maleAccessoryPool = [
+      'Knee raises',
+      'tuck hanging side swings',
+      'Hollow body',
+      'forearm curl',
+      'forearm extension'
+    ];
+    const usedMaleAccessory = new Set();
+    function appendMaleAccessory(rows){
+      const name = randomPick(maleAccessoryPool, usedMaleAccessory);
+      rows.push({ cwiczenie: name, serie: '2', powtorzenia: '10' });
+    }
+
+    // Kobiety: jedna pozycja z opisanej bazy obiektów
+    const femaleAccessoryPool = [
+      { cwiczenie:'incline treadmill walk', serie:'X', powtorzenia:'20min' },
+      { cwiczenie:'stair master',          serie:'X', powtorzenia:'10min' },
+      { cwiczenie:'Knee raises',           serie:'2', powtorzenia:'max'   }
+    ];
+    const usedFemaleAccessory = new Set();
+    function appendFemaleAccessory(rows){
+      // losujemy według cwiczenie (unikalność po nazwie)
+      const names = femaleAccessoryPool.map(x=>x.cwiczenie);
+      const choiceName = randomPick(names, usedFemaleAccessory);
+      const obj = femaleAccessoryPool.find(x=>x.cwiczenie===choiceName) || femaleAccessoryPool[0];
+      rows.push({ cwiczenie: obj.cwiczenie, serie: obj.serie, powtorzenia: obj.powtorzenia });
+    }
+
+    // ========== RULESET DLA KOBIET (bez ABS; akcesorium na końcu) ==========
     function buildRuleBasedPlan_Women({ sessionsPerWeek = 3 }) {
 
-      // Leg day: QUADS, POSTERIOR, CALVES, ABS + marsz po bieżni
+      // Leg day: QUADS, POSTERIOR, CALVES
       function legDay(){
         const rows = [];
         const c1 = 'QUADS';     rows.push({ cwiczenie: pickUnique(c1), serie: SETS_ALWAYS, powtorzenia: repsFor(c1) });
         const c2 = 'POSTERIOR'; rows.push({ cwiczenie: pickUnique(c2), serie: SETS_ALWAYS, powtorzenia: repsFor(c2) });
         const c3 = 'CALVES';    rows.push({ cwiczenie: pickUnique(c3), serie: SETS_ALWAYS, powtorzenia: repsFor(c3) });
-        const c4 = 'ABS';       rows.push({ cwiczenie: pickUnique(c4), serie: SETS_ALWAYS, powtorzenia: repsFor(c4) });
-        rows.push({ cwiczenie: (lang==='en'?'Incline treadmill walk':'Incline treadmill walk'), serie: '1', powtorzenia: '20min' });
+        // akcesorium jako ostatnia pozycja
+        appendFemaleAccessory(rows);
         return rows;
       }
 
-      // Upper day: CHEST, BACK, SHOULDERS, BICEPS, TRICEPS
+      // Upper day: CHEST, BACK, SHOULDERS, BICEPS, TRICEPS (bez ABS)
       function upperDay(){
         const cats = ['CHEST','BACK','SHOULDERS','BICEPS','TRICEPS'];
-        return cats.map(cat => ({
+        const rows = cats.map(cat => ({
           cwiczenie: pickUnique(cat),
           serie: SETS_ALWAYS,
           powtorzenia: repsFor(cat)
         }));
+        appendFemaleAccessory(rows);
+        return rows;
       }
 
       const days = [];
@@ -121,7 +148,7 @@ exports.handler = async (event) => {
       return { days };
     }
 
-    // ========== TWARDY SCHEMAT (wszyscy poza „kobiet…”) – z losowaniem i nowymi REP/SETS ==========
+    // ========== TWARDY SCHEMAT (wszyscy poza „kobiet…”) – bez ABS; akcesorium na końcu ==========
     function scheme3_FBW(){ return [
       ['BACK','CHEST','QUADS','TRICEPS','BICEPS'],
       ['BACK','CHEST','QUADS','TRICEPS','BICEPS'],
@@ -129,12 +156,12 @@ exports.handler = async (event) => {
     ]; }
     function scheme3_PPL(){ return [
       ['CHEST','CHEST','SHOULDERS','TRICEPS','TRICEPS'],
-      ['BACK','BACK','BICEPS','BICEPS','ABS'],
+      ['BACK','BACK','BICEPS','BICEPS'],                 // usunięto ABS
       ['QUADS','POSTERIOR','CALVES','QUADS','POSTERIOR'],
     ]; }
     function scheme4_PPL_FBW(){ return [
       ['CHEST','CHEST','SHOULDERS','TRICEPS','TRICEPS'],
-      ['BACK','BACK','BICEPS','BICEPS','ABS'],
+      ['BACK','BACK','BICEPS','BICEPS'],                 // usunięto ABS
       ['QUADS','POSTERIOR','CALVES','QUADS','POSTERIOR'],
       ['BACK','CHEST','QUADS'],
     ]; }
@@ -146,14 +173,14 @@ exports.handler = async (event) => {
     ]; }
     function scheme5_PPLPP(){ return [
       ['CHEST','CHEST','SHOULDERS','TRICEPS','TRICEPS'],
-      ['BACK','BACK','BICEPS','BICEPS','ABS'],
+      ['BACK','BACK','BICEPS','BICEPS'],                 // usunięto ABS
       ['QUADS','POSTERIOR','CALVES','QUADS','POSTERIOR'],
       ['CHEST','CHEST','SHOULDERS','TRICEPS','TRICEPS'],
-      ['BACK','BACK','BICEPS','BICEPS','ABS'],
+      ['BACK','BACK','BICEPS','BICEPS'],                 // usunięto ABS
     ]; }
     function scheme5_PPL_ARNOLD(){ return [
       ['CHEST','CHEST','SHOULDERS','TRICEPS','TRICEPS'],
-      ['BACK','BACK','BICEPS','BICEPS','ABS'],
+      ['BACK','BACK','BICEPS','BICEPS'],                 // usunięto ABS
       ['QUADS','POSTERIOR','CALVES','QUADS','POSTERIOR'],
       ['CHEST','BACK','CHEST','BACK','CHEST','BACK'],
       ['SHOULDERS','SHOULDERS','BICEPS','BICEPS','TRICEPS','TRICEPS'],
@@ -177,6 +204,8 @@ exports.handler = async (event) => {
           const ex = pickUnique(cat);
           return { cwiczenie: ex, serie: SETS_ALWAYS, powtorzenia: repsFor(cat) };
         });
+        // akcesorium jako ostatnia pozycja
+        appendMaleAccessory(rows);
         days.push({ day: dni[i], exercises: rows });
       });
       return { days };
