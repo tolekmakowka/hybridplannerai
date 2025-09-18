@@ -148,30 +148,35 @@ section.snap{padding:64px 0}
 #details .card-light{ display:flex; flex-direction:column; height:100% }
 
 /* Oferta: 2 karty */
+#pricing .products{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  gap:24px;
+  align-items: stretch;         /* wszystkie karty tej samej wysokości */
+}
+
 #pricing .products .card-light{
   display:flex;
   flex-direction:column;
-  min-height:320px;           /* więcej miejsca na dłuższy opis */
+  height:100%;                  /* karta rozciąga się na pełny tor siatki */
+  min-height:360px;             /* dajemy trochę „powietrza” na dłuższy opis */
 }
-#pricing .product-body{flex:1}
-#pricing .product-body h3{margin:0 0 6px}
-#pricing .product-body p{
-  font-size:15px;
-  line-height:1.55;
-  color:#5f5e5b;              /* jak pozostały jasny tekst */
-  margin:0;                   /* bez dodatkowych przerw */
+
+#pricing .product-body{
+  flex:1;                       /* zajmuje całą wolną przestrzeń ponad stopką */
+  min-height:0;                 /* ważne dla Safari/Chromium, żeby flex mógł się kurczyć */
 }
+
 #pricing .product-footer{
-  margin-top:auto;
+  margin-top:auto;              /* PRZYPINA stopkę (cena + przycisk) do dołu karty */
   display:flex;
   flex-direction:column;
-  gap:12px
+  gap:12px;
 }
-@media (max-width:640px){
-  #pricing .products .card-light{ min-height:280px }
-}
-#pricing .product-footer{margin-top:auto;display:flex;flex-direction:column;gap:12px}
 
+@media (max-width:640px){
+  #pricing .products .card-light{ min-height:300px }
+}
 /* ===== MOBILE ===== */
 @media (max-width: 900px){
   .grid-3{ grid-template-columns: repeat(2, 1fr) }
