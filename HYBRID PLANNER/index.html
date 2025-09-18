@@ -148,7 +148,17 @@ section.snap{padding:64px 0}
 #details .card-light{ display:flex; flex-direction:column; height:100% }
 
 /* Oferta: 2 karty */
-#pricing .products{
+/* === Oferta: karty bez pustej przestrzeni na dole === */
+#pricing .products .card-light{
+  min-height: auto;          /* było: min-height:260px; */
+  padding-bottom: 12px;      /* mniej „powietrza” pod przyciskiem */
+}
+
+/* zachowujemy kotwiczenie footera przy dolnej krawędzi */
+#pricing .product-footer{
+  margin-top: auto;          /* już jest w kodzie – zostawiamy */
+  gap: 10px;                 /* opcjonalnie: ciaśniej w stopce */
+}#pricing .products{
   display:grid;
   grid-template-columns: repeat(2, minmax(280px, 1fr));
   gap:24px;
