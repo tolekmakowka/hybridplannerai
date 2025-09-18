@@ -147,35 +147,42 @@ section.snap{padding:64px 0}
 }
 #details .card-light{ display:flex; flex-direction:column; height:100% }
 
-/* Oferta: 2 karty */
-/* === Oferta: karty bez pustej przestrzeni na dole === */
-#pricing .products .card-light{
-  min-height: auto;          /* było: min-height:260px; */
-  padding-bottom: 12px;      /* mniej „powietrza” pod przyciskiem */
-}
-
-/* zachowujemy kotwiczenie footera przy dolnej krawędzi */
-#pricing .product-footer{
-  margin-top: auto;          /* już jest w kodzie – zostawiamy */
-  gap: 10px;                 /* opcjonalnie: ciaśniej w stopce */
-}#pricing .products{
+/* Oferta: 2 karty — kompaktowe, stopka (cena + Kup teraz) zawsze przy dole */
+#pricing .products{
   display:grid;
   grid-template-columns: repeat(2, minmax(280px, 1fr));
   gap:24px;
-  align-items:stretch;                 /* karty tej samej wysokości w wierszu */
+  align-items:stretch;
+  margin-top:20px;
 }
 
 #pricing .products .card-light{
-  display:grid;
-  grid-template-rows: auto 1fr auto;   /* nagłówek / TREŚĆ / STOPKA */
-  height:100%;
-  min-height:420px;                    /* opcjonalnie: 420px; możesz zmienić */
+  display:flex;
+  flex-direction:column;
+  /* klucz: brak stałych wysokości */
+  height:auto !important;
+  min-height:0 !important;
+  padding:20px;           /* zachowaj padding karty */
 }
 
-/* korpus karty (tytuł + opis) = środkowy wiersz, wypełnia przestrzeń */
 #pricing .product-body{
-  min-height:0;                        /* ważne dla Safari */
+  flex:1 1 auto;          /* treść rośnie i spycha stopkę do dołu */
 }
+
+#pricing .product-footer{
+  margin-top:auto;        /* stopka przy dolnej krawędzi karty */
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+/* RWD */
+@media (max-width: 900px){
+  #pricing .products{ grid-template-columns:1fr; }
+}
+
+/* Bezpiecznik: gdyby gdzieś niżej był min-height dla kart */
+#pricing .products .card-light{ min-height:0 !important; height:auto !important; }
 
 /* STOPKA zawsze na dole karty */
 #pricing .product-footer{
