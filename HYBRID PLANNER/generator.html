@@ -66,7 +66,7 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
 
     <h1 id="title">Generator planów</h1>
     <p id="subtitle" style="margin:6px 0 14px;color:#C9C7C2">
-      Wypełnij ankietę i kliknij <strong>Kup teraz</strong>. Najpierw przekierujemy do płatności, a po jej zakończeniu wyślemy plik (Excel) na e-mail.
+      Wypełnij ankietę i kliknij <strong>Zamawiam i płacę</strong>. Najpierw przekierujemy do płatności, a po jej zakończeniu wyślemy plik (Excel) na e-mail.
     </p>
 
     <h2 id="hA">Plan — pytania (5)</h2>
@@ -103,7 +103,7 @@ footer{margin:30px 0 10px;color:#a9a7a3;font-size:12px;text-align:center}
     <div class="hr"></div>
 
     <div class="actions">
-      <button id="genBtn" class="btn btn-brown">Kup Teraz</button>
+      <button id="genBtn" class="btn btn-brown">Zamawiam i płacę</button>
       <a id="dlBtn" class="btn btn-ghost" href="#" download="Plan Treningowy.xlsx" style="display:none">Pobierz Excel</a>
     </div>
 
@@ -281,7 +281,7 @@ async function resumeAfterPaymentIfNeeded(){
     console.error(e);
     alert((document.documentElement.lang==='en')
       ? 'We could not generate your plan after payment. Please click Generate plan again.'
-      : 'Nie udało się wygenerować planu po płatności. Kliknij jeszcze raz „Kup teraz”.');
+      : 'Nie udało się wygenerować planu po płatności. Kliknij jeszcze raz „Zamawiam i płacę”.');
   }finally{
     sessionStorage.removeItem('hp_form_ai');
   }
@@ -310,7 +310,7 @@ if (genBtn){
       console.error(e);
       alert((document.documentElement.lang==='en') ? 'Could not start payment.' : 'Nie udało się rozpocząć płatności.');
     }finally{
-      genBtn.disabled = false; genBtn.textContent = (document.documentElement.lang==='en') ? 'Generate plan' : 'Kup teraz';
+      genBtn.disabled = false; genBtn.textContent = (document.documentElement.lang==='en') ? 'Generate plan' : 'Zamawiam i płacę';
     }
   });
 }
@@ -361,14 +361,14 @@ if (genBtn){
 
     // Form
     t('title','Generator planów');
-    t('subtitle','Wypełnij ankietę i kliknij Kup teraz. Najpierw przekierujemy do płatności, a po jej zakończeniu wyślemy plik (Excel) na e-mail.');
+    t('subtitle','Wypełnij ankietę i kliknij Zamawiam i płacę. Najpierw przekierujemy do płatności, a po jej zakończeniu wyślemy plik (Excel) na e-mail.');
     t('hA','Plan — pytania (5)');
     t('a1lbl','Ile razy w tygodniu chciałbyś/chciałabyś ćwiczyć?');
     t('a2lbl','Jaki jest twój główny cel?');
     t('a3lbl','Jaki jest twój poziom aktywności fizycznej?');
     t('a4lbl','Do jakiego sprzętu treningowego masz dostęp?');
     t('a5lbl','Płeć');
-    qs('genBtn') && (qs('genBtn').textContent = 'Kup teraz');
+    qs('genBtn') && (qs('genBtn').textContent = 'Zamawiam i płacę');
     qs('dlBtn')  && (qs('dlBtn').textContent  = 'Pobierz Excel');
     t('whoLbl','Plan zostanie wysłany na e-mail:');
     t('rodoLbl','To nie jest porada medyczna. Korzystasz na własną odpowiedzialność.');
