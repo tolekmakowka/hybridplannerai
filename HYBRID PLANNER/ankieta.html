@@ -67,7 +67,7 @@ pre{margin:0;white-space:pre-wrap;word-break:break-word;font:400 12px/1.5 ui-mon
     <div id="paidBanner" class="banner"><strong id="paidOk">Płatność potwierdzona.</strong> <span id="paidNext">Wysyłam Twoją ankietę…</span></div>
 
     <h1 id="title">Ankieta — Indywidualny plan treningowy</h1>
-    <p id="intro" class="helper" style="margin:6px 0 14px">Uzupełnij krótki formularz. Odpowiedzi trafią bezpośrednio do mnie, a płatność zrealizujesz po kliknięciu „Kup teraz”.</p>
+    <p id="intro" class="helper" style="margin:6px 0 14px">Uzupełnij krótki formularz. Odpowiedzi trafią bezpośrednio do mnie, a płatność zrealizujesz po kliknięciu „Zamawiam i płacę”.</p>
 
     <form id="survey" novalidate>
       <div class="row">
@@ -105,7 +105,7 @@ pre{margin:0;white-space:pre-wrap;word-break:break-word;font:400 12px/1.5 ui-mon
       <div class="hr"></div>
 
       <div class="actions">
-        <button id="sendBtn" class="btn btn-brown" type="submit">Kup teraz</button>
+        <button id="sendBtn" class="btn btn-brown" type="submit">Zamawiam i płacę</button>
         <button id="clearBtn" class="btn btn-ghost" type="button">Wyczyść</button>
       </div>
 
@@ -304,7 +304,7 @@ survey.addEventListener('submit', async (e)=>{
       console.error(err);
       alert((document.documentElement.lang==='en'?'Could not start payment: ':'Nie udało się rozpocząć płatności: ') + String(err.message||err));
     }finally{
-      sendBtn.disabled = false; sendBtn.textContent = (document.documentElement.lang==='en'?'Send survey':'Kup teraz');
+      sendBtn.disabled = false; sendBtn.textContent = (document.documentElement.lang==='en'?'Send survey':'Zamawiam i płacę');
     }
     return;
   }
@@ -320,7 +320,7 @@ survey.addEventListener('submit', async (e)=>{
     fallbackText.textContent = buildPlainText(v);
     show(errBox);
   }finally{
-    sendBtn.disabled = false; sendBtn.textContent = (document.documentElement.lang==='en'?'Send survey':'Kup teraz');
+    sendBtn.disabled = false; sendBtn.textContent = (document.documentElement.lang==='en'?'Send survey':'Zamawiam i płacę');
   }
 });
 
@@ -375,7 +375,7 @@ $('copyBtn').addEventListener('click', async ()=>{
     t('badge','Indywidualny plan treningowy');
 
     t('title','Ankieta — Indywidualny plan treningowy');
-    t('intro','Uzupełnij krótki formularz. Płatność zrealizujesz po kliknięciu „Kup teraz”.');
+    t('intro','Uzupełnij krótki formularz. Płatność zrealizujesz po kliknięciu „Zamawiam i płacę”.');
     t('lblIg','Jak nazywasz się na Instagramie? ');
     t('lblIgHelp','(informacja potrzebna w celach kontaktowych)');
     t('lblAge','W jakim jesteś wieku?');
@@ -383,7 +383,7 @@ $('copyBtn').addEventListener('click', async ()=>{
     t('lblLevel','Jaki jest Twój poziom aktywności fizycznej?');
     t('lblGoal','Jaki jest Twój główny cel?');
 
-    t('sendBtn','Kup teraz'); t('clearBtn','Wyczyść');
+    t('sendBtn','Zamawiam i płacę'); t('clearBtn','Wyczyść');
     t('success','Dziękuję! Ankieta została wysłana. Odezwię się w wiadomości prywatnej lub na e-mailu.');
     t('whoLbl','E-mail kontaktowy:');
     t('rodoLbl','To nie jest porada medyczna.');
