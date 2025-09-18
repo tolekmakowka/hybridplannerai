@@ -573,12 +573,15 @@ document.querySelectorAll('.requires-email').forEach(a=>{
     setText('featuresTitle','Szczegóły tworzenia planu treningowego');
     setText('offerTitle','Oferta');
 
+  
     if (offerCards.length >= 2) {
-      offerCards[0].querySelector('h3').textContent = 'Plan treningowy wygenerowany przez AI';
-      offerCards[0].querySelector('p').textContent  = 'Pełny program z progresją i rozmieszczeniem regeneracji';
-      offerCards[1].querySelector('h3').textContent = 'Indywidualny plan treningowy';
-      offerCards[1].querySelector('p').textContent  = 'Szczegółowy program przygotowany ręcznie przez certyfikowanego trenera personalnego';
-    }
+  offerCards[0].querySelector('h3').textContent = 'Plan treningowy wygenerowany przez AI';
+  offerCards[0].querySelector('p').textContent  =
+    'Personalizowany plan treningowy generowany przez AI, dzięki wzorcom w postaci wielu moich planów treningowych sztuczna inteligencja jest w stanie rozpisać plan dostosowany do Twoich potrzeb';
+  offerCards[1].querySelector('h3').textContent = 'Indywidualny plan treningowy';
+  offerCards[1].querySelector('p').textContent  =
+    'Plan treningowy według autorskiej metody treningu siłowego, dzięki której poprawisz swoje wyniki w każdej płaszczyźnie';
+}
     document.querySelectorAll('.btn-cta').forEach(btn => btn.textContent = 'Kup teraz');
 
     document.getElementById('legalPolicy').textContent='Polityka';
